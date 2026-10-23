@@ -37,6 +37,7 @@ A interação é simples: selecionar ou criar uma hashtag e contribuir. **Cada c
 - [08 — Pontos em aberto](docs/08-open-questions.md)
 - [09 — Direção visual Night Lights](docs/09-night-lights-visual-direction.md)
 - [10 — Milestones e progresso planejado](docs/10-milestones-and-progress.md)
+- [11 — Infraestrutura, secrets e GitHub Actions](docs/11-infrastructure-operations.md)
 
 ## Planejamento por versões
 
@@ -57,6 +58,6 @@ A interação é simples: selecionar ou criar uma hashtag e contribuir. **Cada c
 
 ### Estado atual
 
-Repositório de planejamento. Não há app, deployment, banco ou algoritmo validado. Documentos distinguem explicitamente **decisão**, **proposta** e **experimento**.
+`main` ainda contém planejamento e infraestrutura; o frontend está no PR #14. Vercel, Neon Free e bucket R2 privado foram provisionados; `map.faysk.dev` foi configurado na Cloudflare e verificado na Vercel. Conectividade SQL/TLS e objetos R2 foram testados. Isso ainda não representa aplicação ou algoritmo validados. Veja o [estado operacional e pendências](docs/11-infrastructure-operations.md).
 
 Licença: [MIT](LICENSE).

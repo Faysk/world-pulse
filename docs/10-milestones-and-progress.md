@@ -98,3 +98,16 @@ O workflow é idempotente (reutiliza milestone existente e reaplica vínculos) e
 - [Issues da v0.3](https://github.com/Faysk/world-pulse/issues?q=is%3Aissue+%22%5Bv0.3%5D%22)
 - [Issues da v0.4](https://github.com/Faysk/world-pulse/issues?q=is%3Aissue+%22%5Bv0.4%5D%22)
 - [Milestones](https://github.com/Faysk/world-pulse/milestones)
+
+## Infraestrutura provisionada em 23/10/2026
+
+A configuração operacional é rastreada separadamente do frontend em rascunho do PR #14:
+
+| Issue | Entrega | Milestone |
+|---|---|---|
+| #15 | GitHub Actions, secrets e documentação operacional | v0.3 — Data & Presence |
+| #16 | Cloudflare DNS e verificação de map.faysk.dev | v0.1 — Living Earth (Visual POC) |
+| #17 | Neon Free e acesso SQL restrito | v0.3 — Data & Presence |
+| #18 | R2 privado e teste de objetos | v0.3 — Data & Presence |
+
+Consulte o [runbook de infraestrutura](11-infrastructure-operations.md) para evidências, limites e pendências. Provisionamento não fecha automaticamente as issues de presença, persistência ou aprovação visual.

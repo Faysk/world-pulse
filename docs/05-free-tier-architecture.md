@@ -2,6 +2,8 @@
 
 **Status:** preferência de serviços definida; nenhum projeto de infraestrutura criado por esta documentação.
 
+**Atualização de implantação (23/10/2026):** Vercel + Cloudflare DNS/R2 + **Neon Free** provisionados. Neon substitui a preferência Supabase porque a conta Free já tem dois projetos ativos. Consulte o [runbook e estado verificado](11-infrastructure-operations.md); esta página preserva a proposta original abaixo.
+
 ## Componentes escolhidos como preferência
 
 | Serviço | Papel planejado | Notas |
