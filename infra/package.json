@@ -7,7 +7,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "test": "node --test config.test.mjs",
+    "test": "node --test *.test.mjs",
     "check": "node check-connections.mjs",
     "sync": "node sync-vercel.mjs"
   },

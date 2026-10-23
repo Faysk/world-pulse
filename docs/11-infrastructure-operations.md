@@ -65,6 +65,8 @@ Executar em **Actions → Production infrastructure → Run workflow**, branch `
 - `sync`: executa `check` e copia somente a lista explícita de variáveis runtime para a Vercel. Secrets são gravados como `sensitive`; configurações não secretas como `plain`. A resposta da API nunca é impressa.
 - `deploy`: executa `check` e `sync`, solicita build remoto do commit exato de `main` e acompanha até READY. Por fim exige HTTP 200 em `https://map.faysk.dev`. Não executa migrations automaticamente.
 
+Antes de `deploy`, um job separado **sem production secrets** exige o app e `package-lock.json` versionados, executa `npm ci`, `npm test` e `npm run build`. Se falhar, o job de infraestrutura não inicia. Operações `check` e `sync` não dependem de haver frontend em `main`. Essa validação não substitui smoke gráfico nem staging antes da atribuição do domínio; veja #21.
+
 Deploy de produção é manual para não publicar um frontend em rascunho. `vercel.json` desativa deploys automáticos em `main` e `infra/*`; produção passa pelo Actions. Branches de frontend podem continuar gerando previews sem secrets de produção. O pipeline usa a integração Git da Vercel para buscar o commit, portanto o GitHub App da Vercel precisa continuar autorizado no repositório. No merge do PR #14, preservar esse bloco `git` ao incorporar as opções de build Vite daquele PR.
 
 Produção tem restrição de branch `main`, mas não foi configurada revisão humana obrigatória nem proteção da branch principal. Alterações em `main` continuam exigindo confiança nos mantenedores. Não usar `pull_request_target` nem rodar PRs com secrets.

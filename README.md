@@ -38,6 +38,7 @@ A interação é simples: selecionar ou criar uma hashtag e contribuir. **Cada c
 - [09 — Direção visual Night Lights](docs/09-night-lights-visual-direction.md)
 - [10 — Milestones e progresso planejado](docs/10-milestones-and-progress.md)
 - [11 — Infraestrutura, secrets e GitHub Actions](docs/11-infrastructure-operations.md)
+- [12 — Revisão crítica e próxima entrega](docs/12-project-review.md)
 
 ## Planejamento por versões
 
