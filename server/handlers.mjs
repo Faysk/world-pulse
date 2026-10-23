@@ -2,12 +2,13 @@ import {
   ApiError, onlyMethod, parseBody, readSessionCookie,
   requireSameOrigin, json, fail, normalizeHashtag, validateTagId, validateTapBatch
 } from './protocol.mjs';
-import {
-  findVisitor, createVisitor, requireVisitor, createOrGetTag,
-  selectTag, creditBatch, getCredits, getRanking
-} from './store.mjs';
+import * as store from './store.mjs';
 
-export function route(kind) {
+export function route(kind, operations = store) {
+  const {
+    findVisitor, createVisitor, requireVisitor, createOrGetTag,
+    selectTag, creditBatch, getCredits, getRanking
+  } = operations;
   return async function handler(req, res) {
     try {
       if (kind === 'ranking') {
