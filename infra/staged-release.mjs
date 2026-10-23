@@ -16,22 +16,28 @@ export async function stagedRelease({ api, smoke, sha, project, repo, pause, rec
   if (!ready) throw new Error('Candidate build timed out');
   progress('Candidate build READY; checking domain assignment and temporary access.');
   if (ready.autoAssignCustomDomains !== false) throw new Error('Candidate did not confirm disabled domain assignment');
+  progress('Candidate automatic domain assignment is disabled.');
   const host = ready.url || candidate.url;
   if (!/^[a-z0-9-]+\.vercel\.app$/.test(host || '')) throw new Error('Unexpected candidate hostname');
 
   let secret;
   try {
+    progress('Requesting temporary access for the isolated candidate.');
     const share = await api(`/aliases/${encodeURIComponent(candidate.id)}/protection-bypass`, {
       method: 'PATCH', body: JSON.stringify({ ttl: 600 }),
     });
     secret = Object.entries(share.protectionBypass || {}).find(([, value]) => value.scope === 'shareable-link')?.[0];
     if (!secret) throw new Error('Temporary candidate access unavailable');
+    progress('Temporary candidate access granted; starting HTML and asset smoke.');
     await smoke(`https://${host}`, secret);
     progress('Candidate HTML, JavaScript and CSS passed smoke checks.');
   } finally {
-    if (secret) await api(`/aliases/${encodeURIComponent(candidate.id)}/protection-bypass`, {
+    if (secret) {
+      progress('Revoking temporary candidate access.');
+      await api(`/aliases/${encodeURIComponent(candidate.id)}/protection-bypass`, {
       method: 'PATCH', body: JSON.stringify({ revoke: { secret, regenerate: false } }),
-    });
+      });
+    }
   }
   // The access token is revoked BEFORE assigning the production domain.
   progress('Temporary candidate access revoked; requesting promotion.');

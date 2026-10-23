@@ -6,7 +6,7 @@ export function vercelApi({ token, team, fetcher = fetch }) {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       signal: AbortSignal.timeout(30_000),
     });
-    if (!response.ok) throw new Error('Vercel API request failed');
+    if (!response.ok) throw Object.assign(new Error('Vercel API request failed'), { providerStatus: response.status });
     // Promotion may succeed with HTTP 204 and no JSON representation.
     const body = await response.text();
     return body.trim() ? JSON.parse(body) : {};
