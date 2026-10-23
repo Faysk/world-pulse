@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Map as MapInstance } from 'maplibre-gl';
 import { TAGS, peopleCount, type TagId } from './demoData';
 import { WorldGlobe, flyToTag, resetGlobe } from './WorldGlobe';
@@ -126,7 +126,7 @@ export default function App() {
               key={item.id}
               className={'ranking-item ' + (selected === item.id ? 'is-active' : '')}
               onClick={() => chooseTag(item.id, true)}
-              style={{ '--tag': item.color } as React.CSSProperties}
+              style={{ '--tag': item.color } as CSSProperties}
             >
               <span className="rank-number">0{index + 1}</span>
               <span className="rank-dot" aria-hidden="true" />
@@ -160,7 +160,7 @@ export default function App() {
               id="population" aria-label="Quantidade simulada de pessoas"
               type="range" min="0" max="300" step="5" value={Math.round(scale * 100)}
               onChange={e => setScale(Number(e.target.value) / 100)}
-              style={{ '--progress': (scale / 3 * 100) + '%' } as React.CSSProperties}
+              style={{ '--progress': (scale / 3 * 100) + '%' } as CSSProperties}
             />
             <button className={'pulse-button ' + (animate ? 'active' : '')}
               onClick={() => setAnimate(value => !value)}
