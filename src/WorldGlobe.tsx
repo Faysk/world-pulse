@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import maplibregl, { setWorkerUrl, type GeoJSONSource, type Map as MapInstance } from 'maplibre-gl';
+import { Map, setWorkerUrl, type GeoJSONSource, type Map as MapInstance } from 'maplibre-gl';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import {
   TAGS, createPopulation, neutralLightPoints, tagCenter,
@@ -128,7 +128,7 @@ export function WorldGlobe({
 
     let map: MapInstance;
     try {
-      map = new maplibregl.Map({
+      map = new Map({
         container: container.current,
         style: 'https://tiles.openfreemap.org/styles/dark',
         center: [-23, 13],
