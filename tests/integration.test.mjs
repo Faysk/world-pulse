@@ -66,7 +66,8 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
     await assert.rejects(creditBatch(sessionA.visitorId, { ...batch, clicks: 5 }), {
       code: 'batch_id_conflict', status: 409
     });
-    const b = await creditBatch(sessionB.visitorId, { tagId: gta6.id, batchId: randomUUID(), clicks: 1 });
+    // The same UUID on a DIFFERENT visitor is a separate, legitimate batch.
+    const b = await creditBatch(sessionB.visitorId, { tagId: gta6.id, batchId: batch.batchId, clicks: 1 });
     assert.equal(b.creditedSeconds, '1');
   });
 
@@ -108,6 +109,11 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
     await assert.rejects(creditBatch(newcomer.visitorId, {
       tagId:gta6.id,batchId:randomUUID(),clicks:1
     }), { code:'rate_limited', status:429 });
+  });
+
+  await t.test('Expired browser sessions cannot be reused', async () => {
+    await owner.query("UPDATE world_pulse.visitors SET expires_at=now()-interval '1 second' WHERE id=$1", [sessionB.visitorId]);
+    assert.equal(await findVisitor(sessionB.token), null);
   });
 
   await t.test('Runtime role cannot create tables in isolated schema', async () => {
