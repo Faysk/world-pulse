@@ -7,7 +7,8 @@
     }
   },
   "framework": "vite",
-  "installCommand": "npm install --no-audit --no-fund",
+  "installCommand": "npm ci --no-fund",
   "buildCommand": "npm run build",
   "outputDirectory": "dist"
 }
+

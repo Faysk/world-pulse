@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - feat/globe-poc
+      - main
     paths:
       - "src/**"
       - "index.html"
       - "package.json"
+      - "package-lock.json"
       - "tests/**"
       - "src/domain.ts"
       - "tsconfig.json"
@@ -19,6 +21,7 @@ on:
       - "src/**"
       - "index.html"
       - "package.json"
+      - "package-lock.json"
       - "tsconfig.json"
 
 permissions:
@@ -35,7 +38,7 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: "22"
-      - run: npm install --no-audit --no-fund
+      - run: npm ci --no-fund
       - run: npm run test
       - run: npm run build
 
@@ -50,7 +53,7 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: "22"
-      - run: npm install --no-audit --no-fund
+      - run: npm ci --no-fund
       - name: Install only Chromium for Playwright
         run: npx playwright install chromium --with-deps
       - name: Smoke test desktop and mobile
@@ -63,3 +66,4 @@ jobs:
             test-results/
             test-artifacts/
           retention-days: 7
+
