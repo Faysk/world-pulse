@@ -36,6 +36,20 @@ A interação é simples: selecionar ou criar uma hashtag e contribuir. **Cada c
 - [07 — Roadmap e critérios de aceite](docs/07-roadmap.md)
 - [08 — Pontos em aberto](docs/08-open-questions.md)
 - [09 — Direção visual Night Lights](docs/09-night-lights-visual-direction.md)
+- [10 — Milestones e progresso planejado](docs/10-milestones-and-progress.md)
+
+## Planejamento por versões
+
+| Release | Objetivo | Issues |
+|---|---|---|
+| **v0.1 — Living Earth** | Globo cinza, luzes orgânicas e preview visual | #1, #2, #10, #11, #12 |
+| **v0.2 — Hashtags & Taps** | Seleção de #, cores e +1 segundo | #3, #4 |
+| **v0.3 — Data & Presence** | Banco, presença e localização aproximada | #5, #6, #7, #9 |
+| **v0.4 — Alpha** | Top 10 e integração ponta a ponta | #8, #13 |
+
+📍 [Ver organização, critérios de aceite e progresso](docs/10-milestones-and-progress.md) · [Todas as issues](https://github.com/Faysk/world-pulse/issues) · [GitHub Milestones](https://github.com/Faysk/world-pulse/milestones)
+
+**Observação:** as issues já estão identificadas por versão; a criação/vinculação dos milestones **nativos** ainda depende de um passo no GitHub.
 
 ## Próximo passo
 
