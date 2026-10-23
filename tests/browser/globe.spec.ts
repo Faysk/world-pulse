@@ -19,6 +19,9 @@ test.beforeEach(async ({ page }) => {
 test('The globe loads and taps credit seconds without changing people', async ({ page }, info) => {
   const exceptions: string[] = [];
   page.on('pageerror', error => exceptions.push(error.message));
+  page.on('console', message => {
+    if (message.type() === 'error') exceptions.push(message.text());
+  });
   await page.goto('/');
   await expect(page.getByTestId('planet-render-status')).toHaveText('RENDER ONLINE', { timeout: 30_000 });
   await expect(page.locator('.maplibregl-canvas')).toBeVisible();

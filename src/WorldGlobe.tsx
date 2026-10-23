@@ -106,10 +106,12 @@ function applyTagSelection(map: MapInstance, selected: TagId | null): void {
   const focus = brightnessExpression(selected);
   // One shared layer for every hashtag: per-feature color and focus expression.
   map.setPaintProperty('pulse-halo', 'circle-opacity', [
-    '*', ['interpolate', ['linear'], ['zoom'], 5, 0, 7, 0.12, 9, 0.36, 13, 0.40], focus
+    'interpolate', ['linear'], ['zoom'],
+    5, 0, 7, ['*', 0.12, focus], 9, ['*', 0.36, focus], 13, ['*', 0.40, focus]
   ]);
   map.setPaintProperty('pulse-core', 'circle-opacity', [
-    '*', ['interpolate', ['linear'], ['zoom'], 5, 0, 7, 0.14, 9, 0.64, 13, 0.85], focus
+    'interpolate', ['linear'], ['zoom'],
+    5, 0, 7, ['*', 0.14, focus], 9, ['*', 0.64, focus], 13, ['*', 0.85, focus]
   ]);
 }
 
