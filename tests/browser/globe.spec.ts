@@ -62,6 +62,24 @@ test('The globe loads and taps credit seconds without changing people', async ({
   await expect(seconds).toHaveText('3');
   await expect(people).toHaveText(totalBefore);
 
+  if (!isMobile) {
+    // Navigation must not generate a credited second. Exercise real WebGL
+    // mouse dragging rather than clicking only on a separate test button.
+    const canvas = page.locator('.maplibregl-canvas');
+    const box = await canvas.boundingBox();
+    expect(box).not.toBeNull();
+    if (box) {
+      const x = box.x + box.width / 2;
+      const y = box.y + box.height / 2;
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      await page.mouse.move(x + 110, y + 45, { steps: 10 });
+      await page.mouse.up();
+      await expect(seconds).toHaveText('3');
+      await expect(people).toHaveText(totalBefore);
+    }
+  }
+
   await page.screenshot({ path: 'test-artifacts/world-pulse-' + info.project.name + '.png', fullPage: true });
   expect(exceptions).toEqual([]);
 });
