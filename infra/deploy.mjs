@@ -3,22 +3,14 @@ import { setTimeout } from 'node:timers/promises';
 import { required } from './config.mjs';
 import { validateRelease } from './validate-release.mjs';
 import { stagedRelease, smokeStaticSite } from './staged-release.mjs';
+import { vercelApi } from './vercel-api.mjs';
 
 try {
   required(['VERCEL_TOKEN', 'VERCEL_ORG_ID', 'VERCEL_PROJECT_ID', 'GITHUB_SHA', 'GITHUB_REPOSITORY_ID']);
   if (process.env.GITHUB_REF !== 'refs/heads/main') throw new Error();
   await validateRelease(process.cwd());
   const { VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID } = process.env;
-  const api = async (path, options = {}) => {
-    const url = new URL(`https://api.vercel.com${path}`);
-    url.searchParams.set('teamId', VERCEL_ORG_ID);
-    const response = await fetch(url, { ...options,
-      headers: { Authorization: `Bearer ${VERCEL_TOKEN}`, 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!response.ok) throw new Error();
-    return response.json();
-  };
+  const api = vercelApi({ token: VERCEL_TOKEN, team: VERCEL_ORG_ID });
   const id = await stagedRelease({ api, smoke: smokeStaticSite, sha: process.env.GITHUB_SHA,
     project: VERCEL_PROJECT_ID, repo: process.env.GITHUB_REPOSITORY_ID, pause: setTimeout,
     receipt: id => console.log(`Staged production deployment: ${id}`),
