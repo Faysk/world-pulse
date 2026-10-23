@@ -250,7 +250,7 @@ export function WorldGlobe({
     mapRef.current = map;
     let hasLoaded = false;
     let frames = 0;
-    let periodStart = performance.now();
+    let periodStart = 0;
     const watchdog = window.setTimeout(() => {
       if (!hasLoaded) callbacks.current.onFailure(
         'O mapa não carregou. Verifique sua ligação e o acesso aos tiles cartográficos.'
@@ -272,11 +272,21 @@ export function WorldGlobe({
       callbacks.current.onZoom(map.getZoom());
     });
 
-    map.on('moveend', () => callbacks.current.onZoom(map.getZoom()));
+    map.on('movestart', () => {
+      frames = 0;
+      periodStart = performance.now();
+    });
+    map.on('moveend', () => {
+      callbacks.current.onZoom(map.getZoom());
+      callbacks.current.onFps(0);
+    });
     map.on('render', () => {
+      // MapLibre only renders when needed, so counting idle frames / second
+      // is NOT a meaningful performance metric. Sample active movement only.
+      if (!map.isMoving() || !periodStart) return;
       frames++;
       const now = performance.now();
-      if (now - periodStart > 1000) {
+      if (now - periodStart > 850) {
         callbacks.current.onFps(Math.round(frames * 1000 / (now - periodStart)));
         frames = 0;
         periodStart = now;
