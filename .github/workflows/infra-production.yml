@@ -1,0 +1,57 @@
+name: Production infrastructure
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Check connections, sync runtime config, or sync and deploy the app
+        required: true
+        default: check
+        type: choice
+        options: [check, sync, deploy]
+permissions:
+  contents: read
+concurrency:
+  group: world-pulse-production
+  cancel-in-progress: false
+jobs:
+  infrastructure:
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+      APP_URL: ${{ vars.APP_URL }}
+      R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
+      R2_BUCKET_NAME: ${{ vars.R2_BUCKET_NAME }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: infra/package-lock.json
+      - run: npm ci --prefix infra --ignore-scripts
+      - run: npm test --prefix infra
+      - name: Probe database and private R2 bucket
+        run: node infra/check-connections.mjs
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      - name: Synchronize GitHub runtime secrets to Vercel production
+        if: inputs.operation == 'sync' || inputs.operation == 'deploy'
+        run: node infra/sync-vercel.mjs
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      - name: Deploy exact main commit and check HTTPS
+        if: inputs.operation == 'deploy'
+        run: node infra/deploy.mjs
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
