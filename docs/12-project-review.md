@@ -2,6 +2,8 @@
 
 Revisão de 23/10/2026, baseada em `main` (`a6f9f20`) e PR #14 (`4049ec5`). **Recomendações de produto abaixo são propostas, não decisões aprovadas.** Rastreio: #20 e #21.
 
+**Decisão posterior do usuário (24/10/2026):** a proposta de presença por heartbeat/cinco minutos desta revisão foi rejeitada pelo contrato de [saldo em tempo real por hashtag](14-time-credit-contract.md). As manchas duram até o saldo zerar, mesmo offline; várias podem coexistir por participante. Não implementar a proposta antiga abaixo. O pipeline staged descrito como futuro nesta revisão já foi implementado nos PRs #27/#28.
+
 ## O que mais destrava o projeto
 
 O próximo salto útil é um fluxo real pequeno: dois navegadores usam a mesma hashtag e cor, enviam lotes sem duplicar segundos e consultam um agregado. Ele valida as principais regras antes de investir em shaders ou escala global. O trabalho visual do PR #14 pode seguir com dados simulados em paralelo, sem exigir backend pronto.
