@@ -1,18 +1,18 @@
 # World Pulse — Releases, Milestones e progresso
 
 **Atualizado em:** 23/10/2026  
-**Status:** planejamento organizado nas Issues. **Milestones nativos ainda precisam ser criados no GitHub e vinculados** — o conector atual não disponibiliza criação de milestones. Não considerar a simples classificação de issues como milestone nativo já concluído.
+**Status:** ✅ **Quatro milestones nativos criados no GitHub, com as 13 issues vinculadas e verificadas individualmente.** O workflow `.github/workflows/setup-milestones.yml` realiza a criação/vinculação de modo idempotente.
 
 ## Visão geral — ordem das entregas
 
-| Milestone nativo a criar (título exato) | Propósito | Issues | Estado inicial |
+| Milestone GitHub | Propósito | Issues | Estado inicial |
 |---|---|---|---|
-| `v0.1 — Living Earth (Visual POC)` | Globo cinza, zoom de alta qualidade, Night Lights e demo Vercel | [#1](../../issues/1), [#2](../../issues/2), [#10](../../issues/10), [#11](../../issues/11), [#12](../../issues/12) | 0/5 concluídas |
-| `v0.2 — Hashtags & Taps` | Seleção de hashtags, cor aleatória persistente e +1 segundo por tap | [#3](../../issues/3), [#4](../../issues/4) | 0/2 concluídas |
-| `v0.3 — Data & Presence` | Contribuições persistentes, presença, geografia aproximada e infra gratuita | [#5](../../issues/5), [#6](../../issues/6), [#7](../../issues/7), [#9](../../issues/9) | 0/4 concluídas |
-| `v0.4 — World Pulse Alpha` | Top 10, origem por país, integração e validação de público | [#8](../../issues/8), [#13](../../issues/13) | 0/2 concluídas |
+| [v0.1 — Living Earth (Visual POC)](../../milestone/1) | Globo cinza, zoom de alta qualidade, Night Lights e demo Vercel | [#1](../../issues/1), [#2](../../issues/2), [#10](../../issues/10), [#11](../../issues/11), [#12](../../issues/12) | 0/5 concluídas |
+| [v0.2 — Hashtags & Taps](../../milestone/2) | Seleção de hashtags, cor aleatória persistente e +1 segundo por tap | [#3](../../issues/3), [#4](../../issues/4) | 0/2 concluídas |
+| [v0.3 — Data & Presence](../../milestone/3) | Contribuições persistentes, presença, geografia aproximada e infra gratuita | [#5](../../issues/5), [#6](../../issues/6), [#7](../../issues/7), [#9](../../issues/9) | 0/4 concluídas |
+| [v0.4 — World Pulse Alpha](../../milestone/4) | Top 10, origem por país, integração e validação de público | [#8](../../issues/8), [#13](../../issues/13) | 0/2 concluídas |
 
-**Total:** 13 issues abertas, nenhuma concluída no momento da criação deste documento. Essa contagem é um **snapshot**, não um widget ao vivo. Após associar as issues a milestones nativos, a página [GitHub Milestones](https://github.com/Faysk/world-pulse/milestones) mostrará o percentual **automaticamente a partir das issues fechadas**.
+**Total:** 13 issues abertas, nenhuma concluída na verificação inicial. Essa contagem é um **snapshot**, não um widget ao vivo. Os quatro milestones nativos estão ativos e [GitHub Milestones](https://github.com/Faysk/world-pulse/milestones) calcula o progresso **automaticamente a partir das issues fechadas**.
 
 Não inventar deadlines; escolher `No due date` por enquanto.
 
@@ -67,16 +67,19 @@ Não inventar deadlines; escolher `No due date` por enquanto.
 - Testar PC/celular, limites do Free, status de privacidade antes da estreia.
 - Não inventar usuários; zero pessoas = zero atividade.
 
-## Como criar os quatro milestones nativos no GitHub
+## Milestones nativos — criados e verificados
 
-A conexão GitHub usada nesta etapa consegue **editar issues e definir um milestone numérico existente**, mas **não criar milestones** nem consultar a coleção diretamente. Por isso, as 13 issues já receberam o prefixo `[v0.x]` e referência a este documento, **mas o campo GitHub Milestone ainda não foi preenchido**.
+O conector do GitHub não oferecia a operação para criar milestones diretamente. Resolvemos com o workflow [`setup-milestones.yml`](../.github/workflows/setup-milestones.yml), publicado em `main`, que usa o `GITHUB_TOKEN` temporário do próprio GitHub Actions com a permissão mínima `issues: write`.
 
-**Um único passo manual preparatório no site:**
-1. Acesse [New milestone](https://github.com/Faysk/world-pulse/milestones/new) e crie os **quatro títulos exatamente como na tabela**, usando `No due date`.
-2. Depois, a conexão pode recuperar o número dos milestones pela informação presente nas issues e associar os itens com `update_issue(milestone=...)`, verificando o resultado, ou você pode vincular os itens em lote pelo GitHub Issues.
-3. [Confira a porcentagem real em Milestones](https://github.com/Faysk/world-pulse/milestones). GitHub faz o cálculo por **issues fechadas**, não por checkboxes internos.
+**Verificação:** as issues #1–#13 foram consultadas individualmente e têm exatamente estes números de milestone:
+- **Milestone #1:** issues #1, #2, #10, #11, #12.
+- **Milestone #2:** issues #3, #4.
+- **Milestone #3:** issues #5, #6, #7, #9.
+- **Milestone #4:** issues #8, #13.
 
-**Não fechar issues antes do aceite real:** documento de planejamento publicado não significa feature implementada.
+O workflow é idempotente (reutiliza milestone existente e reaplica vínculos) e pode ser executado manualmente na aba Actions. Não é necessário criar milestones ou vincular issues manualmente. **Não executar de novo para usos cotidianos**; o painel de GitHub já atualiza o progresso conforme a issue é fechada.
+
+[Abra o painel real de milestones](https://github.com/Faysk/world-pulse/milestones).
 
 ## Gestão simples do trabalho
 
