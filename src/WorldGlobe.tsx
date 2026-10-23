@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Map, setWorkerUrl, type GeoJSONSource, type Map as MapInstance } from 'maplibre-gl';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
+import { heatVisibility } from './domain';
 import {
   TAGS, createPopulation, neutralLightPoints, tagCenter,
   type TagId
@@ -16,6 +17,7 @@ export type GlobeProps = {
   onZoom: (zoom: number) => void;
   onFps: (fps: number) => void;
   onTap: () => void;
+  onTagPick: (tag: TagId) => void;
   onFailure: (message: string) => void;
 };
 
@@ -54,6 +56,37 @@ function nightStyle(map: MapInstance): void {
   }
 }
 
+function heatOpacity(focus: number) {
+  return [
+    'interpolate', ['linear'], ['zoom'],
+    0, heatVisibility(0) * focus,
+    5, heatVisibility(5) * focus,
+    7, heatVisibility(7) * focus,
+    9, heatVisibility(9) * focus,
+    11.5, 0
+  ];
+}
+
+function applyTagSelection(map: MapInstance, selected: TagId | null): void {
+  if (!map.getLayer('pulse-heat-gta6')) return;
+  for (const tag of TAGS) {
+    const focus = selected === null || selected === tag.id ? 1 : 0.17;
+    map.setPaintProperty('pulse-heat-' + tag.id, 'heatmap-opacity', heatOpacity(focus));
+    map.setPaintProperty('pulse-sparks-' + tag.id, 'circle-opacity', [
+      'interpolate', ['linear'], ['zoom'],
+      5, 0,
+      7, 0.12 * focus,
+      9, 0.47 * focus,
+      13, 0.58 * focus
+    ]);
+  }
+}
+
+function applyNeutralLights(map: MapInstance, enabled: boolean): void {
+  if (!map.getLayer('neutral-glow')) return;
+  map.setLayoutProperty('neutral-glow', 'visibility', enabled ? 'visible' : 'none');
+}
+
 function installLights(map: MapInstance, scale: number): void {
   map.addSource('neutral-cities', { type: 'geojson', data: neutralLightPoints() });
   map.addLayer({
@@ -81,7 +114,7 @@ function installLights(map: MapInstance, scale: number): void {
       paint: {
         'heatmap-weight': [
           'interpolate', ['linear'], ['get', 'people'],
-          0, 0, 1, 0.18, 6, 0.42, 14, 0.7, 32, 1
+          0, 0, 1, 0.2, 6, 0.47, 14, 0.72, 32, 0.98, 120, 1.55, 1000, 2.2
         ],
         'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1.35, 5, 1.7, 10, 2.2],
         'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 10, 3, 19, 6, 30, 10, 52, 14, 80],
@@ -94,7 +127,8 @@ function installLights(map: MapInstance, scale: number): void {
           0.75, rgb(tag.color, 0.86),
           1, rgb(tag.color, 1)
         ],
-        'heatmap-opacity': 0.84
+        'heatmap-opacity': heatOpacity(1),
+        'heatmap-opacity-transition': { duration: 620, delay: 0 }
       }
     });
 
@@ -102,12 +136,27 @@ function installLights(map: MapInstance, scale: number): void {
       id: 'pulse-sparks-' + tag.id,
       source: sourceId,
       type: 'circle',
-      minzoom: 6,
+      minzoom: 5,
       paint: {
         'circle-color': tag.color,
-        'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 2, 9, 5, 13, 12],
-        'circle-blur': 0.85,
-        'circle-opacity': 0.35,
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 2, 8, 5, 11, 10, 15, 16],
+        'circle-blur': 0.9,
+        'circle-opacity': ['interpolate', ['linear'], ['zoom'], 5, 0, 7, 0.12, 9, 0.47, 13, 0.58],
+        'circle-opacity-transition': { duration: 620, delay: 0 },
+        'circle-stroke-width': 0
+      }
+    });
+
+    // Separate transparent hit region: light fields are GPU aggregates and are
+    // not themselves a reliable clickable GeoJSON layer.
+    map.addLayer({
+      id: 'pulse-hit-' + tag.id,
+      source: sourceId,
+      type: 'circle',
+      paint: {
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 0, 12, 5, 19, 9, 27, 14, 34],
+        'circle-color': tag.color,
+        'circle-opacity': 0.001,
         'circle-stroke-width': 0
       }
     });
@@ -115,12 +164,14 @@ function installLights(map: MapInstance, scale: number): void {
 }
 
 export function WorldGlobe({
-  scale, selected, cityLights, onReady, onZoom, onFps, onTap, onFailure
+  scale, selected, cityLights, onReady, onZoom, onFps, onTap, onTagPick, onFailure
 }: GlobeProps) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapInstance | null>(null);
-  const callbacks = useRef({ onReady, onZoom, onFps, onTap, onFailure });
-  callbacks.current = { onReady, onZoom, onFps, onTap, onFailure };
+  const callbacks = useRef({ onReady, onZoom, onFps, onTap, onTagPick, onFailure });
+  callbacks.current = { onReady, onZoom, onFps, onTap, onTagPick, onFailure };
+  const latestState = useRef({ scale, selected, cityLights });
+  latestState.current = { scale, selected, cityLights };
 
   // Create the GPU-backed map only once. React state must not recreate the renderer.
   useEffect(() => {
@@ -136,6 +187,7 @@ export function WorldGlobe({
         minZoom: 0.8,
         maxZoom: 15,
         pitch: 0,
+        canvasContextAttributes: { antialias: true },
         dragRotate: true,
         touchZoomRotate: true,
         fadeDuration: 350
@@ -163,7 +215,9 @@ export function WorldGlobe({
     map.on('load', () => {
       hasLoaded = true;
       window.clearTimeout(watchdog);
-      installLights(map, scale);
+      installLights(map, latestState.current.scale);
+      applyTagSelection(map, latestState.current.selected);
+      applyNeutralLights(map, latestState.current.cityLights);
       callbacks.current.onReady(map);
       callbacks.current.onZoom(map.getZoom());
     });
@@ -179,9 +233,29 @@ export function WorldGlobe({
       }
     });
 
-    // MapLibre's map click event is distinct from drag/zoom gestures.
-    // Only eligible short clicks may add a demo-second; never touchmove/pinch.
-    map.on('click', () => callbacks.current.onTap());
+    // Prefer selecting the underlying tag on the first hotspot tap.
+    // A second tap on the SAME tag, or a tap on empty terrain, credits +1.
+    // Native MapLibre 'click' ignores map drag/pinch gestures.
+    map.on('click', (event) => {
+      if (!map.getLayer('pulse-hit-gta6')) return;
+      const hits = map.queryRenderedFeatures(event.point, {
+        layers: TAGS.map(tag => 'pulse-hit-' + tag.id)
+      });
+      const found = hits.map(hit => hit.properties?.tag).find(value =>
+        TAGS.some(tag => tag.id === value)
+      ) as TagId | undefined;
+      if (found) callbacks.current.onTagPick(found);
+      else callbacks.current.onTap();
+    });
+
+    // Indicate that the luminous regions can be selected.
+    map.on('mousemove', (event) => {
+      if (!map.getLayer('pulse-hit-gta6')) return;
+      const hits = map.queryRenderedFeatures(event.point, {
+        layers: TAGS.map(tag => 'pulse-hit-' + tag.id)
+      });
+      map.getCanvas().style.cursor = hits.length ? 'pointer' : 'grab';
+    });
 
     return () => {
       window.clearTimeout(watchdog);
@@ -204,18 +278,12 @@ export function WorldGlobe({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.getLayer('pulse-heat-gta6')) return;
-    for (const tag of TAGS) {
-      const opacity = selected === null || selected === tag.id ? 0.88 : 0.19;
-      map.setPaintProperty('pulse-heat-' + tag.id, 'heatmap-opacity', opacity);
-      map.setPaintProperty('pulse-sparks-' + tag.id, 'circle-opacity', opacity * 0.42);
-    }
+    if (map) applyTagSelection(map, selected);
   }, [selected]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.getLayer('neutral-glow')) return;
-    map.setLayoutProperty('neutral-glow', 'visibility', cityLights ? 'visible' : 'none');
+    if (map) applyNeutralLights(map, cityLights);
   }, [cityLights]);
 
   return <div className="map-canvas" ref={container} aria-label="Globo interativo de atividade simulada" />;
