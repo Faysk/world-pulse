@@ -3,7 +3,7 @@ import { Map, setWorkerUrl, type GeoJSONSource, type Map as MapInstance } from '
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { heatVisibility } from './domain';
 import {
-  TAGS, createPopulation, neutralLightPoints, tagCenter,
+  TAGS, createCombinedPopulation, neutralLightPoints, tagCenter,
   type TagId
 } from './demoData';
 
@@ -82,19 +82,33 @@ function heatOpacity(focus: number): HeatOpacityStops {
   ];
 }
 
+/**
+ * We render three heatmap passes for the DEMO only, but all high-zoom lights
+ * are rendered in two shared data-driven layers. This avoids one expensive
+ * GeoJSON source and multiple circles per hashtag as the tag count grows.
+ */
+const tagLayers = TAGS.map(tag => 'pulse-heat-' + tag.id);
+
+function brightnessExpression(selected: TagId | null) {
+  return selected === null
+    ? 1
+    : ['case', ['==', ['get', 'tag'], selected], 1, 0.15];
+}
+
 function applyTagSelection(map: MapInstance, selected: TagId | null): void {
-  if (!map.getLayer('pulse-heat-gta6')) return;
+  if (!map.getLayer(tagLayers[0])) return;
   for (const tag of TAGS) {
-    const focus = selected === null || selected === tag.id ? 1 : 0.17;
+    const focus = selected === null || selected === tag.id ? 1 : 0.16;
     map.setPaintProperty('pulse-heat-' + tag.id, 'heatmap-opacity', heatOpacity(focus));
-    map.setPaintProperty('pulse-sparks-' + tag.id, 'circle-opacity', [
-      'interpolate', ['linear'], ['zoom'],
-      5, 0,
-      7, 0.12 * focus,
-      9, 0.47 * focus,
-      13, 0.58 * focus
-    ]);
   }
+  const focus = brightnessExpression(selected);
+  // One shared layer for every hashtag: per-feature color and focus expression.
+  map.setPaintProperty('pulse-halo', 'circle-opacity', [
+    '*', ['interpolate', ['linear'], ['zoom'], 5, 0, 7, 0.12, 9, 0.36, 13, 0.40], focus
+  ]);
+  map.setPaintProperty('pulse-core', 'circle-opacity', [
+    '*', ['interpolate', ['linear'], ['zoom'], 5, 0, 7, 0.14, 9, 0.64, 13, 0.85], focus
+  ]);
 }
 
 function applyNeutralLights(map: MapInstance, enabled: boolean): void {
@@ -116,16 +130,19 @@ function installLights(map: MapInstance, scale: number): void {
     }
   });
 
+  map.addSource('pulse-population', {
+    type: 'geojson',
+    data: createCombinedPopulation(scale)
+  });
+
+  // Heatmap colour cannot be data-driven in MapLibre. Separate heatmap
+  // passes are acceptable for 3 demonstration tags; scale test follows.
   for (const tag of TAGS) {
-    const sourceId = 'pulse-source-' + tag.id;
-    map.addSource(sourceId, {
-      type: 'geojson',
-      data: createPopulation(tag.id, scale)
-    });
     map.addLayer({
       id: 'pulse-heat-' + tag.id,
-      source: sourceId,
+      source: 'pulse-population',
       type: 'heatmap',
+      filter: ['==', ['get', 'tag'], tag.id],
       paint: {
         'heatmap-weight': [
           'interpolate', ['linear'], ['get', 'people'],
@@ -146,36 +163,52 @@ function installLights(map: MapInstance, scale: number): void {
         'heatmap-opacity-transition': { duration: 620, delay: 0 }
       }
     });
-
-    map.addLayer({
-      id: 'pulse-sparks-' + tag.id,
-      source: sourceId,
-      type: 'circle',
-      minzoom: 5,
-      paint: {
-        'circle-color': tag.color,
-        'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 2, 8, 5, 11, 10, 15, 16],
-        'circle-blur': 0.9,
-        'circle-opacity': ['interpolate', ['linear'], ['zoom'], 5, 0, 7, 0.12, 9, 0.47, 13, 0.58],
-        'circle-opacity-transition': { duration: 620, delay: 0 },
-        'circle-stroke-width': 0
-      }
-    });
-
-    // Separate transparent hit region: light fields are GPU aggregates and are
-    // not themselves a reliable clickable GeoJSON layer.
-    map.addLayer({
-      id: 'pulse-hit-' + tag.id,
-      source: sourceId,
-      type: 'circle',
-      paint: {
-        'circle-radius': ['interpolate', ['linear'], ['zoom'], 0, 12, 5, 19, 9, 27, 14, 34],
-        'circle-color': tag.color,
-        'circle-opacity': 0.001,
-        'circle-stroke-width': 0
-      }
-    });
   }
+
+  // The blurred halo gives a subtle illuminated halo around each point.
+  map.addLayer({
+    id: 'pulse-halo',
+    source: 'pulse-population',
+    type: 'circle',
+    minzoom: 5,
+    paint: {
+      'circle-color': ['get', 'color'],
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 3, 8, 7, 11, 14, 15, 23],
+      'circle-blur': 0.95,
+      'circle-opacity': ['interpolate', ['linear'], ['zoom'], 5, 0, 7, 0.12, 9, 0.36, 13, 0.40],
+      'circle-opacity-transition': { duration: 550, delay: 0 }
+    }
+  });
+
+  // Crisp light cores keep the close-up from becoming a field of blurry pixels.
+  map.addLayer({
+    id: 'pulse-core',
+    source: 'pulse-population',
+    type: 'circle',
+    minzoom: 5,
+    paint: {
+      'circle-color': ['get', 'color'],
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 0.8, 7, 1.4, 10, 2.2, 14, 3.1],
+      'circle-blur': 0.13,
+      'circle-opacity': ['interpolate', ['linear'], ['zoom'], 5, 0, 7, 0.14, 9, 0.64, 13, 0.85],
+      'circle-opacity-transition': { duration: 550, delay: 0 },
+      'circle-stroke-width': 0
+    }
+  });
+
+  // Single hit layer for every hashtag. The full heatmap gradient is not
+  // pickable yet; these cells provide a reliably bounded interaction area.
+  map.addLayer({
+    id: 'pulse-hit',
+    source: 'pulse-population',
+    type: 'circle',
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 0, 12, 5, 19, 9, 27, 14, 34],
+      'circle-color': '#ffffff',
+      'circle-opacity': 0.001,
+      'circle-stroke-width': 0
+    }
+  });
 }
 
 export function WorldGlobe({
@@ -252,9 +285,9 @@ export function WorldGlobe({
     // A second tap on the SAME tag, or a tap on empty terrain, credits +1.
     // Native MapLibre 'click' ignores map drag/pinch gestures.
     map.on('click', (event) => {
-      if (!map.getLayer('pulse-hit-gta6')) return;
+      if (!map.getLayer('pulse-hit')) return;
       const hits = map.queryRenderedFeatures(event.point, {
-        layers: TAGS.map(tag => 'pulse-hit-' + tag.id)
+        layers: ['pulse-hit']
       });
       const found = hits.map(hit => hit.properties?.tag).find(value =>
         TAGS.some(tag => tag.id === value)
@@ -265,9 +298,9 @@ export function WorldGlobe({
 
     // Indicate that the luminous regions can be selected.
     map.on('mousemove', (event) => {
-      if (!map.getLayer('pulse-hit-gta6')) return;
+      if (!map.getLayer('pulse-hit')) return;
       const hits = map.queryRenderedFeatures(event.point, {
-        layers: TAGS.map(tag => 'pulse-hit-' + tag.id)
+        layers: ['pulse-hit']
       });
       map.getCanvas().style.cursor = hits.length ? 'pointer' : 'grab';
     });
@@ -283,12 +316,8 @@ export function WorldGlobe({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.getSource('pulse-source-gta6')) return;
-    for (const tag of TAGS) {
-      (map.getSource('pulse-source-' + tag.id) as GeoJSONSource).setData(
-        createPopulation(tag.id, scale)
-      );
-    }
+    const source = map?.getSource('pulse-population') as GeoJSONSource | undefined;
+    if (source) source.setData(createCombinedPopulation(scale));
   }, [scale]);
 
   useEffect(() => {
