@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Map as MapInstance } from 'maplibre-gl';
-import { TAGS, peopleCount, type TagId } from './demoData';
+import { TAGS, createCombinedPopulation, createScenarioPopulation, POPULATION_SCENARIOS,
+  scenarioDescription, type ScenarioDistribution, type TagId } from './demoData';
 import { WorldGlobe, flyToTag, resetGlobe } from './WorldGlobe';
 import { EMPTY_SECONDS, creditTap, creditedTotal } from './domain';
 
 const format = (n: number) => Intl.NumberFormat('pt-BR').format(n);
+const compact = (n: number) => n >= 1_000_000 ? Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 2 }).format(n) : format(n);
 
 export default function App() {
   const mapRef = useRef<MapInstance | null>(null);
@@ -12,6 +14,8 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<TagId | null>(null);
   const [scale, setScale] = useState(1);
+  const [scenario, setScenario] = useState<number | null>(null);
+  const [distribution, setDistribution] = useState<ScenarioDistribution>('distributed');
   const [cityLights, setCityLights] = useState(true);
   const [animate, setAnimate] = useState(false);
   const [zoom, setZoom] = useState(1.65);
@@ -24,10 +28,13 @@ export default function App() {
   const [localSeconds, setLocalSeconds] = useState<Record<TagId, number>>(() => ({ ...EMPTY_SECONDS }));
   const [flash, setFlash] = useState(false);
 
+  const population = useMemo(() => scenario === null ? createCombinedPopulation(scale)
+    : createScenarioPopulation(scenario, distribution), [scale, scenario, distribution]);
   const populations = useMemo(
-    () => TAGS.map(tag => ({ ...tag, people: peopleCount(tag.id, scale) }))
+    () => TAGS.map(tag => ({ ...tag, people: population.features.reduce((sum, feature) =>
+      sum + (feature.properties.tag === tag.id ? feature.properties.people : 0), 0) }))
       .sort((a, b) => b.people - a.people),
-    [scale]
+    [population]
   );
   const total = populations.reduce((sum, item) => sum + item.people, 0);
 
@@ -92,6 +99,7 @@ export default function App() {
     <div className="world-pulse">
       <WorldGlobe
         scale={scale}
+        population={population}
         selected={selected}
         cityLights={cityLights}
         onReady={map => { mapRef.current = map; setReady(true); }}
@@ -126,7 +134,7 @@ export default function App() {
         <div className="rail-divider"/>
         <div className="stat-row">
           <span>Pessoas simuladas</span>
-          <strong data-testid="poc-people-total">{format(total)}</strong>
+          <strong data-testid="poc-people-total" data-total={total} title={format(total)}>{compact(total)}</strong>
         </div>
         <div className="stat-row">
           <span>Hashtags de teste</span>
@@ -176,7 +184,7 @@ export default function App() {
                 <span className="rank-label">{item.label}</span>
                 <span className="rank-bar"><i style={{ width: (populations[0]?.people ? item.people / populations[0].people * 100 : 0) + '%' }}/></span>
               </span>
-              <span className="rank-count">{format(item.people)}</span>
+              <span className="rank-count" title={format(item.people)}>{compact(item.people)}</span>
             </button>
           ))}
         </div>
@@ -193,7 +201,7 @@ export default function App() {
         aria-expanded={labOpen}
         aria-controls="visual-lab"
         onClick={() => setLabOpen(value => !value)}
-      ><span className="lab-toggle-icon">✧</span> VISUAL LAB {labOpen ? '✕' : '⌃'}</button>
+      ><span className="lab-toggle-icon">✧</span> VISUAL LAB {!labOpen && scenario !== null ? `· ${compact(scenario)}` : ''} {labOpen ? '✕' : '⌃'}</button>
 
       <section id="visual-lab" className={'dock glass' + (labOpen ? '' : ' is-collapsed')} aria-label="Laboratório de simulação">
         <div className="dock-left">
@@ -202,6 +210,26 @@ export default function App() {
           <p>Altere a quantidade de pessoas e observe como a Terra muda.</p>
         </div>
         <div className="dock-controls">
+          <div className="scenario-controls">
+            <label htmlFor="population-scenario">Cenário de participantes</label>
+            <select id="population-scenario" value={scenario === null ? '' : String(scenario)} onChange={event => {
+              const value = event.target.value;
+              setScenario(value === '' ? null : Number(value)); setAnimate(false);
+              if (value !== '') setCityLights(false);
+            }}>
+              <option value="">Simulação livre</option>
+              {POPULATION_SCENARIOS.map(value => <option value={value} key={value}>{format(value)}{value > 8_000_000_000 ? ' — estresse' : ''}</option>)}
+            </select>
+            {scenario !== null && <>
+              <label htmlFor="scenario-distribution">Distribuição de teste</label>
+              <select id="scenario-distribution" value={distribution} onChange={event => setDistribution(event.target.value as ScenarioDistribution)}>
+                <option value="distributed">Regiões distribuídas</option><option value="concentrated">Mesma região</option>
+              </select>
+              <p className="scenario-description" data-testid="scenario-description">{scenarioDescription(scenario)}
+                <span data-testid="scenario-cells"> {population.features.length} células · {format(total)} participantes simulados.</span>
+              </p>
+            </>}
+          </div>
           <div className="field-head">
             <label htmlFor="population">Intensidade da simulação</label>
             <output>{Math.round(scale * 100)}%</output>
@@ -210,11 +238,11 @@ export default function App() {
             <input
               id="population" aria-label="Quantidade simulada de pessoas"
               type="range" min="0" max="300" step="5" value={Math.round(scale * 100)}
-              onChange={e => setScale(Number(e.target.value) / 100)}
+              onChange={e => { setScenario(null); setScale(Number(e.target.value) / 100); }}
               style={{ '--progress': (scale / 3 * 100) + '%' } as CSSProperties}
             />
             <button className={'pulse-button ' + (animate ? 'active' : '')}
-              onClick={() => setAnimate(value => !value)}
+              onClick={() => { setScenario(null); setAnimate(value => !value); }}
               aria-label={animate ? 'Pausar simulação automática' : 'Animar crescimento das manchas'}>
               {animate ? 'Ⅱ' : '▶'} <span>{animate ? 'PAUSAR' : 'ANIMAR'}</span>
             </button>

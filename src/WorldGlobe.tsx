@@ -4,12 +4,13 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { heatVisibility } from './domain';
 import {
   TAGS, createCombinedPopulation, neutralLightPoints, tagCenter,
-  type TagId
+  type TagId, type PulseCollection
 } from './demoData';
 
 setWorkerUrl(workerUrl);
 
 export type GlobeProps = {
+  population?: PulseCollection;
   scale: number;
   selected: TagId | null;
   cityLights: boolean;
@@ -104,6 +105,8 @@ function applyTagSelection(map: MapInstance, selected: TagId | null): void {
     map.setPaintProperty('pulse-heat-' + tag.id, 'heatmap-opacity', heatOpacity(focus));
   }
   const focus = brightnessExpression(selected);
+  const sparse = ['*', ['case', ['<=', ['get', 'people'], 10], 0.8, 0], focus];
+  map.setPaintProperty('pulse-sparse', 'circle-opacity', ['interpolate', ['linear'], ['zoom'], 0, sparse, 5, sparse, 7, 0]);
   // One shared layer for every hashtag: per-feature color and focus expression.
   map.setPaintProperty('pulse-halo', 'circle-opacity', [
     'interpolate', ['linear'], ['zoom'],
@@ -120,7 +123,7 @@ function applyNeutralLights(map: MapInstance, enabled: boolean): void {
   map.setLayoutProperty('neutral-glow', 'visibility', enabled ? 'visible' : 'none');
 }
 
-function installLights(map: MapInstance, scale: number): void {
+function installLights(map: MapInstance, scale: number, population?: PulseCollection): void {
   map.addSource('neutral-cities', { type: 'geojson', data: neutralLightPoints() });
   map.addLayer({
     id: 'neutral-glow',
@@ -136,7 +139,7 @@ function installLights(map: MapInstance, scale: number): void {
 
   map.addSource('pulse-population', {
     type: 'geojson',
-    data: createCombinedPopulation(scale)
+    data: population ?? createCombinedPopulation(scale)
   });
 
   // Heatmap colour cannot be data-driven in MapLibre. Separate heatmap
@@ -150,7 +153,8 @@ function installLights(map: MapInstance, scale: number): void {
       paint: {
         'heatmap-weight': [
           'interpolate', ['linear'], ['get', 'people'],
-          0, 0, 1, 0.2, 6, 0.47, 14, 0.72, 32, 0.98, 120, 1.55, 1000, 2.2
+          0, 0, 1, 0.2, 6, 0.47, 14, 0.72, 32, 0.98, 120, 1.2,
+          1000, 1.4, 100000, 1.65, 1000000, 1.85, 1000000000, 2.2
         ],
         'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1.35, 5, 1.7, 10, 2.2],
         'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 10, 3, 19, 6, 30, 10, 52, 14, 80],
@@ -168,6 +172,11 @@ function installLights(map: MapInstance, scale: number): void {
       }
     });
   }
+
+  // A sparse signal remains visible at world zoom without inflating its area.
+  map.addLayer({ id: 'pulse-sparse', source: 'pulse-population', type: 'circle', maxzoom: 7,
+    paint: { 'circle-color': ['get', 'color'], 'circle-radius': 2.5,
+      'circle-opacity': ['case', ['<=', ['get', 'people'], 10], 0.8, 0], 'circle-blur': 0.2 } });
 
   // The blurred halo gives a subtle illuminated halo around each point.
   map.addLayer({
@@ -216,14 +225,14 @@ function installLights(map: MapInstance, scale: number): void {
 }
 
 export function WorldGlobe({
-  scale, selected, cityLights, onReady, onZoom, onFps, onTap, onTagPick, onFailure
+  scale, population, selected, cityLights, onReady, onZoom, onFps, onTap, onTagPick, onFailure
 }: GlobeProps) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapInstance | null>(null);
   const callbacks = useRef({ onReady, onZoom, onFps, onTap, onTagPick, onFailure });
   callbacks.current = { onReady, onZoom, onFps, onTap, onTagPick, onFailure };
-  const latestState = useRef({ scale, selected, cityLights });
-  latestState.current = { scale, selected, cityLights };
+  const latestState = useRef({ scale, population, selected, cityLights });
+  latestState.current = { scale, population, selected, cityLights };
 
   // Create the GPU-backed map only once. React state must not recreate the renderer.
   useEffect(() => {
@@ -267,7 +276,7 @@ export function WorldGlobe({
     map.on('load', () => {
       hasLoaded = true;
       window.clearTimeout(watchdog);
-      installLights(map, latestState.current.scale);
+      installLights(map, latestState.current.scale, latestState.current.population);
       applyTagSelection(map, latestState.current.selected);
       applyNeutralLights(map, latestState.current.cityLights);
       callbacks.current.onReady(map);
@@ -348,10 +357,10 @@ export function WorldGlobe({
     // Collapse quick slider updates into one GeoJSON worker upload per frame.
     const frame = window.requestAnimationFrame(() => {
       const source = map.getSource('pulse-population') as GeoJSONSource | undefined;
-      if (source) source.setData(createCombinedPopulation(scale));
+      if (source) source.setData(population ?? createCombinedPopulation(scale));
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [scale]);
+  }, [scale, population]);
 
   useEffect(() => {
     const map = mapRef.current;
