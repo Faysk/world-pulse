@@ -11,3 +11,6 @@ coverage/
 *.local
 infra/.deploy-url
 infra-*.png
+test-results/
+test-artifacts/
+playwright-report/
