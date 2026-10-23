@@ -121,3 +121,12 @@ test('Tap endpoint attributes clicks to the originally supplied hashtag', async 
   assert.equal(res.code,200);
   assert.deepEqual(received,{tagId:a,batchId,clicks:2});
 });
+
+test('Malformed JSON returns a client error, not HTTP 500', async () => {
+  const req = request('POST',{});
+  req.body = '{ invalid json';
+  const res = response();
+  await route('session',stub())(req,res);
+  assert.equal(res.code,400);
+  assert.equal(res.payload.error,'invalid_json');
+});
