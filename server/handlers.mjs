@@ -11,6 +11,11 @@ export function route(kind, operations = store) {
   } = operations;
   return async function handler(req, res) {
     try {
+      // Default OFF even after the code lands in main. Enable only after
+      // migration, retention, security and privacy gates are approved.
+      if (process.env.WP_API_ENABLED !== 'true') {
+        throw new ApiError(503, 'participation_disabled', 'Participação real ainda não foi liberada.');
+      }
       if (kind === 'ranking') {
         onlyMethod(req, 'GET');
         const ranking = await getRanking();
