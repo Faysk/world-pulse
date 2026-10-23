@@ -46,9 +46,15 @@ export default function App() {
 
   useEffect(() => {
     if (!animate) return;
+    let direction = 1;
     const interval = window.setInterval(() => {
-      setScale(current => current >= 2.8 ? 0.1 : Math.min(2.8, current + 0.12));
-    }, 850);
+      setScale(current => {
+        // Ping-pong instead of instantly jumping from maximum to minimum.
+        if (current >= 2.85) direction = -1;
+        if (current <= 0.12) direction = 1;
+        return Math.max(0, Math.min(3, Number((current + 0.08 * direction).toFixed(2))));
+      });
+    }, 350);
     return () => window.clearInterval(interval);
   }, [animate]);
 
