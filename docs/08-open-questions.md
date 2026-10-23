@@ -2,6 +2,8 @@
 
 **Não transformar suposições em requisitos confirmados.**
 
+**Q1/Q2 resolvidas em 24/10/2026:** participação depende de saldo de tempo positivo por hashtag; diminui em tempo real, inclusive offline. Várias hashtags podem permanecer simultaneamente, mas novos taps aumentam somente a selecionada. O [contrato confirmado](14-time-credit-contract.md) substitui as alternativas antigas de Q1/Q2 abaixo. Q4 (ordenação do ranking) permanece aberta.
+
 ## Decisões de produto ainda abertas
 
 ### Q1. O que conta como participante para a mancha?
