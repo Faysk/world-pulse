@@ -1,0 +1,81 @@
+name: Set up World Pulse milestones
+
+# Runs once when this workflow is first committed. Can also be rerun manually.
+on:
+  push:
+    paths:
+      - ".github/workflows/setup-milestones.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: world-pulse-milestones
+  cancel-in-progress: false
+
+jobs:
+  organize:
+    name: Create milestones and assign issues
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create missing milestones and associate 13 issues
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          create_and_assign() {
+            local title="$1"
+            local description="$2"
+            shift 2
+
+            local id
+            id="$(gh api --method GET "repos/${GH_REPO}/milestones?state=all&per_page=100" |
+              jq -r --arg title "$title" '[.[] | select(.title == $title) | .number] | first // empty')"
+
+            if [[ -z "$id" ]]; then
+              echo "Creating milestone: $title"
+              id="$(gh api --method POST "repos/${GH_REPO}/milestones" \
+                -f title="$title" \
+                -f description="$description" \
+                --jq '.number')"
+            else
+              echo "Using existing milestone #$id: $title"
+            fi
+
+            for issue in "$@"; do
+              echo "Assigning issue #$issue -> milestone #$id"
+              gh api --method PATCH "repos/${GH_REPO}/issues/${issue}" \
+                -F milestone="$id" --silent
+            done
+
+            echo "- **$title**: milestone #$id; issues: $(printf '#%s ' "$@")" >> "$GITHUB_STEP_SUMMARY"
+          }
+
+          echo "## World Pulse milestones" >> "$GITHUB_STEP_SUMMARY"
+          create_and_assign \
+            "v0.1 — Living Earth (Visual POC)" \
+            "Globo cinza, mapas nítidos, manchas Night Lights, desempenho e preview visual Vercel." \
+            1 2 10 11 12
+
+          create_and_assign \
+            "v0.2 — Hashtags & Taps" \
+            "Hashtags com cores aleatórias persistentes e +1 segundo por clique/tap elegível, sem interferir no globo." \
+            3 4
+
+          create_and_assign \
+            "v0.3 — Data & Presence" \
+            "Persistência de segundos, localização aproximada, definição de presença e infraestrutura gratuita." \
+            5 6 7 9
+
+          create_and_assign \
+            "v0.4 — World Pulse Alpha" \
+            "Top 10 global, distribuição geográfica e integração ponta a ponta da primeira alpha." \
+            8 13
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "[View milestones](https://github.com/${GH_REPO}/milestones)" >> "$GITHUB_STEP_SUMMARY"
