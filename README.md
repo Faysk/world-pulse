@@ -49,7 +49,7 @@ A interação é simples: selecionar ou criar uma hashtag e contribuir. **Cada c
 
 📍 [Ver organização, critérios de aceite e progresso](docs/10-milestones-and-progress.md) · [Todas as issues](https://github.com/Faysk/world-pulse/issues) · [GitHub Milestones](https://github.com/Faysk/world-pulse/milestones)
 
-**Observação:** as issues já estão identificadas por versão; a criação/vinculação dos milestones **nativos** ainda depende de um passo no GitHub.
+**✅ Milestones nativos criados e 13 issues vinculadas.** Veja o [painel automático de progresso](https://github.com/Faysk/world-pulse/milestones). A configuração está documentada e automatizada pelo [GitHub Actions](.github/workflows/setup-milestones.yml).
 
 ## Próximo passo
 
