@@ -3,6 +3,14 @@ import { randomUUID } from 'node:crypto';
 import { ApiError, batchFingerprint, newSession, randomColor, tokenHash } from './protocol.mjs';
 
 let pool;
+
+// Test-only injection allows the CI's disposable PostgreSQL to run without
+// weakening the production requirement for verify-full TLS.
+export function useTestPool(database) {
+  if (process.env.NODE_ENV !== 'test') throw new Error('test_pool_forbidden');
+  pool = database;
+}
+
 function getPool() {
   if (pool) return pool;
   const url = process.env.DATABASE_URL;
