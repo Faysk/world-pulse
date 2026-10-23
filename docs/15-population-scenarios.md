@@ -49,6 +49,11 @@ cenários em desktop e celular, mais concentração de 1 trilhão, ficam em
 `test-artifacts/scenario-*.png` e no artefato `world-pulse-browser-smoke` do Actions.
 Também houve inspeção no Chrome com o estilo real do OpenFreeMap.
 
+Comparação com cartografia real: um participante, 8 bilhões distribuídos e
+1 trilhão concentrado com Minecraft destacado. Os dados são sintéticos.
+
+![Comparação de cenários com mapa real](assets/population-real-map.jpg)
+
 `node --experimental-strip-types scripts/population-benchmark.mjs` mede 100 gerações
 de GeoJSON por combinação. Na execução local Windows/Node, distribuição espalhada:
 1 pessoa = 207 bytes; 100 mil = 135.102 bytes; 8 bilhões = 138.666 bytes;
@@ -64,7 +69,7 @@ transferência, workers, GPU, tiles, banco ou concorrência de usuários reais.
   o contador é necessário. Não interpretar área iluminada como área habitada real.
 - Na concentração extrema, a última camada de heatmap pode dominar outra cor.
   Destacar uma hashtag ajuda a inspecionar, mas não resolve a composição de muitas
-  hashtags coincidentes. Este limite permanece registrado em issue própria.
+  hashtags coincidentes. Este limite permanece registrado na [issue #32](https://github.com/Faysk/world-pulse/issues/32).
 - Ainda não é agregação espacial por zoom: aproximar não revela novos indivíduos.
   Para dados reais precisamos células por nível de detalhe, origem/limites por
   viewport e orçamento de payload; não multiplicar os pontos até bilhões.
