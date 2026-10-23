@@ -35,6 +35,7 @@ A interação é simples: selecionar ou criar uma hashtag e contribuir. **Cada c
 - [06 — Modelo de dados proposto](docs/06-data-model.md)
 - [07 — Roadmap e critérios de aceite](docs/07-roadmap.md)
 - [08 — Pontos em aberto](docs/08-open-questions.md)
+- [09 — Direção visual Night Lights](docs/09-night-lights-visual-direction.md)
 
 ## Próximo passo
 
