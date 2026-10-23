@@ -89,7 +89,9 @@ function heatOpacity(focus: number): HeatOpacityStops {
  */
 const tagLayers = TAGS.map(tag => 'pulse-heat-' + tag.id);
 
-function brightnessExpression(selected: TagId | null) {
+type TagFocusExpression = ['case', ['==', ['get', 'tag'], TagId], 1, 0.15];
+
+function brightnessExpression(selected: TagId | null): number | TagFocusExpression {
   return selected === null
     ? 1
     : ['case', ['==', ['get', 'tag'], selected], 1, 0.15];
