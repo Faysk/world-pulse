@@ -25,6 +25,7 @@ export class ParticipationClient {
   private pending: PendingTapBatch[] = [];
   private sessionPromise: Promise<void> | null = null;
   private sending: Promise<void> | null = null;
+  private selectionQueue: Promise<unknown> = Promise.resolve();
 
   constructor(
     fetcher: FetchLike = fetch,
@@ -83,18 +84,29 @@ export class ParticipationClient {
     await this.sessionPromise;
   }
 
-  async selectTag(name: string): Promise<LiveTag> {
-    await this.connect();
-    const response = await this.request<{ tag: LiveTag }>('/api/tags', { name });
-    await this.request('/api/select', { tagId: response.tag.id });
-    this.selectedTagId = response.tag.id;
-    return response.tag;
+  private enqueueSelection<T>(task: () => Promise<T>): Promise<T> {
+    const next = this.selectionQueue.then(task, task);
+    // Never poison the future selection queue after a transient network error.
+    this.selectionQueue = next.then(() => undefined, () => undefined);
+    return next;
   }
 
-  async clearSelection(): Promise<void> {
-    await this.connect();
-    await this.request('/api/select', { tagId: null });
-    this.selectedTagId = null;
+  selectTag(name: string): Promise<LiveTag> {
+    return this.enqueueSelection(async () => {
+      await this.connect();
+      const response = await this.request<{ tag: LiveTag }>('/api/tags', { name });
+      await this.request('/api/select', { tagId: response.tag.id });
+      this.selectedTagId = response.tag.id;
+      return response.tag;
+    });
+  }
+
+  clearSelection(): Promise<void> {
+    return this.enqueueSelection(async () => {
+      await this.connect();
+      await this.request('/api/select', { tagId: null });
+      this.selectedTagId = null;
+    });
   }
 
   /** Call this method on a validated user click/tap, never on clock ticks. */
