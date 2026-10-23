@@ -111,3 +111,40 @@ test('Zero participants means zero lights and no loss of navigation', async ({ p
   await page.getByRole('button', { name: 'Fechar' }).click();
   await expect(page.getByRole('dialog', { name: 'Sobre World Pulse' })).toHaveCount(0);
 });
+
+
+test('Visual animation pauses in hidden tabs and resumes on return', async ({ page }, info) => {
+  test.skip(info.project.name !== 'chromium', 'One desktop lifecycle check is enough');
+  await page.addInitScript(() => {
+    let isHidden = false;
+    Object.defineProperty(document, 'hidden', {
+      configurable: true,
+      get: () => isHidden
+    });
+    (window as typeof window & { setDemoHidden: (state: boolean) => void }).setDemoHidden =
+      (state: boolean) => {
+        isHidden = state;
+        document.dispatchEvent(new Event('visibilitychange'));
+      };
+  });
+
+  await page.goto('/');
+  await expect(page.getByTestId('planet-render-status')).toHaveText('RENDER ONLINE', { timeout: 30_000 });
+  const population = page.locator('.field-head output');
+  const before = await population.innerText();
+
+  await page.getByRole('button', { name: 'Animar crescimento das manchas' }).click();
+  await expect(population).not.toHaveText(before, { timeout: 3000 });
+
+  await page.evaluate(() => {
+    (window as typeof window & { setDemoHidden: (state: boolean) => void }).setDemoHidden(true);
+  });
+  const frozen = await population.innerText();
+  await page.waitForTimeout(900);
+  await expect(population).toHaveText(frozen);
+  await page.evaluate(() => {
+    (window as typeof window & { setDemoHidden: (state: boolean) => void }).setDemoHidden(false);
+  });
+  await expect(population).not.toHaveText(frozen, { timeout: 3000 });
+  await page.getByRole('button', { name: 'Pausar simulação automática' }).click();
+});
