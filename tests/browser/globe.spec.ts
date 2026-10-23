@@ -1,0 +1,72 @@
+import { test, expect } from '@playwright/test';
+
+// The integration smoke test intentionally replaces the third-party map style
+// with a local minimal background. We test real MapLibre/WebGL initialization
+// without depending on the availability or quotas of a public map tile server.
+const minimalMapStyle = {
+  version: 8,
+  name: 'World Pulse CI mock map',
+  sources: {},
+  layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#121a22' } }]
+};
+
+test.beforeEach(async ({ page }) => {
+  await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark(?:\?.*)?$/, route => {
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(minimalMapStyle) });
+  });
+});
+
+test('The globe loads and taps credit seconds without changing people', async ({ page }, info) => {
+  const exceptions: string[] = [];
+  page.on('pageerror', error => exceptions.push(error.message));
+  await page.goto('/');
+  await expect(page.getByTestId('planet-render-status')).toHaveText('RENDER ONLINE', { timeout: 30_000 });
+  await expect(page.locator('.maplibregl-canvas')).toBeVisible();
+  await expect(page.getByText('DEMO COM DADOS SIMULADOS')).toBeVisible();
+
+  const people = page.getByTestId('poc-people-total');
+  const totalBefore = await people.innerText();
+  const seconds = page.getByTestId('seconds-current');
+  await expect(seconds).toHaveText('—');
+  const credit = page.getByRole('button', { name: 'Somar 1 segundo à hashtag selecionada' });
+  await expect(credit).toBeDisabled();
+
+  await page.getByRole('button', { name: /#GTA6/ }).click();
+  await expect(credit).toBeEnabled();
+  await expect(seconds).toHaveText('0');
+  for (let i = 0; i < 3; i++) await credit.click();
+  await expect(seconds).toHaveText('3');
+  await expect(people).toHaveText(totalBefore);
+
+  await page.getByRole('button', { name: /#Minecraft/ }).click();
+  await expect(seconds).toHaveText('0');
+  await credit.click();
+  await expect(seconds).toHaveText('1');
+  await page.getByRole('button', { name: /#GTA6/ }).click();
+  await expect(seconds).toHaveText('3');
+  await expect(people).toHaveText(totalBefore);
+
+  await page.screenshot({ path: 'test-artifacts/world-pulse-' + info.project.name + '.png', fullPage: true });
+  expect(exceptions).toEqual([]);
+});
+
+test('Zero participants means zero lights and no loss of navigation', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByTestId('planet-render-status')).toHaveText('RENDER ONLINE', { timeout: 30_000 });
+
+  const slider = page.getByRole('slider', { name: 'Quantidade simulada de pessoas' });
+  await slider.fill('0');
+  await expect(page.getByTestId('poc-people-total')).toHaveText('0');
+  await expect(page.locator('.maplibregl-canvas')).toBeVisible();
+
+  await page.getByRole('button', { name: /#GTA6/ }).click();
+  await expect(page.getByTestId('seconds-current')).toHaveText('0');
+  await page.getByRole('button', { name: 'Somar 1 segundo à hashtag selecionada' }).click();
+  await expect(page.getByTestId('seconds-current')).toHaveText('1');
+  await expect(page.getByTestId('poc-people-total')).toHaveText('0');
+
+  await page.getByRole('button', { name: 'Sobre este experimento' }).click();
+  await expect(page.getByRole('dialog', { name: 'Sobre World Pulse' })).toBeVisible();
+  await page.getByRole('button', { name: 'Fechar' }).click();
+  await expect(page.getByRole('dialog', { name: 'Sobre World Pulse' })).toHaveCount(0);
+});
