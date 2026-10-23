@@ -1,10 +1,16 @@
 # 14 — API experimental de participação real (revisão técnica, NÃO lançada)
 
-**Branch:** `feat/real-participation-api` · **Estado:** implementação isolada, sem migração executada, sem exposição no globo público.
+**Branch:** `feat/real-participation-api` · **Estado:** implementação isolada, sem migração executada, sem exposição no globo público. **API bloqueada por padrão:** exige variável exclusivamente server-side `WP_API_ENABLED=true`, ausente nos ambientes atuais.
 
 ## Objetivo
 
 Validar duas sessões distintas num backend PostgreSQL existente (Neon) antes de integrar geografia, presença ou ranking de atividade em tempo real. A POC visual atual **não foi alterada**: seus pontos e contadores continuam simulados.
+
+## Gate de lançamento — desligado por padrão
+
+Todas as rotas HTTP deste PR devolvem `503 participation_disabled` se `WP_API_ENABLED` **não** for exatamente `true`. A variável deve ser configurada **somente** no runtime Vercel, nunca como `VITE_*` ou código no navegador, e **somente depois** de aprovar migração, retenção, segurança e política de presença/privacidade.
+
+A release visual em `map.faysk.dev` continua usando exclusivamente dados sintéticos. A mera presença dos arquivos `api/*.mjs` na build não autoriza nem ativa a participação real.
 
 ## Contrato HTTP (mesma origem, JSON)
 
