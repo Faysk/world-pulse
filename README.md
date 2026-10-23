@@ -66,3 +66,7 @@ A interação é simples: selecionar ou criar uma hashtag e contribuir. **Cada c
 **A POC visual v0.1 está publicada em [map.faysk.dev](https://map.faysk.dev)** (Vercel production READY, commit `84d50a5`, PR #14 integrado). Inclui globo MapLibre, luzes de hashtags simuladas e teste de +1 segundo apenas local; **não** há usuários reais, backend da aplicação ou geolocalização integrada. A infraestrutura Neon Free e R2 foi preservada. [Detalhes e limitações da publicação](docs/13-visual-release-v0.1.md).
 
 Licença: [MIT](LICENSE).
+## Cenários de população
+
+O Visual Lab inclui cenários exatos de 0 a 8 bilhões e 1 trilhão de participantes
+sintéticos, distribuídos ou concentrados. Veja [análise, limites e reprodução](docs/15-population-scenarios.md).

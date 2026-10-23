@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { POPULATION_SCENARIOS } from '../../src/demoData';
 
 // The integration smoke test intentionally replaces the third-party map style
 // with a local minimal background. We test real MapLibre/WebGL initialization
@@ -9,6 +10,31 @@ const minimalMapStyle = {
   sources: {},
   layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#121a22' } }]
 };
+
+test('Exact population scenarios stay navigable from empty to one trillion', async ({ page }, info) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on('pageerror', e => errors.push(e.message));
+  page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+  await page.goto('/');
+  await expect(page.getByTestId('planet-render-status')).toHaveText('RENDER ONLINE', { timeout: 30_000 });
+  if (info.project.name === 'mobile-chromium') await page.getByRole('button', { name: 'Abrir laboratório visual' }).click();
+  for (const total of POPULATION_SCENARIOS) {
+    await page.getByLabel('Cenário de participantes').selectOption(String(total));
+    await expect(page.getByTestId('poc-people-total')).toHaveAttribute('data-total', String(total));
+    await expect(page.getByLabel('Luzes urbanas de fundo')).not.toBeChecked();
+    await expect(page.getByTestId('scenario-cells')).toContainText(total.toLocaleString('pt-BR'));
+    await page.getByRole('button', { name: 'Recolher laboratório visual' }).click();
+    await page.waitForTimeout(350);
+    await page.screenshot({ path: `test-artifacts/scenario-${info.project.name}-${total}.png` });
+    await page.getByRole('button', { name: 'Abrir laboratório visual' }).click();
+  }
+  await page.getByLabel('Distribuição de teste').selectOption('concentrated');
+  await expect(page.getByTestId('poc-people-total')).toHaveAttribute('data-total', '1000000000000');
+  await page.waitForTimeout(350);
+  await page.screenshot({ path: `test-artifacts/scenario-${info.project.name}-concentrated.png` });
+  expect(errors).toEqual([]);
+});
 
 test.beforeEach(async ({ page }) => {
   await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark(?:\?.*)?$/, route => {
