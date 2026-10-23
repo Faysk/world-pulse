@@ -91,7 +91,12 @@ export default function App() {
 
   function chooseTag(tag: TagId | null, focus = false) {
     setSelected(tag);
-    if (tag && focus) flyToTag(mapRef.current, tag);
+    if (tag && focus) {
+      if (scenario !== null && distribution === 'concentrated') {
+        const point = population.features.find(feature => feature.properties.tag === tag)?.geometry.coordinates;
+        if (point) mapRef.current?.flyTo({ center: point as [number, number], zoom: 4.2, duration: 1600 });
+      } else if (populations.some(item => item.id === tag && item.people > 0)) flyToTag(mapRef.current, tag);
+    }
     if (window.innerWidth <= 620) setRankingOpen(false);
   }
 

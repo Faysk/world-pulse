@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Map, setWorkerUrl, type GeoJSONSource, type Map as MapInstance } from 'maplibre-gl';
+import { Map, setWorkerUrl, type GeoJSONSource, type ExpressionSpecification, type Map as MapInstance } from 'maplibre-gl';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { heatVisibility } from './domain';
 import {
@@ -105,7 +105,7 @@ function applyTagSelection(map: MapInstance, selected: TagId | null): void {
     map.setPaintProperty('pulse-heat-' + tag.id, 'heatmap-opacity', heatOpacity(focus));
   }
   const focus = brightnessExpression(selected);
-  const sparse = ['*', ['case', ['<=', ['get', 'people'], 10], 0.8, 0], focus];
+  const sparse: ExpressionSpecification = ['*', ['case', ['<=', ['get', 'people'], 10], 0.8, 0], focus];
   map.setPaintProperty('pulse-sparse', 'circle-opacity', ['interpolate', ['linear'], ['zoom'], 0, sparse, 5, sparse, 7, 0]);
   // One shared layer for every hashtag: per-feature color and focus expression.
   map.setPaintProperty('pulse-halo', 'circle-opacity', [
