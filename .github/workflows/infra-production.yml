@@ -79,7 +79,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-      - name: Deploy exact main commit and check HTTPS
+      - name: Stage exact main commit, smoke assets and promote
         if: inputs.operation == 'deploy'
         run: node infra/deploy.mjs
         env:
