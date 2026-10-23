@@ -7,6 +7,8 @@ import {
   requireSameOrigin, parseBody
 } from '../server/protocol.mjs';
 import { route } from '../server/handlers.mjs';
+// Test-only environment: production stays disabled unless explicitly enabled.
+process.env.WP_API_ENABLED = 'true';
 
 function request(method, body = {}, origin = 'https://map.faysk.dev') {
   return { method, body, headers: {
@@ -129,4 +131,19 @@ test('Malformed JSON returns a client error, not HTTP 500', async () => {
   await route('session',stub())(req,res);
   assert.equal(res.code,400);
   assert.equal(res.payload.error,'invalid_json');
+});
+
+test('Real participation endpoints default to disabled even with valid requests', async () => {
+  process.env.WP_API_ENABLED = 'false';
+  try {
+    const res=response();
+    await route('session',stub())(request('POST'),res);
+    assert.equal(res.code,503);
+    assert.equal(res.payload.error,'participation_disabled');
+    const ranking=response();
+    await route('ranking',stub())({method:'GET',headers:{}},ranking);
+    assert.equal(ranking.code,503);
+  } finally {
+    process.env.WP_API_ENABLED = 'true';
+  }
 });
