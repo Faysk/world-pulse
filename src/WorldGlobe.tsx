@@ -310,17 +310,31 @@ export function WorldGlobe({
       else callbacks.current.onTap();
     });
 
-    // Indicate that the luminous regions can be selected.
+    // Coalesce mouse events so hit testing cannot run hundreds of times per
+    // second on high-polling-rate mice. Skip GPU queries during camera moves.
+    let hoverFrame: number | null = null;
     map.on('mousemove', (event) => {
-      if (!map.getLayer('pulse-hit')) return;
-      const hits = map.queryRenderedFeatures(event.point, {
-        layers: ['pulse-hit']
+      if (hoverFrame !== null) window.cancelAnimationFrame(hoverFrame);
+      hoverFrame = window.requestAnimationFrame(() => {
+        hoverFrame = null;
+        if (!map.getLayer('pulse-hit')) return;
+        if (map.isMoving()) {
+          map.getCanvas().style.cursor = 'grabbing';
+          return;
+        }
+        const hits = map.queryRenderedFeatures(event.point, { layers: ['pulse-hit'] });
+        map.getCanvas().style.cursor = hits.length ? 'pointer' : 'grab';
       });
-      map.getCanvas().style.cursor = hits.length ? 'pointer' : 'grab';
+    });
+    map.on('mouseout', () => {
+      if (hoverFrame !== null) window.cancelAnimationFrame(hoverFrame);
+      hoverFrame = null;
+      map.getCanvas().style.cursor = '';
     });
 
     return () => {
       window.clearTimeout(watchdog);
+      if (hoverFrame !== null) window.cancelAnimationFrame(hoverFrame);
       map.remove();
       mapRef.current = null;
     };
@@ -330,8 +344,13 @@ export function WorldGlobe({
 
   useEffect(() => {
     const map = mapRef.current;
-    const source = map?.getSource('pulse-population') as GeoJSONSource | undefined;
-    if (source) source.setData(createCombinedPopulation(scale));
+    if (!map?.getSource('pulse-population')) return;
+    // Collapse quick slider updates into one GeoJSON worker upload per frame.
+    const frame = window.requestAnimationFrame(() => {
+      const source = map.getSource('pulse-population') as GeoJSONSource | undefined;
+      if (source) source.setData(createCombinedPopulation(scale));
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [scale]);
 
   useEffect(() => {

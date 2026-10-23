@@ -50,16 +50,36 @@ export default function App() {
 
   useEffect(() => {
     if (!animate) return;
+
+    // Avoid waking the renderer and MapLibre workers for a hidden tab.
+    // A returning visitor keeps the same visual intensity and can resume.
     let direction = 1;
-    const interval = window.setInterval(() => {
-      setScale(current => {
-        // Ping-pong instead of instantly jumping from maximum to minimum.
-        if (current >= 2.85) direction = -1;
-        if (current <= 0.12) direction = 1;
-        return Math.max(0, Math.min(3, Number((current + 0.08 * direction).toFixed(2))));
-      });
-    }, 350);
-    return () => window.clearInterval(interval);
+    let interval: number | null = null;
+
+    const step = () => setScale(current => {
+      if (current >= 2.85) direction = -1;
+      if (current <= 0.12) direction = 1;
+      return Math.max(0, Math.min(3, Number((current + 0.08 * direction).toFixed(2))));
+    });
+
+    const stop = () => {
+      if (interval !== null) window.clearInterval(interval);
+      interval = null;
+    };
+    const syncVisibility = () => {
+      if (document.hidden) {
+        stop();
+      } else if (interval === null) {
+        interval = window.setInterval(step, 350);
+      }
+    };
+
+    document.addEventListener('visibilitychange', syncVisibility);
+    syncVisibility();
+    return () => {
+      document.removeEventListener('visibilitychange', syncVisibility);
+      stop();
+    };
   }, [animate]);
 
   function chooseTag(tag: TagId | null, focus = false) {
