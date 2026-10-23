@@ -103,3 +103,14 @@ O CI não usa Neon de produção, `DATABASE_URL` real nem segredos dos seus serv
 `tests/api.test.mjs` executa invariantes de normalização, sessão aleatória, hash, cor, UUID, limite de cliques, origem, cookie protegido e handler com dependências simuladas. Uma bateria adicional de integração com **PostgreSQL real descartável** deve ser executada depois de aprovação da migração. Teste de handler isolado não é prova de consistência de transações sob concorrência.
 
 Relacionado a [#20](../issues/20), [#4](../issues/4), [#5](../issues/5), [#9](../issues/9), [#6](../issues/6).
+
+## Evidência de CI desta branch — 24/10/2026
+
+| Validação | Resultado |
+|---|---|
+| [Participation API CI — PostgreSQL 16 descartável](https://github.com/Faysk/world-pulse/actions/runs/40040828557) | **success** |
+| [Visual POC CI — testes, build e Chromium desktop/mobile](https://github.com/Faysk/world-pulse/actions/runs/40040828538) | **success** |
+| [Infrastructure CI](https://github.com/Faysk/world-pulse/actions/runs/40040828555) | **success** |
+| Vercel preview `dpl_3Gn9dEtzQbfuNSSj45pNSocfYpKN` | **READY**, sem mudança em produção |
+
+A validação comprova **código compilável e comportamento dos testes cobertos**, não implantação funcional no Neon de produção. A API real permanece bloqueada por `WP_API_ENABLED`, a migração não foi aplicada e não houve alteração da interface pública.
