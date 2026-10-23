@@ -92,7 +92,12 @@ export function requireSameOrigin(req) {
 export function parseBody(req) {
   const length = Number(req.headers?.['content-length'] ?? '0');
   if (Number.isFinite(length) && length > 8192) throw new ApiError(413, 'payload_too_large', 'Limite do pedido excedido.');
-  const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+  let body;
+  try {
+    body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+  } catch {
+    throw new ApiError(400, 'invalid_json', 'JSON inválido.');
+  }
   if (!body || typeof body !== 'object' || Array.isArray(body) || JSON.stringify(body).length > 8192) {
     throw new ApiError(400, 'invalid_body', 'Objeto JSON obrigatório.');
   }
