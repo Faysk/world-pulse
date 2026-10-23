@@ -39,3 +39,17 @@ A atribuição de cor está fixa para os três dados simulados, e a seleção es
 - Avaliar nitidez desde a visão global até a cidade e desempenho dos heatmaps com muitas cores.
 - Analisar o pipeline de `npm ci` da infraestrutura (#21): frontend ainda precisa de `package-lock.json` versionado para esse workflow.
 - Definir #9 e começar os contratos reais de API nas etapas v0.2/v0.3, sem expor dados individuais.
+
+## Atualização verificada — 24/10/2026
+
+Este registro atualiza o estado da primeira publicação descrita acima:
+
+- PR #23 integrado com lockfile, npm ci e correção das expressões de zoom do MapLibre (#24).
+- Commit publicado: `128bd138b2cd44badd9fde29c9e53ce9d1bc0064`.
+- Deployment Vercel: `dpl_41HLMXDouvPriGKZE8tRZHCN7nyZ`, READY.
+- [Pipeline de produção](https://github.com/Faysk/world-pulse/actions/runs/40037961587): **success**, incluindo validação sem secrets, testes/build do app, consultas SQL/TLS, teste R2, sync de configuração e publicação.
+- [CI desktop/mobile do PR #23](https://github.com/Faysk/world-pulse/actions/runs/40037661262): **success**, com captura de erros de console além de exceções.
+- Requisição HTTPS externa: **HTTP 200**, título World Pulse — Living Earth POC.
+- Chrome no domínio público: mapa real OpenFreeMap carregou, atribuições visíveis, seleção de hashtag e +1 local funcionaram; nenhum console.error observado nessa verificação.
+
+Portanto, o lockfile e a verificação externa deixaram de ser pendências, e o release corrigido foi publicado **pelo GitHub Actions**. A publicação inicial anterior permanece acima como histórico. Continuam pendentes benchmark em celular físico, nitidez em vários níveis de zoom e integração real frontend/API/banco; manter #12 aberta. Não interpretar a publicação da POC como aceite dessas funcionalidades.
