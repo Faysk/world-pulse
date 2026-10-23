@@ -136,7 +136,6 @@ export function WorldGlobe({
         minZoom: 0.8,
         maxZoom: 15,
         pitch: 0,
-        antialias: true,
         dragRotate: true,
         touchZoomRotate: true,
         fadeDuration: 350
