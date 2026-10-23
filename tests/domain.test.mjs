@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { creditTap, creditedTotal, EMPTY_SECONDS, peopleDensityWeight, heatVisibility, chooseHashtag } from '../src/domain.ts';
-import { TAGS, createPopulation, peopleCount, neutralLightPoints } from '../src/demoData.ts';
+import { TAGS, createPopulation, createCombinedPopulation, peopleCount, neutralLightPoints } from '../src/demoData.ts';
 
 test('A click credits exactly one second to the selected tag', () => {
   let state = { ...EMPTY_SECONDS };
@@ -75,4 +75,25 @@ test('Heatmap transitions away smoothly at detailed zoom', () => {
   assert.equal(heatVisibility(12), 0);
   assert.ok(heatVisibility(8) < heatVisibility(5));
   assert.ok(heatVisibility(10) < heatVisibility(8));
+});
+
+test('Shared GPU source preserves all participants and their individual tag colors', () => {
+  for (const scale of [0, 0.2, 1, 3]) {
+    const merged = createCombinedPopulation(scale);
+    const count = merged.features.reduce((sum, x) => sum + x.properties.people, 0);
+    assert.equal(count, TAGS.reduce((sum, tag) => sum + peopleCount(tag.id, scale), 0));
+    assert.ok(merged.features.every(x => TAGS.some(tag =>
+      tag.id === x.properties.tag && tag.color === x.properties.color
+    )));
+    assert.ok(merged.features.length <= TAGS.length * 7 * 36);
+    assert.deepEqual(merged, createCombinedPopulation(scale));
+  }
+});
+
+test('Extra clicks never mutate the spatially aggregated population source', () => {
+  const before = createCombinedPopulation(1);
+  let seconds = { ...EMPTY_SECONDS };
+  for (let i = 0; i < 2000; i++) seconds = creditTap(seconds, 'lofi');
+  assert.equal(seconds.lofi, 2000);
+  assert.deepEqual(createCombinedPopulation(1), before);
 });
