@@ -65,7 +65,7 @@ function noise(a: number, b: number, c: number): number {
 type PulseFeature = {
   type: 'Feature';
   geometry: { type: 'Point'; coordinates: [number, number] };
-  properties: { people: number; tag: TagId; city: string };
+  properties: { people: number; tag: TagId; city: string; color?: string };
 };
 export type PulseCollection = { type: 'FeatureCollection'; features: PulseFeature[] };
 
@@ -97,8 +97,23 @@ export function createPopulation(tagId: TagId, scale = 1): PulseCollection {
   return { type: 'FeatureCollection', features };
 }
 
+/**
+ * All tags share one GeoJSON source for rendering crisp data-driven light points.
+ * Only the aggregate heatmaps need separate render passes (one per tag).
+ */
+export function createCombinedPopulation(scale = 1): PulseCollection {
+  return {
+    type: 'FeatureCollection',
+    features: TAGS.flatMap(tag => createPopulation(tag.id, scale).features.map(feature => ({
+      ...feature,
+      properties: { ...feature.properties, color: tag.color }
+    })))
+  };
+}
+
 export function peopleCount(tagId: TagId, scale: number): number {
-  return createPopulation(tagId, scale).features.reduce((sum, f) => sum + f.properties.people, 0);
+  return clusters[tagId].reduce((sum, city) =>
+    sum + Math.round(city.people * Math.max(0, scale)), 0);
 }
 
 export function neutralLightPoints(): PulseCollection {
