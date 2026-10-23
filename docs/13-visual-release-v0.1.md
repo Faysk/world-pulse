@@ -53,3 +53,20 @@ Este registro atualiza o estado da primeira publicação descrita acima:
 - Chrome no domínio público: mapa real OpenFreeMap carregou, atribuições visíveis, seleção de hashtag e +1 local funcionaram; nenhum console.error observado nessa verificação.
 
 Portanto, o lockfile e a verificação externa deixaram de ser pendências, e o release corrigido foi publicado **pelo GitHub Actions**. A publicação inicial anterior permanece acima como histórico. Continuam pendentes benchmark em celular físico, nitidez em vários níveis de zoom e integração real frontend/API/banco; manter #12 aberta. Não interpretar a publicação da POC como aceite dessas funcionalidades.
+
+
+## Atualização de desempenho — 24/10/2026 (PR #26)
+
+A identidade visual foi preservada; alterações internas para evitar trabalho desnecessário enquanto o usuário navega:
+
+- Mouse hover sobre focos luminosos agora usa `requestAnimationFrame` para coalescer eventos, evitando múltiplas consultas por frame.
+- Enquanto a câmera move, hit-testing de hover é suspenso (o clique para seleção permanece).
+- Alterações rápidas no slider de população atualizam o GeoJSON com coalescência por frame e cancelamento da versão anterior.
+- A animação sintética para com a aba oculta e retoma ao voltar, mantendo a mesma intensidade.
+- Teste Playwright de ciclo de vida de aba incluído em Chromium, além dos testes existentes.
+- **PR #26:** https://github.com/Faysk/world-pulse/pull/26 (integrado)
+- **Commit integrado:** `77cbd8327183471ec06f221c8c55cd6b70cb5adc`.
+- **CI:** https://github.com/Faysk/world-pulse/actions/runs/40038149682 — `build` e `browser-smoke` concluídos com `success`.
+- **Deployment production:** `dpl_6HbeWdvf1ZXCFm81BVaHrkgFF5FQ`, Vercel `READY`, alias confirmado `map.faysk.dev`.
+
+**Não foi feito benchmark quantitativo de FPS nem prova de desempenho em celular físico**. A aprovação do usuário sobre a estética não substitui medições técnicas em vários dispositivos. Ainda sem participação real ou backend conectado.
