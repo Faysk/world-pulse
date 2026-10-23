@@ -171,3 +171,27 @@ input[type=range]::-moz-range-thumb { width: 12px; height: 12px; background: #b2
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
+
+/* Accessible simulation action: duplicates the in-globe tap without adding people. */
+.tap-credit-button {
+  margin-top: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(113, 199, 188, .12);
+  border: 1px solid rgba(113, 199, 188, .32);
+  color: #b9f6e7;
+  border-radius: 9px;
+  padding: 9px 12px;
+  font-size: 10px;
+  font-weight: 780;
+  letter-spacing: .08em;
+  transition: background .18s ease, transform .18s ease;
+}
+.tap-credit-button:hover:not(:disabled) { background: rgba(113, 199, 188, .25); transform: translateY(-1px); }
+.tap-credit-button:disabled { opacity: .32; cursor: not-allowed; }
+.tap-credit-button span { font-size: 14px; opacity: .9; }
+@media (max-width: 620px) {
+  .tap-credit-button { margin-top: 0; padding: 8px 11px; }
+}
