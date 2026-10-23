@@ -101,7 +101,7 @@ export default function App() {
         <div className="rail-divider"/>
         <div className="stat-row">
           <span>Pessoas simuladas</span>
-          <strong>{format(total)}</strong>
+          <strong data-testid="poc-people-total">{format(total)}</strong>
         </div>
         <div className="stat-row">
           <span>Hashtags de teste</span>
@@ -186,10 +186,11 @@ export default function App() {
           <div className="eyebrow">INTERACTION TEST</div>
           <div className="dock-heading">{selected ? TAGS.find(t => t.id === selected)?.label : 'Escolha um #'}</div>
           <div className="contribution-count">
-            <strong>{selected ? format(localSeconds[selected]) : '—'}</strong>
+            <strong data-testid="seconds-current">{selected ? format(localSeconds[selected]) : '—'}</strong>
             <span>SEGUNDOS LOCAIS</span>
             {flash && <span className="plus-one">+1</span>}
           </div>
+          <button className="tap-credit-button" type="button" disabled={!selected} aria-label="Somar 1 segundo à hashtag selecionada" onClick={onTap}>+1 SEGUNDO <span>↗</span></button>
           <p>Toque em uma luz para selecionar o #. Toque de novo para +1 segundo. O brilho só depende de pessoas.</p>
         </div>
       </section>
@@ -197,7 +198,7 @@ export default function App() {
       <footer className="footer-hud">
         <div className="footer-status">
           <span className={'render-dot ' + (ready ? 'online' : '')}/>
-          {error ? 'MAP ERROR' : ready ? 'RENDER ONLINE' : 'LOADING GEOSPATIAL DATA'}
+          <span data-testid="planet-render-status">{error ? 'MAP ERROR' : ready ? 'RENDER ONLINE' : 'LOADING GEOSPATIAL DATA'}</span>
           <span className="footer-separator">/</span>
           <span>MAPLIBRE GL</span>
           <span className="footer-separator">/</span>
