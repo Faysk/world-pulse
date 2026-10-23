@@ -56,7 +56,13 @@ function nightStyle(map: MapInstance): void {
   }
 }
 
-function heatOpacity(focus: number) {
+type HeatOpacityStops = [
+  'interpolate', ['linear'], ['zoom'],
+  number, number, number, number, number,
+  number, number, number, number, number
+];
+
+function heatOpacity(focus: number): HeatOpacityStops {
   return [
     'interpolate', ['linear'], ['zoom'],
     0, heatVisibility(0) * focus,
