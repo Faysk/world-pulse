@@ -11,6 +11,8 @@ on:
       - "tests/**"
       - "src/domain.ts"
       - "tsconfig.json"
+      - "playwright.config.ts"
+      - "tests/browser/**"
       - ".github/workflows/visual-poc-ci.yml"
   pull_request:
     paths:
@@ -36,3 +38,28 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npm run test
       - run: npm run build
+
+  browser-smoke:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Install only Chromium for Playwright
+        run: npx playwright install chromium --with-deps
+      - name: Smoke test desktop and mobile
+        run: npm run test:browser
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: world-pulse-browser-smoke
+          path: |
+            test-results/
+            test-artifacts/
+          retention-days: 7
