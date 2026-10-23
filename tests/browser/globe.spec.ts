@@ -22,7 +22,21 @@ test('The globe loads and taps credit seconds without changing people', async ({
   await page.goto('/');
   await expect(page.getByTestId('planet-render-status')).toHaveText('RENDER ONLINE', { timeout: 30_000 });
   await expect(page.locator('.maplibregl-canvas')).toBeVisible();
-  await expect(page.getByText('DEMO COM DADOS SIMULADOS')).toBeVisible();
+
+  const isMobile = info.project.name === 'mobile-chromium';
+  if (isMobile) {
+    await expect(page.locator('#hashtag-ranking')).toBeHidden();
+    await expect(page.locator('#visual-lab')).toBeHidden();
+  }
+  await page.screenshot({
+    path: 'test-artifacts/world-pulse-' + info.project.name + '-initial.png',
+    fullPage: true
+  });
+  if (isMobile) {
+    await page.getByRole('button', { name: 'Abrir laboratório visual' }).click();
+    await page.getByRole('button', { name: 'Abrir ranking de hashtags' }).click();
+  }
+
 
   const people = page.getByTestId('poc-people-total');
   const totalBefore = await people.innerText();
@@ -38,10 +52,12 @@ test('The globe loads and taps credit seconds without changing people', async ({
   await expect(seconds).toHaveText('3');
   await expect(people).toHaveText(totalBefore);
 
+  if (isMobile) await page.getByRole('button', { name: 'Abrir ranking de hashtags' }).click();
   await page.getByRole('button', { name: /#Minecraft/ }).click();
   await expect(seconds).toHaveText('0');
   await credit.click();
   await expect(seconds).toHaveText('1');
+  if (isMobile) await page.getByRole('button', { name: 'Abrir ranking de hashtags' }).click();
   await page.getByRole('button', { name: /#GTA6/ }).click();
   await expect(seconds).toHaveText('3');
   await expect(people).toHaveText(totalBefore);
@@ -50,10 +66,14 @@ test('The globe loads and taps credit seconds without changing people', async ({
   expect(exceptions).toEqual([]);
 });
 
-test('Zero participants means zero lights and no loss of navigation', async ({ page }) => {
+test('Zero participants means zero lights and no loss of navigation', async ({ page }, info) => {
   await page.goto('/');
   await expect(page.getByTestId('planet-render-status')).toHaveText('RENDER ONLINE', { timeout: 30_000 });
 
+  if (info.project.name === 'mobile-chromium') {
+    await page.getByRole('button', { name: 'Abrir laboratório visual' }).click();
+    await page.getByRole('button', { name: 'Abrir ranking de hashtags' }).click();
+  }
   const slider = page.getByRole('slider', { name: 'Quantidade simulada de pessoas' });
   await slider.fill('0');
   await expect(page.getByTestId('poc-people-total')).toHaveText('0');
