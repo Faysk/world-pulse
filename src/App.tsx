@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import type { Map as MapInstance } from 'maplibre-gl';
 import { TAGS, peopleCount, type TagId } from './demoData';
 import { WorldGlobe, flyToTag, resetGlobe } from './WorldGlobe';
+import { EMPTY_SECONDS, creditTap, creditedTotal } from './domain';
 
 const format = (n: number) => Intl.NumberFormat('pt-BR').format(n);
 
@@ -16,9 +17,7 @@ export default function App() {
   const [zoom, setZoom] = useState(1.65);
   const [fps, setFps] = useState(0);
   const [showHelp, setShowHelp] = useState(false);
-  const [localSeconds, setLocalSeconds] = useState<Record<TagId, number>>({
-    gta6: 0, minecraft: 0, lofi: 0
-  });
+  const [localSeconds, setLocalSeconds] = useState<Record<TagId, number>>(() => ({ ...EMPTY_SECONDS }));
   const [flash, setFlash] = useState(false);
 
   const populations = useMemo(
@@ -30,12 +29,14 @@ export default function App() {
 
   const onTap = useCallback(() => {
     if (!selected) return;
-    setLocalSeconds(value => ({
-      ...value,
-      [selected]: value[selected] + 1
-    }));
+    setLocalSeconds(value => creditTap(value, selected));
     setFlash(true);
   }, [selected]);
+
+  const onTagPick = useCallback((tag: TagId) => {
+    if (selected === tag) onTap();
+    else setSelected(tag);
+  }, [selected, onTap]);
 
   useEffect(() => {
     if (!flash) return;
@@ -66,6 +67,7 @@ export default function App() {
         onZoom={setZoom}
         onFps={setFps}
         onTap={onTap}
+        onTagPick={onTagPick}
         onFailure={setError}
       />
 
@@ -182,7 +184,7 @@ export default function App() {
             <span>SEGUNDOS LOCAIS</span>
             {flash && <span className="plus-one">+1</span>}
           </div>
-          <p>Clique no globo com uma hashtag selecionada para testar +1 segundo. Não altera o brilho.</p>
+          <p>Toque em uma luz para selecionar o #. Toque de novo para +1 segundo. O brilho só depende de pessoas.</p>
         </div>
       </section>
 
@@ -221,7 +223,8 @@ export default function App() {
             <div className="eyebrow">WORLD PULSE — EXPERIMENT 001</div>
             <h2>O planeta é a interface.</h2>
             <p>Esta é uma <strong>prova visual</strong> do World Pulse, com todas as localizações, hashtags e contagens <strong>simuladas</strong>. Não há usuários reais, login, geolocalização automática ou backend conectado nesta versão.</p>
-            <p>Use o scroll/pinça para aproximar, arraste para girar, ajuste a população de teste e escolha uma hashtag à direita. Clique curto no globo para somar +1 segundo <strong>apenas localmente</strong>; o gesto não altera a mancha.</p>
+            <p>Use scroll/pinça para aproximar e arraste para girar. Toque numa luz para escolher sua hashtag; toque novamente para acumular +1 segundo <strong>apenas localmente</strong>, sem aumentar a mancha. Também pode escolher pelo ranking.</p>
+            <p>Créditos locais acumulados nesta sessão: <strong>{format(creditedTotal(localSeconds))} segundos</strong>. Não são segundos cronológicos; 1 tap válido = +1 crédito.</p>
             <p>O indicador FPS* conta os frames renderizados enquanto o mapa está em movimento — não é benchmark definitivo.</p>
             <a href="https://github.com/Faysk/world-pulse/issues/10" target="_blank" rel="noreferrer">Ver pesquisa e próximos passos ↗</a>
           </section>
