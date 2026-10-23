@@ -17,6 +17,10 @@ export default function App() {
   const [zoom, setZoom] = useState(1.65);
   const [fps, setFps] = useState(0);
   const [showHelp, setShowHelp] = useState(false);
+  // The globe stays the primary surface on narrow screens.
+  // Ranking and visual laboratory are opt-in overlays on mobile.
+  const [rankingOpen, setRankingOpen] = useState(() => window.innerWidth > 620);
+  const [labOpen, setLabOpen] = useState(() => window.innerWidth > 620);
   const [localSeconds, setLocalSeconds] = useState<Record<TagId, number>>(() => ({ ...EMPTY_SECONDS }));
   const [flash, setFlash] = useState(false);
 
@@ -61,6 +65,7 @@ export default function App() {
   function chooseTag(tag: TagId | null, focus = false) {
     setSelected(tag);
     if (tag && focus) flyToTag(mapRef.current, tag);
+    if (window.innerWidth <= 620) setRankingOpen(false);
   }
 
   return (
@@ -89,7 +94,7 @@ export default function App() {
           </div>
         </div>
         <div className="header-right">
-          <div className="simulation-label"><span className="status-dot"/> DEMO COM DADOS SIMULADOS</div>
+          <div className="simulation-label"><span className="status-dot"/><span className="demo-long">DEMO COM DADOS SIMULADOS</span><span className="demo-short">DEMO</span></div>
           <button className="icon-button help-btn" aria-label="Sobre este experimento" onClick={() => setShowHelp(true)}>?</button>
         </div>
       </header>
@@ -115,7 +120,16 @@ export default function App() {
         <button className="text-action" onClick={() => resetGlobe(mapRef.current)}>↺ <span>Voltar à vista global</span></button>
       </aside>
 
-      <aside className="right-rail glass">
+      <button
+        className="ranking-mobile-toggle glass"
+        type="button"
+        aria-label={rankingOpen ? 'Recolher ranking de hashtags' : 'Abrir ranking de hashtags'}
+        aria-expanded={rankingOpen}
+        aria-controls="hashtag-ranking"
+        onClick={() => setRankingOpen(value => !value)}
+      >◉ <span>TOP HASHTAGS</span> {rankingOpen ? '✕' : '⌄'}</button>
+
+      <aside id="hashtag-ranking" className={'right-rail glass' + (rankingOpen ? '' : ' is-collapsed')}>
         <div className="panel-head">
           <div>
             <div className="eyebrow">GLOBAL ACTIVITY</div>
@@ -152,7 +166,16 @@ export default function App() {
 
       <div className="map-tip">✥ <span>ARRASTE PARA GIRAR</span><b>·</b><span>SCROLL PARA APROXIMAR</span></div>
 
-      <section className="dock glass" aria-label="Laboratório de simulação">
+      <button
+        className="lab-mobile-toggle glass"
+        type="button"
+        aria-label={labOpen ? 'Recolher laboratório visual' : 'Abrir laboratório visual'}
+        aria-expanded={labOpen}
+        aria-controls="visual-lab"
+        onClick={() => setLabOpen(value => !value)}
+      ><span className="lab-toggle-icon">✧</span> VISUAL LAB {labOpen ? '✕' : '⌃'}</button>
+
+      <section id="visual-lab" className={'dock glass' + (labOpen ? '' : ' is-collapsed')} aria-label="Laboratório de simulação">
         <div className="dock-left">
           <span className="eyebrow">CONTROL ROOM</span>
           <div className="dock-heading">Visual Lab <span className="line-accent">/ v0.1</span></div>
