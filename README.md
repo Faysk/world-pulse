@@ -4,6 +4,8 @@
 
 **Status:** descoberta / pesquisa técnica · **Nome:** provisório · **Documentação inicial:** 23/10/2026
 
+**Regra de tempo confirmada em 24/10/2026:** taps adicionam saldo por hashtag; esse saldo diminui em tempo real, inclusive offline. Várias hashtags podem manter manchas simultaneamente até seus saldos zerarem, mas novos taps aumentam apenas a hashtag selecionada. Histórico creditado e saldo restante são distintos. [Contrato completo](docs/14-time-credit-contract.md).
+
 O visitante abre o site e já vê um **globo 3D navegável**, com giro, zoom e transições fluidas. A Terra é inicialmente cinza. Cada hashtag recebe uma **cor aleatória persistida** na primeira criação; manchas daquela cor surgem e crescem conforme **mais participantes distintos** escolhem esse # em suas regiões.
 
 A interação é simples: selecionar ou criar uma hashtag e contribuir. **Cada clique/tap elegível soma +1 segundo** ao acumulado do participante **na hashtag ativa**. É possível trocar de hashtag sem perder o tempo acumulado anteriormente; **nunca contribuir para duas simultaneamente**.
@@ -39,6 +41,7 @@ A interação é simples: selecionar ou criar uma hashtag e contribuir. **Cada c
 - [10 — Milestones e progresso planejado](docs/10-milestones-and-progress.md)
 - [11 — Infraestrutura, secrets e GitHub Actions](docs/11-infrastructure-operations.md)
 - [12 — Revisão crítica e próxima entrega](docs/12-project-review.md)
+- [14 — Saldo de tempo e duração das manchas](docs/14-time-credit-contract.md)
 - [13 — Release visual v0.1](docs/13-visual-release-v0.1.md)
 
 ## Planejamento por versões
