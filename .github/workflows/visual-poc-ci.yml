@@ -8,6 +8,8 @@ on:
       - "src/**"
       - "index.html"
       - "package.json"
+      - "tests/**"
+      - "src/domain.ts"
       - "tsconfig.json"
       - ".github/workflows/visual-poc-ci.yml"
   pull_request:
@@ -32,4 +34,5 @@ jobs:
         with:
           node-version: "22"
       - run: npm install --no-audit --no-fund
+      - run: npm run test
       - run: npm run build
