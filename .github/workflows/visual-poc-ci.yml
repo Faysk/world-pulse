@@ -66,4 +66,3 @@ jobs:
             test-results/
             test-artifacts/
           retention-days: 7
-
