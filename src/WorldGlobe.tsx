@@ -47,6 +47,15 @@ function nightStyle(map: MapInstance): void {
           : id.includes('water') ? '#31404e'
           : '#586372';
         map.setPaintProperty(layer.id, 'line-color', line);
+      } else if (layer.type === 'symbol') {
+        // Keep geographic names readable but quiet at planetary zoom.
+        map.setPaintProperty(layer.id, 'text-color', '#acbac8');
+        map.setPaintProperty(layer.id, 'text-halo-color', '#111820');
+        map.setPaintProperty(layer.id, 'text-halo-width', 0.85);
+        map.setPaintProperty(layer.id, 'text-opacity', [
+          'interpolate', ['linear'], ['zoom'],
+          0, 0.14, 3, 0.4, 5, 0.7, 9, 0.78
+        ]);
       } else if (layer.type === 'circle') {
         map.setPaintProperty(layer.id, 'circle-color', '#78828c');
       }
