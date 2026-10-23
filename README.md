@@ -39,6 +39,7 @@ A interação é simples: selecionar ou criar uma hashtag e contribuir. **Cada c
 - [10 — Milestones e progresso planejado](docs/10-milestones-and-progress.md)
 - [11 — Infraestrutura, secrets e GitHub Actions](docs/11-infrastructure-operations.md)
 - [12 — Revisão crítica e próxima entrega](docs/12-project-review.md)
+- [13 — Release visual v0.1](docs/13-visual-release-v0.1.md)
 
 ## Planejamento por versões
 
@@ -59,6 +60,6 @@ A interação é simples: selecionar ou criar uma hashtag e contribuir. **Cada c
 
 ### Estado atual
 
-`main` ainda contém planejamento e infraestrutura; o frontend está no PR #14. Vercel, Neon Free e bucket R2 privado foram provisionados; `map.faysk.dev` foi configurado na Cloudflare e verificado na Vercel. Conectividade SQL/TLS e objetos R2 foram testados. Isso ainda não representa aplicação ou algoritmo validados. Veja o [estado operacional e pendências](docs/11-infrastructure-operations.md).
+**A POC visual v0.1 está publicada em [map.faysk.dev](https://map.faysk.dev)** (Vercel production READY, commit `84d50a5`, PR #14 integrado). Inclui globo MapLibre, luzes de hashtags simuladas e teste de +1 segundo apenas local; **não** há usuários reais, backend da aplicação ou geolocalização integrada. A infraestrutura Neon Free e R2 foi preservada. [Detalhes e limitações da publicação](docs/13-visual-release-v0.1.md).
 
 Licença: [MIT](LICENSE).
