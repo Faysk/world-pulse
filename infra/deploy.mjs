@@ -2,7 +2,7 @@ import { appendFile } from 'node:fs/promises';
 import { setTimeout } from 'node:timers/promises';
 import { required } from './config.mjs';
 import { validateRelease } from './validate-release.mjs';
-import { stagedRelease, smokeStaticSite } from './staged-release.mjs';
+import { stagedRelease, smokeStaticSite, SmokeCheckError } from './staged-release.mjs';
 import { vercelApi } from './vercel-api.mjs';
 
 let lastStage = 'Initial release validation';
@@ -25,6 +25,7 @@ try {
   console.error('Staged release failed. Inspect build, access, smoke and promotion status; private details suppressed. No promotion is requested unless candidate checks and access revocation pass.');
   // Stage messages are fixed strings authored in staged-release.mjs, never provider bodies.
   console.error(`Last safe release stage: ${lastStage}`);
+  if (error instanceof SmokeCheckError) console.error(`Safe smoke failure: ${error.message}`);
   if (Number.isInteger(error?.providerStatus) && error.providerStatus >= 400 && error.providerStatus <= 599) {
     console.error(`Provider HTTP status: ${error.providerStatus}`);
   }
