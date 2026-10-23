@@ -14,7 +14,36 @@ concurrency:
   group: world-pulse-production
   cancel-in-progress: false
 jobs:
+  validate-release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        if: inputs.operation == 'deploy'
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        if: inputs.operation == 'deploy'
+        with:
+          node-version: '24'
+      - name: Require application and committed lockfile
+        if: inputs.operation == 'deploy'
+        run: node infra/validate-release.mjs
+      - name: Install locked application dependencies without production secrets
+        if: inputs.operation == 'deploy'
+        run: npm ci --no-fund
+      - name: Test application
+        if: inputs.operation == 'deploy'
+        run: npm test
+      - name: Build application
+        if: inputs.operation == 'deploy'
+        run: npm run build
+      - name: Check and sync operations need no application build
+        if: inputs.operation != 'deploy'
+        run: echo 'Application validation is required only for deploy.'
   infrastructure:
+    needs: validate-release
     if: github.ref == 'refs/heads/main'
     environment: production
     runs-on: ubuntu-latest
