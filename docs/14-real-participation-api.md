@@ -31,6 +31,21 @@ Todas as rotas de escrita exigem `Origin` exatamente igual ao host da aplicaçã
 9. `/api/ranking` usa **métrica histórica declarada**, não presença ativa, não densidade geográfica e não a contagem mundial de pessoas físicas. Valores de segundos são strings decimais para evitar overflow de bigint no JavaScript.
 10. Nenhum dado de IP, localização GPS, user-agent ou coordenada vai para este modelo. A região aparece como `unknown` conceitualmente até a decisão de #6. **Não mostrar os agregados no globo ainda.**
 
+## Cliente experimental pronto, mas ainda não conectado ao globo
+
+O módulo [`src/participationClient.ts`](../src/participationClient.ts) implementa o transporte da próxima etapa de frontend:
+
+- `connect()`: sessão anônima e cookie HttpOnly configurado pelo servidor.
+- `selectTag(name)`: cria/resgata um # e seleciona-o em sequência; mudanças rápidas são serializadas.
+- `creditClick()`: **somente** quando um evento de usuário válido o chamar; acumula em memória e `localStorage` usando lotes de até 30.
+- `flush()`: transmite os lotes pendentes com `batchId` estável, não reatribui taps entre hashtags, mantém fila quando há falha e nunca a limpa até o servidor reconhecer o envio.
+- `clearSelection()`: desativa o #; `ranking()`: consulta exclusivamente participação histórica.
+- A fila local não armazena cookie, token ou coordenadas; **não é um armazenamento durável garantido** (limpeza de navegador, modo privado e expiração de sessão são riscos).
+
+**Não importar o módulo no `App.tsx` público antes de concluir a migração e o teste em staging**. A POC deve continuar com dados fictícios claramente identificados; caso a API falhe, não falsificar contagens reais.
+
+Os testes `tests/client.test.mjs` verificam agrupamento 30+30+5, falha de rede e retry com o mesmo ID, troca A→B e fila restaurada.
+
 ## Migration: operação deliberadamente manual
 
 O arquivo `infra/sql/0002-participation-core.sql` cria apenas as quatro tabelas de produto:
@@ -62,6 +77,20 @@ Requer `0001-runtime-access.sql` já executado e role `world_pulse_app`. **Execu
 - Um backend público escrito sem proteção de limpeza/retention pode acumular registros; liberar apenas após etapa de abuso/privacidade.
 - A geração de lotes pelo navegador e política de retry são o próximo trabalho do frontend, não presumir isso implementado.
 - O MVP atual estático e o seu aspecto noturno continuam funcionando caso API/banco fiquem indisponíveis, sem fallback que fabrique dados reais.
+
+## CI com PostgreSQL descartável
+
+A action [`Participation API CI`](../.github/workflows/participation-api-ci.yml) usa PostgreSQL 16 exclusivo do job para aplicar `0001` e `0002` com conta de proprietário e conferir via role de runtime:
+
+- Sessões independentes, somente hash do cookie salvo, sessão expirada recusada.
+- Criação concorrente da mesma hashtag sem mudar ID/cor.
+- Duas requisições simultâneas com **mesmo batchId** não duplicam segundos.
+- Mesmo batchId de sessões diferentes não colide.
+- Reuso do ID com conteúdo diferente recebe 409.
+- A→B com lote atrasado de A credita A sem trocar a seleção ativa.
+- Rejeição de hashtag que nunca foi selecionada, limite de 120/min, ranking histórico e restrição de DDL.
+
+O CI não usa Neon de produção, `DATABASE_URL` real nem segredos dos seus serviços.
 
 ## Testes sem banco
 
