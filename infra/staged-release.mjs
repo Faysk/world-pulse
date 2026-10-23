@@ -56,7 +56,7 @@ export async function smokeStaticSite(origin, secret, fetcher = fetch) {
     let url = new URL(path, base);
     if (url.origin !== base.origin) throw new Error('Cross-origin asset refused');
     for (let redirects = 0; redirects < 4; redirects++) {
-      if (secret) url.searchParams.set('_vercel_share', secret);
+      if (secret && !cookies.size) url.searchParams.set('_vercel_share', secret);
       const response = await fetcher(url, { redirect: 'manual',
         headers: cookies.size ? { Cookie: [...cookies].map(([k, v]) => `${k}=${v}`).join('; ') } : {},
         signal: AbortSignal.timeout(30_000),

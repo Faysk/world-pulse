@@ -74,3 +74,19 @@ test('login redirects, broken assets and external bundle URLs fail the smoke', a
   }));
   assert.equal(calls, 1);
 });
+test('candidate access follows same-origin cookie redirect without reattaching the share token', async () => {
+  let initial = true;
+  await smokeStaticSite('https://candidate.vercel.app', 'temporary', async (url, options) => {
+    if (initial) {
+      initial = false;
+      assert.equal(url.searchParams.get('_vercel_share'), 'temporary');
+      return new Response('', { status: 302, headers: {
+        Location: '/', 'Set-Cookie': '_vercel_jwt=authorized; HttpOnly; Secure; Path=/',
+      } });
+    }
+    assert.equal(url.searchParams.has('_vercel_share'), false);
+    assert.equal(options.headers.Cookie, '_vercel_jwt=authorized');
+    if (url.pathname === '/') return new Response(html, { headers: { 'Content-Type': 'text/html' } });
+    return new Response('asset', { headers: { 'Content-Type': url.pathname.endsWith('.js') ? 'application/javascript' : 'text/css' } });
+  });
+});
