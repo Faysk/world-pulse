@@ -49,3 +49,14 @@ não conecta, API ativa/staging/TLS/roles/owner pooled recusados, ordem dos arqu
 owner fechado antes do runtime, falha parcial sem falso sucesso e lock concorrente.
 O SQL desses mesmos arquivos já foi aplicado no PostgreSQL descartável e no
 staging real, mas **isso não é prova de migração executada em produção**.
+
+## Evidência de 24/10/2026
+
+[CI na main 40064606694](https://github.com/Faysk/world-pulse/actions/runs/40064606694):
+25 testes aprovados, inclusive gate, destinos, falhas e lock. Execução local do
+CLI com gate fechado recusou conectar, como esperado.
+
+[Check de produção 40064608407](https://github.com/Faysk/world-pulse/actions/runs/40064608407):
+TLS/runtime/R2 aprovados; somente o hostname não secreto foi registrado e salvo
+em `WP_PRODUCTION_DB_HOST` no GitHub production. A flag de migração permanece
+false. Os passos de migração, sync e deploy foram **skipped**, não executados.

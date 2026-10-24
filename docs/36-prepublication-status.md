@@ -10,13 +10,15 @@ promoção, migração de domínio ou habilitação de participação em produç
 
 | Parte | Resultado e evidência |
 |---|---|
+| Integração do código | [PR #31](https://github.com/Faysk/world-pulse/pull/31) e [PR #91](https://github.com/Faysk/world-pulse/pull/91) na main; integração não executou publicação ou migração de domínio |
 | Infra existente | [40059556406](https://github.com/Faysk/world-pulse/actions/runs/40059556406): PostgreSQL TLS/runtime restrito e R2 privado write/read/delete aprovados |
 | Site existente | HTTPS, HTML e assets JS/CSS de `map.faysk.dev` conferidos sem publicar; é a demonstração anterior |
 | Neon staging | 0001–0006, grants, ausência de DDL e timeouts efetivos no pooler: [40058318799](https://github.com/Faysk/world-pulse/actions/runs/40058318799), [40058318548](https://github.com/Faysk/world-pulse/actions/runs/40058318548) |
 | Plano de preview | [40058932667](https://github.com/Faysk/world-pulse/actions/runs/40058932667), sem acesso à Vercel ou publicação |
 | App → banco remoto real | [40061344573](https://github.com/Faysk/world-pulse/actions/runs/40061344573): dois testes desktop/mobile via HTTPS privado, duas sessões, cookie seguro, saldos, recarga, retry e consentimento; quatro sessões sintéticas removidas no encerramento |
-| Banco descartável e regressões | [40060394467](https://github.com/Faysk/world-pulse/actions/runs/40060394467): transações e dois navegadores aprovados, incluindo 205 históricos, idempotência, filas/abas e retenção |
-| UI e três builds | [40060394468](https://github.com/Faysk/world-pulse/actions/runs/40060394468): produção fechada, preview por opt-in e alpha por flag separada; desktop/mobile aprovados |
+| Banco descartável e regressões | [40063608672](https://github.com/Faysk/world-pulse/actions/runs/40063608672): transações e dois navegadores na main aprovados, incluindo 205 históricos, idempotência, filas/abas e retenção |
+| UI e três builds | [40063608553](https://github.com/Faysk/world-pulse/actions/runs/40063608553): produção fechada, preview por opt-in e alpha por flag separada; desktop/mobile aprovados, incluindo retirada de consentimento com geografia desativada |
+| Operação futura de produção | [40064606694](https://github.com/Faysk/world-pulse/actions/runs/40064606694): 25 testes de infraestrutura aprovados. [Check 40064608407](https://github.com/Faysk/world-pulse/actions/runs/40064608407) atestou hostname/TLS/role e R2; sync, migração e deploy foram pulados |
 | Geografia | SQL agregado por saldo positivo, consentimento opcional, supressão e polígonos nativos; [contrato e provas](31-country-geography.md). Fonte real da borda permanece desativada |
 | Legibilidade | Tinta calculada e marcador preservando cor persistida, com provas de azul escuro em navegador; [limites](34-tag-label-readability.md) |
 
@@ -37,7 +39,8 @@ medidas de FPS ou gestos em dispositivos físicos. O benchmark de 0 a 1 trilhão
   proprietário de migração/token operacional não estão no runtime.
 - GitHub production: `WP_ALPHA_RELEASE`, `WP_API_ENABLED`, `WP_GEO_PUBLIC_ENABLED`,
   `WP_GEO_COUNTRY_ENABLED` e `WP_GEO_DIRECT_EDGE` estão false. Staging sync está
-  false; retenção horária está false no repositório. Nenhuma dessas ativações
+  false; retenção horária está false no repositório e `WP_PRODUCTION_MIGRATIONS_ENABLED`
+  está false em production. Nenhuma dessas ativações
   foi sincronizada/publicada nesta etapa.
 - Plano/sync preview só aceita a branch de staging e runtime restrito. Retenção
   tem plano READ ONLY, execução limitada e resumo/backlog; continua desligada.
@@ -64,7 +67,7 @@ medidas de FPS ou gestos em dispositivos físicos. O benchmark de 0 a 1 trilhão
 
 Isso distingue preparação técnica validada de aceite público completo. As
 issues #5, #6, #7, #8, #13 e #53 continuam abertas pelos gates correspondentes.
-Entregas de implementação #74, #76, #77, #79, #81, #83 e #85 foram concluídas em
+Entregas de implementação #74, #76, #77, #79, #81, #83, #85, #88 e #90 foram concluídas em
 PRs vinculados a milestones, sem fechar gates que não foram testados.
 
 A sequência de liberação/interrupção/rollback está em
