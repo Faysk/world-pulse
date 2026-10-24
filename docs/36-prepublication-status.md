@@ -91,3 +91,6 @@ no retry: a primeira execução excedeu 120s ao percorrer todos os cenários e c
 na mesma função. Essa instabilidade não é prova de FPS ou desempenho físico.
 Os contratos 02/10/14/24 foram alinhados à implementação. Sem deploy, migração de
 domínio, ativação ou alteração de secrets nesta rodada.
+
+A estabilização desse teste foi registrada na [issue #97](https://github.com/Faysk/world-pulse/issues/97),
+com evidência do timeout e aceite separado de medição física.
