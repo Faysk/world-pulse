@@ -71,6 +71,7 @@ export function route(kind, operations = store) {
         if (sessionToken) {
           setSessionCookie(res,sessionToken,visitor.expires_at);
         }
+        const credits=await getCredits(visitor.id);
         return json(res, 200, {
           anonymous: true,
           sessionFresh: !existing,
@@ -85,7 +86,8 @@ export function route(kind, operations = store) {
           activeTag: visitor.active_tag_id && visitor.active_tag_name
             ? { id: visitor.active_tag_id, name: '#' + visitor.active_tag_name, color: visitor.active_tag_color }
             : null,
-          credits: await getCredits(visitor.id)
+          credits: credits.slice(0,200),
+          creditsHasMore:credits.length>200
         });
       }
 
@@ -97,7 +99,9 @@ export function route(kind, operations = store) {
       }
       if (kind === 'select') {
         const tagId = body.tagId === null ? null : validateTagId(body.tagId);
-        return json(res, 200, await selectTag(visitor.id, tagId));
+        const selection=await selectTag(visitor.id, tagId);
+        const credits=await getCredits(visitor.id);
+        return json(res, 200, {...selection,credits:credits.slice(0,200),creditsHasMore:credits.length>200});
       }
       if (kind === 'taps') {
         // The cookie can rotate in ANOTHER TAB after a session check and

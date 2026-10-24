@@ -394,6 +394,24 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
     assert.equal((await history()).creditedSeconds,'36');
   });
 
+  await t.test('More than 200 historical balances cannot hide selection or positive time',async()=>{
+    const visitor=await createVisitor();
+    const {rows}=await owner.query(`INSERT INTO world_pulse.tags(id,normalized,color)
+      SELECT gen_random_uuid(),'many_balances_'||n,'#aabbcc' FROM generate_series(1,205) n RETURNING id`);
+    const ids=rows.map(row=>row.id).sort();const selected=ids.at(-1),positive=ids.at(-2);
+    await owner.query(`INSERT INTO world_pulse.visitor_tags(visitor_id,tag_id,seconds,expires_at)
+      SELECT $1,id,10,now()-interval '8 days' FROM world_pulse.tags WHERE id=ANY($2::uuid[])`,[visitor.visitorId,ids]);
+    await owner.query("UPDATE world_pulse.visitor_tags SET expires_at=now()+interval '1 hour' WHERE visitor_id=$1 AND tag_id=$2",[visitor.visitorId,positive]);
+    await selectTag(visitor.visitorId,selected);
+    let credits=await getCredits(visitor.visitorId);
+    assert.equal(credits.length,201,'one extra row signals the HTTP display limit');
+    assert.equal(credits[0].tagId,selected);assert.equal(credits[0].remainingMs,0);
+    assert.equal(credits[1].tagId,positive);assert.ok(credits[1].remainingMs>3000000);
+    await selectTag(visitor.visitorId,positive);credits=await getCredits(visitor.visitorId);
+    assert.equal(credits[0].tagId,positive);assert.equal(credits[0].creditedSeconds,'10');
+    assert.equal((await owner.query('SELECT count(*)::int AS n FROM world_pulse.visitor_tags WHERE visitor_id=$1',[visitor.visitorId])).rows[0].n,205);
+  });
+
   await t.test('Read-only retention inspection reports bounded eligibility without deleting sessions',async()=>{
     const {inspectInactive}=await import('../server/retention.mjs');
     const visitor=await createVisitor();

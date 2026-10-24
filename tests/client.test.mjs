@@ -362,3 +362,14 @@ test('Malformed ranking snapshots fail explicitly instead of crashing bigint/dat
     await assert.rejects(()=>client.ranking(),/invalid_ranking_snapshot/);
   }
 });
+
+
+test('Selecting an older hashtag restores its authoritative balance immediately and exposes a limited list',async()=>{
+  const transport=mockTransport();
+  const selectedBalance={tagId:ID_A,name:'#gta6',color:'#aabbcc',creditedSeconds:'3600',expiresAtMs:3601000,serverNowMs:1000,remainingMs:3600000};
+  const handle=async(path,init)=>path==='/api/select'?Response.json({activeTagId:ID_A,credits:[selectedBalance],creditsHasMore:true}):transport.handle(path,init);
+  const client=new ParticipationClient(handle,fakeStorage(),randomUUID,()=>1000);
+  await client.selectTag('#gta6');
+  assert.equal(client.remainingMilliseconds(ID_A),3600000);assert.equal(client.balancesLimited(),true);
+  assert.equal(client.balances()[0].creditedSeconds,'3600');assert.equal(client.pendingClicks(),0);
+});

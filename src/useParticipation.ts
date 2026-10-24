@@ -144,6 +144,6 @@ export function useParticipation() {
     try{await client.discardOrphanedPending();await connect();}
     catch(reason){failure(reason);}
   },[client,connect,failure]);
-  return {countrySnapshot,countryError,countryPreference,consentBusy,setGeoConsent,ready,selecting,syncing,error,selected,balances,pending,quarantined,ranking,rankingError,tick,persistent:client.persistsPending(),
+  return {countrySnapshot,countryError,countryPreference,consentBusy,setGeoConsent,ready,selecting,syncing,error,selected,balances,pending,quarantined,ranking,rankingError,tick,persistent:client.persistsPending(),balancesLimited:client.balancesLimited(),
     remaining:(tagId:string)=>client.remainingMilliseconds(tagId),connect,select,tap,sync,discard};
 }
