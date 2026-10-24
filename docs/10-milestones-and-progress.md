@@ -8,7 +8,8 @@
 Base React (#11) concluída; comparação de três motores (#1) encerrada como não planejada. Ranking atual confirmado por saldo positivo, histórico desde seleção e máxima histórica separada. Fila coordenada entre abas e orçamentos compartilhados na cadeia da API experimental. [Inventário operacional atual](26-readiness.md). As tabelas de contagem inicial abaixo são históricas, não o progresso atual.
 
 
-POC publicada, infraestrutura provisionada, contrato de saldo confirmado (#9), cenários entregues (#30) e pipeline staged validado. API real permanece em draft (#31), sem migração/ativação pública. #32 trata os limites visuais encontrados. Os números abaixo descrevem o planejamento inicial; o painel GitHub é a fonte do progresso atual.
+POC publicada, infraestrutura provisionada, contrato de saldo confirmado (#9), cenários entregues (#30) e pipeline staged validado. API real integrada à main pelo PR #31, com testes PostgreSQL e HTTPS privado contra
+Neon staging real; sem migração de domínio/ativação pública. #32 trata os limites visuais encontrados. Os números abaixo descrevem o planejamento inicial; o painel GitHub é a fonte do progresso atual.
 
 ## Visão geral — ordem das entregas
 

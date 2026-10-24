@@ -33,12 +33,13 @@ podem disputar, sem mínimo; ausência de participação atual aparece como zero
 `GET /api/history` retorna `type=historical`, pares sessão/hashtag já selecionados
 e segundos históricos. Esse histórico também não é uma máxima simultânea.
 A antiga resposta histórica de `/api/ranking` foi movida para essa rota enquanto
-a API ainda está em draft/gated, antes de haver consumidor público.
+a API ainda estava em draft/gated, antes de haver consumidor público. Agora a API
+está integrada à main, mantendo flags públicas desligadas.
 
 ## Interface de homologação
 
-Laboratório DEV-only exibe o Top 10 real do banco configurado, separado do globo
-sintético. Polling a cada 5 segundos apenas com aba visível, sem requests
+A experiência integrada gated e o laboratório DEV-only exibem o Top 10 do banco
+configurado, separados da demonstração sintética. Polling a cada 5 segundos apenas com aba visível, sem requests
 sobrepostos. A hora da leitura é explícita; falha preserva a última leitura e
 mostra que pode estar desatualizada. Não inventa zero para mascarar indisponibilidade.
 Isso é atualização periódica, não transmissão instantânea por WebSocket.
@@ -50,6 +51,11 @@ no histórico, re-seleção sem duplicação, 30 taps = 1 participação, múlti
 saldos, expiração e desempate independente de segundos. UI desktop/mobile
 verifica contagens e estados de leitura.
 
-Ainda pendentes: geografia agregada segura (#6), limites/cache em escala (#7),
-UX definitiva e integração no globo (#13), staging HTTPS (#53). Nenhuma ativação
-ou migração foi feita na produção por esta mudança.
+Geografia agregada por país, consentimento, supressão, cache e orçamentos estão
+implementados e testados, com [países multicolor/foco/busca](38-multicolor-countries.md).
+O [HTTPS privado contra Neon real](35-staging-private-https-smoke.md) também passou.
+
+Ainda pendentes: fonte geográfica na borda real, preview/runtime Vercel (#53),
+custos/logs/backup/restore e operação de produção (#7/#13), visual orgânico e QA
+físico (#32/#12). Nenhuma ativação ou migração de domínio foi feita em produção.
+[Estado operacional atual](36-prepublication-status.md).
