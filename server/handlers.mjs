@@ -72,6 +72,15 @@ export function route(kind, operations = store) {
         return json(res, 200, await selectTag(visitor.id, tagId));
       }
       if (kind === 'taps') {
+        // The cookie can rotate in ANOTHER TAB after a session check and
+        // before this request. Bind the batch to the cookie at THIS request.
+        // The marker is not authentication; the HttpOnly cookie still is.
+        const binding = req.headers?.['x-wp-session-binding'];
+        const expected = tokenHash('world-pulse-queue-binding-v1:' + token);
+        if (typeof binding !== 'string' || binding !== expected) {
+          throw new ApiError(409, 'session_binding_mismatch',
+            'Lote vinculado a outra sessão anônima.');
+        }
         return json(res, 200, await creditBatch(visitor.id, validateTapBatch(body)));
       }
       throw new ApiError(404,'not_found','Rota inexistente.');
