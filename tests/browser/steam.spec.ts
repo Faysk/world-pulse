@@ -30,11 +30,24 @@ const sample = {
   ]
 };
 
+test('Steam panel is absent by default and never calls its API', async ({ page }) => {
+  let steamRequests = 0;
+  await page.route('**/api/steam', route => {
+    steamRequests++;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(sample) });
+  });
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: 'Abrir dados de jogos Steam' })).toHaveCount(0);
+  await expect(page.getByTestId('steam-panel')).toHaveCount(0);
+  await expect(page.locator('.maplibregl-canvas')).toBeVisible();
+  expect(steamRequests).toBe(0);
+});
+
 test('Steam feed is opt-in and separate from simulated map people', async ({ page }) => {
   await page.route('**/api/steam', route => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify(sample)
   }));
-  await page.goto('/');
+  await page.goto('/?steamPreview=1');
   const total = page.getByTestId('poc-people-total');
   const initial = await total.count() ? await total.innerText() : null;
   const trigger = page.getByRole('button', { name: 'Abrir dados de jogos Steam' });
@@ -59,7 +72,7 @@ test('Steam outage is explicit and does not create fake game numbers', async ({ 
   await page.route('**/api/steam', route => route.fulfill({
     status: 502, contentType: 'application/json', body: JSON.stringify({ error: 'steam_unavailable' })
   }));
-  await page.goto('/');
+  await page.goto('/?steamPreview=1');
   await page.getByRole('button', { name: 'Abrir dados de jogos Steam' }).click();
   const panel = page.getByTestId('steam-panel');
   await expect(panel.getByRole('alert')).toContainText('Dados indisponíveis');
