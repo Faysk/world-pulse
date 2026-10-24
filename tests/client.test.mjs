@@ -67,9 +67,9 @@ function mockTransport({ failOnce = false, loseResponseOnce = false, clock = () 
 test('Queued +1 taps are grouped into bounded idempotent batches', async () => {
   const storage = fakeStorage(), transport = mockTransport();
   const client = new ParticipationClient(transport.handle, storage, randomUUID);
-  assert.equal(client.creditClick(), false, 'no active tag');
+  assert.equal(await client.creditClick(), false, 'no active tag');
   await client.selectTag('#GTA6');
-  for (let i=0; i<65; i++) assert.equal(client.creditClick(), true);
+  for (let i=0; i<65; i++) assert.equal(await client.creditClick(), true);
   assert.equal(client.pendingClicks(), 65);
   await client.flush();
   assert.equal(client.pendingClicks(), 0);
@@ -82,7 +82,7 @@ test('Network failure does not mutate retry batch ID or tap count', async () => 
   const storage = fakeStorage(), transport = mockTransport({ failOnce: true });
   const client = new ParticipationClient(transport.handle, storage, randomUUID);
   await client.selectTag('#GTA6');
-  for (let i=0; i<4; i++) client.creditClick();
+  for (let i=0; i<4; i++) await client.creditClick();
   await assert.rejects(() => client.flush(), /network-failure/);
   const pending = JSON.parse(storage.getItem('world-pulse-pending-v1')).batches;
   assert.equal(pending.length, 1);
@@ -106,23 +106,23 @@ test('A -> B selection preserves the already queued original tag credits', async
   assert.deepEqual(transport.calls.filter(x => x.path === '/api/select').map(x => x.body.tagId), [ID_A, ID_B]);
   // Switch back to A to enqueue one tap, then B to enqueue another.
   await client.selectTag('#GTA6');
-  client.creditClick();
+  await client.creditClick();
   await client.selectTag('#LoFi');
-  client.creditClick();
+  await client.creditClick();
   await client.flush();
   assert.equal(transport.credited.get(ID_A), 1);
   assert.equal(transport.credited.get(ID_B), 1);
   await client.clearSelection();
-  assert.equal(client.creditClick(), false);
+  assert.equal(await client.creditClick(), false);
 });
 
 test('New taps after a lost response never change the already accepted batch fingerprint', async () => {
   const storage = fakeStorage(), transport = mockTransport({loseResponseOnce:true});
   const client = new ParticipationClient(transport.handle,storage,randomUUID);
   await client.selectTag('#GTA6');
-  for(let i=0;i<4;i++) client.creditClick();
+  for(let i=0;i<4;i++) await client.creditClick();
   await assert.rejects(client.flush(),/response-lost/);
-  for(let i=0;i<2;i++) client.creditClick();
+  for(let i=0;i<2;i++) await client.creditClick();
   await client.flush();
   const attempts = transport.calls.filter(x=>x.path==='/api/taps');
   assert.deepEqual(attempts[0].body,attempts[1].body);
@@ -135,11 +135,11 @@ test('Restored unacknowledged batches stay frozen even after new taps in the sam
   const storage = fakeStorage(), transport = mockTransport({loseResponseOnce:true});
   const original = new ParticipationClient(transport.handle,storage,randomUUID);
   await original.selectTag('#GTA6');
-  original.creditClick();
+  await original.creditClick();
   await assert.rejects(original.flush(),/response-lost/);
   const restored = new ParticipationClient(transport.handle,storage,randomUUID);
   await restored.selectTag('#GTA6');
-  restored.creditClick();
+  await restored.creditClick();
   await restored.flush();
   assert.equal(transport.credited.get(ID_A),2);
   assert.equal(restored.pendingClicks(),0);
@@ -167,7 +167,7 @@ test('Returning browser restores selected tag and independent server balance sna
   const client = new ParticipationClient(async () => Response.json({anonymous:true,sessionFresh:false,sessionBinding:SESSION_BINDING,activeTagId:ID_A,activeTag:null,credits}),fakeStorage(),randomUUID);
   await client.connect();
   assert.deepEqual(client.balances(),credits);
-  assert.equal(client.creditClick(),true);
+  assert.equal(await client.creditClick(),true);
   const copy = client.balances();
   copy[0].remainingMs=0;
   assert.equal(client.balances()[0].remainingMs,8000);
@@ -177,10 +177,10 @@ test('Each balance counts down on its own monotonic clock, including while toppi
   let elapsed=100000;
   const transport=mockTransport({clock:()=>elapsed});
   const client=new ParticipationClient(transport.handle,fakeStorage(),randomUUID,()=>elapsed);
-  await client.selectTag('#GTA6');for(let i=0;i<4;i++)client.creditClick();await client.flush();
+  await client.selectTag('#GTA6');for(let i=0;i<4;i++)await client.creditClick();await client.flush();
   assert.equal(client.remainingMilliseconds(ID_A),4000);
   elapsed+=1500;
-  await client.selectTag('#LoFi');for(let i=0;i<4;i++)client.creditClick();await client.flush();
+  await client.selectTag('#LoFi');for(let i=0;i<4;i++)await client.creditClick();await client.flush();
   assert.equal(client.remainingMilliseconds(ID_A),2500);
   assert.equal(client.remainingMilliseconds(ID_B),4000);
   elapsed+=3000;
@@ -203,7 +203,7 @@ test('New anonymous session quarantines pending clicks instead of replaying as a
   const client=new ParticipationClient(fetcher,storage,randomUUID);
   await assert.rejects(client.connect(),/session_rotated_pending/);
   assert.equal(client.isQuarantined(),true);
-  assert.equal(client.creditClick(),false);
+  assert.equal(await client.creditClick(),false);
   await assert.rejects(client.flush(),/session_rotated_pending/);
   assert.deepEqual(JSON.parse(storage.getItem('world-pulse-pending-v1')).batches,[oldBatch]);
   assert.equal(calls.some(x=>x.path==='/api/taps'),false);
@@ -212,7 +212,7 @@ test('New anonymous session quarantines pending clicks instead of replaying as a
   const refreshed=new ParticipationClient(fetcher,storage,randomUUID);
   await assert.rejects(refreshed.connect(),/session_rotated_pending/);
   assert.equal(refreshed.pendingClicks(),3);
-  refreshed.discardOrphanedPending();
+  await refreshed.discardOrphanedPending();
   assert.equal(refreshed.isQuarantined(),false);
   assert.equal(refreshed.pendingClicks(),0);
   await refreshed.connect();
@@ -234,7 +234,7 @@ test('An expired session during flush blocks old pending batches and does not re
   };
   const client=new ParticipationClient(transport,storage,()=>batchId);
   await client.connect();
-  client.creditClick();
+  await client.creditClick();
   await assert.rejects(client.flush(),/session_expired/);
   assert.equal(client.isQuarantined(),true);
   assert.equal(client.pendingClicks(),1);
@@ -272,7 +272,7 @@ test('Tabs converge on authoritative server selection after notification, not gu
   await a.clearSelection();
   await b.refreshSession();
   assert.equal(b.selection(),null);
-  assert.equal(b.creditClick(),false);
+  assert.equal(await b.creditClick(),false);
   assert.ok(storage.getItem('world-pulse-selection-changed-v1'));
 });
 
@@ -297,4 +297,56 @@ test('A different tab may rotate the cookie before our request, but queue bindin
   assert.equal(client.pendingClicks(),2);
   assert.deepEqual(calls,['/api/session']);
   assert.deepEqual(JSON.parse(storage.getItem('world-pulse-pending-v1')).batches,[original]);
+});
+
+test('Concurrent clients never overwrite a shared queue or resurrect acknowledged batches', async () => {
+  const storage=fakeStorage(), transport=mockTransport();
+  const a=new ParticipationClient(transport.handle,storage,randomUUID);
+  const b=new ParticipationClient(transport.handle,storage,randomUUID);
+  await a.selectTag('#GTA6'); await b.refreshSession();
+  await Promise.all(Array.from({length:60},(_,i)=>(i%2?a:b).creditClick()));
+  await a.refreshPending(); await b.refreshPending();
+  assert.equal(a.pendingClicks(),60); assert.equal(b.pendingClicks(),60);
+  await Promise.all([a.flush(),b.flush()]);
+  assert.equal(transport.credited.get(ID_A),60);
+  assert.equal(JSON.parse(storage.getItem('world-pulse-pending-v1')).batches.length,0);
+  await b.creditClick(); await a.flush(); await b.refreshPending();
+  assert.equal(transport.credited.get(ID_A),61);
+  assert.equal(b.pendingClicks(),0);
+});
+
+test('Another writer waits for in-flight batch, then preserves its frozen ID after a lost response', async () => {
+  const storage=fakeStorage(), transport=mockTransport({loseResponseOnce:true});
+  let release, entered;
+  const gate=new Promise(resolve=>release=resolve);
+  const reached=new Promise(resolve=>entered=resolve);
+  const handle=async(path,init)=>{
+    if(path==='/api/taps'){entered();await gate;}
+    return transport.handle(path,init);
+  };
+  const a=new ParticipationClient(handle,storage,randomUUID);
+  const b=new ParticipationClient(handle,storage,randomUUID);
+  await a.selectTag('#GTA6'); await b.refreshSession(); await a.creditClick();
+  const sending=a.flush();
+  await reached;
+  const durable=JSON.parse(storage.getItem('world-pulse-pending-v1'));
+  assert.deepEqual(durable.sealed,[durable.batches[0].batchId]);
+  let wrote=false;
+  const addition=b.creditClick().then(()=>{wrote=true;});
+  await Promise.resolve(); assert.equal(wrote,false);
+  release(); await assert.rejects(sending,/response-lost/); await addition;
+  const after=JSON.parse(storage.getItem('world-pulse-pending-v1'));
+  assert.equal(after.batches.length,2);
+  assert.deepEqual(after.batches[0],durable.batches[0]);
+  await b.flush();
+  assert.equal(transport.credited.get(ID_A),2);
+});
+
+test('Storage write failures are explicit, never reported as a durable accepted tap', async () => {
+  const storage=fakeStorage(), transport=mockTransport();
+  const client=new ParticipationClient(transport.handle,storage,randomUUID);
+  await client.selectTag('#GTA6');
+  storage.setItem=()=>{throw new Error('quota');};
+  await assert.rejects(()=>client.creditClick(),/queue_storage_unavailable/);
+  assert.equal(transport.credited.size,0);
 });

@@ -11,7 +11,10 @@ test('Development lab renders server snapshots and sends taps; public view stays
   });
   let a=snapshot(first,'28800','#gta6','#ff9465',8*3600000);
   const b=snapshot(second,'1920','#lofi','#b69afa',32*60000);
-  await page.route('**/api/session',route=>{requests++;return route.fulfill({json:{anonymous:true,activeTagId:first,credits:[a,b]}});});
+  await page.route('**/api/session',route=>{requests++;return route.fulfill({json:{
+    anonymous:true,sessionFresh:false,sessionBinding:'a'.repeat(64),activeTagId:first,
+    activeTag:{id:first,name:a.name,color:a.color},credits:[a,b]
+  }});});
   await page.route('**/api/taps',route=>{
     const body=route.request().postDataJSON();
     a=snapshot(first,String(Number(a.creditedSeconds)+body.clicks),a.name,a.color,8*3600000);
