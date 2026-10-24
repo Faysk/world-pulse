@@ -1,6 +1,6 @@
 # 14 — API experimental de participação real (revisão técnica, NÃO lançada)
 
-**Branch:** `feat/real-participation-api` · **Estado:** implementação isolada, sem migração executada, sem exposição no globo público. **API bloqueada por padrão:** exige variável exclusivamente server-side `WP_API_ENABLED=true`, ausente nos ambientes atuais.
+**Branch:** `feat/real-participation-api` · **Estado:** implementação isolada, migrações verificadas em CI e staging temporário (ver docs/18), sem migração de domínio na produção e sem exposição no globo público. **API bloqueada por padrão:** exige variável exclusivamente server-side `WP_API_ENABLED=true`, ausente na produção.
 
 ## Objetivo
 
@@ -22,7 +22,8 @@ Todas as rotas de escrita exigem `Origin` exatamente igual ao host da aplicaçã
 | `/api/tags` | POST | `{"name":"#GTA6"}` | `{"tag":{"id":"uuid","name":"#gta6","color":"#rrggbb"}}` |
 | `/api/select` | POST | `{"tagId":"uuid"}` (ou null) | `{"activeTagId":"uuid"}` |
 | `/api/taps` | POST | `{"batchId":"uuid","tagId":"uuid","clicks":1}` | `{"batchId":"uuid","tagId":"uuid","acceptedClicks":1,"duplicate":false,"creditedSeconds":"1"}` |
-| `/api/ranking` | GET | — | `{"type":"historical","ranking":[{"id","name","color","historicalParticipants":"…","creditedSeconds":"…"}]}` |
+| `/api/ranking` | GET | — | `type=active`, `asOfMs`, participações atuais, históricos e segundos separados |
+| `/api/history` | GET | — | `type=historical`, pares já selecionados e segundos históricos; não é máxima histórica |
 
 ### Regras importantes
 
@@ -34,7 +35,7 @@ Todas as rotas de escrita exigem `Origin` exatamente igual ao host da aplicaçã
 6. Idempotência em `(visitor_id,batch_id)`: enviar de novo conteúdo idêntico retorna `duplicate=true` e `acceptedClicks=0`; conteúdo diferente com mesmo ID recebe HTTP 409.
 7. Um lote de A pode chegar **depois** da troca para B se A já foi selecionada. Ao aceitar um lote novo, o servidor estende o saldo de A, sem alterar `active_tag_id`. Retry duplicado não altera saldo nem histórico. A janela de aceitação de lotes atrasados ainda depende da política de retenção antes da ativação pública.
 8. `creditedSeconds` é histórico de taps. O saldo cronológico é separado: `expires_at = max(expires_at, statement_timestamp()) + clicks segundos`, atualizado uma única vez por lote. O relógio é consultado na instrução de crédito, depois do lock por visitante. Fechar a aba ou selecionar outra hashtag não pausa nem apaga o saldo.
-9. `/api/ranking` usa **métrica histórica declarada**, não presença ativa, não densidade geográfica e não a contagem mundial de pessoas físicas. Valores de segundos são strings decimais para evitar overflow de bigint no JavaScript.
+9. `/api/ranking` usa **participações atuais com saldo positivo**; `/api/history` guarda a métrica histórica separada, iniciada na seleção. Nenhuma das duas comprova pessoas físicas únicas. Contagens/segundos são strings decimais para evitar overflow de bigint no JavaScript. [Contrato atual](24-ranking-contract.md).
 10. Nenhum dado de IP, localização GPS, user-agent ou coordenada vai para este modelo. A região aparece como `unknown` conceitualmente até a decisão de #6. **Não mostrar os agregados no globo ainda.**
 
 ## Saldo cronológico e retorno à sessão — correção #39
@@ -77,7 +78,7 @@ O módulo [`src/participationClient.ts`](../src/participationClient.ts) implemen
 - `selectTag(name)`: cria/resgata um # e seleciona-o em sequência; mudanças rápidas são serializadas.
 - `creditClick()`: **somente** quando um evento de usuário válido o chamar; acumula em memória e `localStorage` usando lotes de até 30.
 - `flush()`: transmite lotes com `batchId` e conteúdo estáveis. Lotes enviados ou restaurados ficam congelados; taps novos recebem outro lote. Uma resposta perdida não permite alterar o payload do ID antigo. A fila só remove um lote depois de confirmação.
-- `clearSelection()`: desativa o #; `ranking()`: consulta exclusivamente participação histórica.
+- `clearSelection()`: desativa o #; `ranking()`: snapshot de participações atuais; `historicalRanking()`: pares históricos em rota separada.
 - A fila local não armazena cookie, token ou coordenadas; **não é um armazenamento durável garantido** (limpeza de navegador, modo privado e expiração de sessão são riscos).
 
 **Não importar o módulo no `App.tsx` público antes de concluir a migração e o teste em staging**. A POC deve continuar com dados fictícios claramente identificados; caso a API falhe, não falsificar contagens reais.
