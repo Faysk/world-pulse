@@ -40,8 +40,8 @@ ou false enquanto não houver liberação. A condição de agendamento é avalia
 antes de carregar o Environment; não configurar essa chave apenas nele.
 
 Antes de qualquer leitura/execução, `WP_PRODUCTION_DB_HOST` no Environment
-production precisa conter o hostname pooled real, conferido no provedor. Ainda
-não foi atestado/configurado neste trabalho. O validador rejeita staging,
+production precisa conter o hostname pooled real conferido por TLS/role no
+probe de produção e centralizado como metadado no GitHub. O validador rejeita staging,
 proprietário, banco/porta diferentes e TLS fraco. O script confirma que o runtime
 não tem atributos elevados ou memberships. Não fornece o owner ao job.
 
@@ -75,8 +75,8 @@ liberação e migração de produção.
    retirada. Só então considerar atestações da borda; nunca ativar por suposição.
 5. Conferir planos gratuitos, métricas de requisições/CPU/Neon, políticas de
    backups/logs e aviso de privacidade. Medir hardware físico, não apenas emulação.
-6. Revisar e aplicar 0002–0006 em produção em operação própria, com owner apenas
-   operacional; não há migração automática no deploy. Conferir restore/rollback
+6. Revisar e aplicar 0002–0006 pela operação manual `migrate`, com [gate próprio](37-production-schema-preparation.md)
+   e owner apenas operacional; não há migração automática no deploy. Conferir restore/rollback
    do provedor antes de iniciar participação. Não apagar tabelas para rollback.
 7. Conferir hostname de produção, executar plano de retenção, ativar a rotina
    deliberadamente e verificar a primeira execução. Documentar responsável e
