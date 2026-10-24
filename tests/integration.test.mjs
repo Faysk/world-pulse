@@ -394,6 +394,15 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
     assert.equal((await history()).creditedSeconds,'36');
   });
 
+  await t.test('Read-only retention inspection reports bounded eligibility without deleting sessions',async()=>{
+    const {inspectInactive}=await import('../server/retention.mjs');
+    const visitor=await createVisitor();
+    await owner.query("UPDATE world_pulse.visitors SET last_seen_at=now()-interval '60 days' WHERE id=$1",[visitor.visitorId]);
+    assert.deepEqual(await inspectInactive(app,{limit:1}),{eligibleAtLeast:1,capped:true});
+    assert.equal((await owner.query('SELECT id FROM world_pulse.visitors WHERE id=$1',[visitor.visitorId])).rows.length,1);
+    await assert.rejects(()=>inspectInactive(app,{limit:10001}),RangeError);
+  });
+
   await t.test('Country consent, suppression, cache and withdrawal preserve current participation', async()=>{
     const {setCountryConsent,getCountrySnapshot}=await import('../server/store.mjs');
     const tag=await createOrGetTag('#aaa_geo');const visitors=[];

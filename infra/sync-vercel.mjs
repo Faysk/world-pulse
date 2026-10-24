@@ -1,17 +1,18 @@
-import { required, runtimeConfig, runtimeSecrets, validateRuntime } from './config.mjs';
+import { required, runtimeConfig, runtimeSecrets, validateRuntime,productionReleaseFlags } from './config.mjs';
 
 try {
   validateRuntime();
   required(['VERCEL_TOKEN', 'VERCEL_ORG_ID', 'VERCEL_PROJECT_ID']);
   const { VERCEL_ORG_ID, VERCEL_PROJECT_ID, VERCEL_TOKEN } = process.env;
+  const flags=productionReleaseFlags();
   const endpoint = new URL(`https://api.vercel.com/v10/projects/${encodeURIComponent(VERCEL_PROJECT_ID)}/env`);
   endpoint.searchParams.set('teamId', VERCEL_ORG_ID);
   endpoint.searchParams.set('upsert', 'true');
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: { Authorization: `Bearer ${VERCEL_TOKEN}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify([...runtimeSecrets, ...runtimeConfig].map(key => ({
-      key, value: process.env[key], target: ['production'],
+    body: JSON.stringify([...runtimeSecrets, ...runtimeConfig,...Object.keys(flags)].map(key => ({
+      key, value: flags[key]??process.env[key], target: ['production'],
       type: runtimeSecrets.includes(key) ? 'sensitive' : 'plain',
       comment: 'Managed from GitHub Actions production environment',
     }))),

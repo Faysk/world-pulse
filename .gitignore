@@ -2,6 +2,7 @@ node_modules/
 dist/
 dist-gate-production/
 dist-gate-preview/
+dist-gate-alpha/
 .vite/
 coverage/
 *.log

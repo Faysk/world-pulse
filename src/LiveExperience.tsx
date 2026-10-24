@@ -73,7 +73,8 @@ export default function LiveExperience(){
         <small>Leitura: {new Date(live.countrySnapshot.asOfMs).toLocaleTimeString('pt-BR')} · até 5s de intervalo</small>
         {!countryTag?.countries.length?<p>Nenhuma participação ativa nesta hashtag.</p>:<ul>{countryTag.countries.map(country=><li key={country.countryCode}><span>{country.countryCode==='ZZ'?'Origem desconhecida / sem compartilhamento':country.countryCode==='OTHER'?'Outros países (grupos menores que 5)':country.countryCode}</span><strong>{count(country.activeParticipants)}</strong></li>)}</ul>}
         {countryPick&&<p>País inspecionado: {countryPick}. Este toque não adiciona segundos.</p>}
-        <p>Outras hashtags ativas:</p><ul>{live.countrySnapshot.tags.map(tag=><li key={tag.id}><button disabled={!live.ready||live.selecting} style={{color:tag.color}} onClick={()=>void live.select(tag.name)}>{tag.name}</button><strong>{count(tag.activeParticipants)}</strong></li>)}</ul>
+        <p>Hashtags ativas nesta leitura (até 20, sem ordem de ranking):</p><ul>{live.countrySnapshot.tags.slice(0,20).map(tag=><li key={tag.id}><button disabled={!live.ready||live.selecting} style={{color:tag.color}} onClick={()=>void live.select(tag.name)}>{tag.name}</button><strong>{count(tag.activeParticipants)}</strong></li>)}</ul>
+        {live.countrySnapshot.tags.length>20&&<p>Exibindo 20 de {live.countrySnapshot.tags.length} hashtags. Digite outra hashtag para consultar seus países; o Top 10 é um painel separado.</p>}
       </>}
       <p>País estimado pela conexão, sujeito a VPN e erros. Pequenos grupos são agrupados. Algumas ilhas e territórios não têm desenho nesta escala; seus totais continuam na lista.</p>
       {countryDrawError&&<p role="status">{countryDrawError}</p>}

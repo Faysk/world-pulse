@@ -42,8 +42,8 @@ sessão na mesma transação. DELETE/CASCADE isolado perderia histórico e é pr
 | Ambiente | Estado |
 |---|---|
 | Produção Neon `main` | Baseline de acesso; domínio da API não migrado/ativado por este trabalho |
-| Neon `world-pulse-staging` | Separado, schema-only, credenciais próprias no GitHub; 0001–0005 e timeouts transacionais no pooler verificados. Expira 31/10 às 01:15 UTC |
-| CI PostgreSQL descartável | Migrações 0001–0005; testes HTTP/duas sessões/abas e concorrência, sem secrets reais |
+| Neon `world-pulse-staging` | Separado, schema-only, credenciais próprias no GitHub; 0001–0006 e timeouts transacionais no pooler verificados. Expira 31/10 às 01:15 UTC |
+| CI PostgreSQL descartável | Migrações 0001–0006; testes HTTP/duas sessões/abas e concorrência, sem secrets reais |
 | Local visual | Funciona sem secrets; teste SQL requer PostgreSQL descartável do CI ou instalação local explícita |
 
 0004/0005 foram aplicadas no staging pelo Actions; qualquer migração futura exige operação manual revisada;
@@ -88,3 +88,5 @@ Referências: [fila](23-cross-tab-queue.md), [ranking](24-ranking-contract.md),
 
 
 [Benchmark CPU completo](28-population-benchmark.md): 180 combinações incluindo 8 bilhões; não é benchmark de usuários simultâneos ou GPU.
+
+[Operações preparadas e sequência de liberação](32-prepublication-operations.md). Nada disso ativa publicação, flags ou manutenção de produção por si só.
