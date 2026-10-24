@@ -70,9 +70,14 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     } else if (process.env.WP_STAGING_OPERATION === 'check') {
       await checkStaging(process.env.DATABASE_URL);
     } else throw new Error('explicit_staging_operation_required');
-  } catch {
+  } catch (error) {
     // Drivers can embed credentials in errors. Never print private error objects.
     console.error('Staging database operation failed; verify target, expiry, schema and role permissions.');
+    const safeReasons = ['staging_expired','staging_target_rejected','runtime_role_too_powerful',
+      'runtime_membership_rejected','runtime_timeouts_not_applied','runtime_ddl_allowed',
+      'explicit_staging_operation_required','unexpected_runtime_membership'];
+    if (safeReasons.includes(error.message)) console.error(`Safe failure reason: ${error.message}`);
+    if (/^[0-9A-Z]{5}$/.test(error.code ?? '')) console.error(`SQLSTATE: ${error.code}`);
     process.exitCode = 1;
   }
 }
