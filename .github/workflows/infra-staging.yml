@@ -6,7 +6,7 @@ on:
         description: Check runtime access, or deliberately apply reviewed staging migrations
         type: choice
         default: check
-        options: [check, migrate, maintain, preview-plan]
+        options: [check, migrate, maintain, preview-plan, smoke]
   push:
     branches: [codex/remote-staging]
     paths: ['infra/staging-db*', '.github/workflows/infra-staging.yml']
@@ -20,7 +20,7 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/remote-staging'
     environment: staging
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -58,3 +58,27 @@ jobs:
         env:
           WP_PREVIEW_OPERATION: plan
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Install locked app and browser only for explicit HTTPS smoke
+        if: inputs.operation == 'smoke'
+        run: |
+          npm ci --no-fund
+          npx playwright install chromium --with-deps
+      - name: Create ephemeral loopback TLS certificate, never a public credential
+        if: inputs.operation == 'smoke'
+        run: |
+          umask 077
+          openssl req -x509 -newkey rsa:2048 -nodes -keyout "$RUNNER_TEMP/wp-smoke.key" -out "$RUNNER_TEMP/wp-smoke.crt" -days 1 -subj '/CN=localhost' -addext 'subjectAltName=DNS:localhost,IP:127.0.0.1'
+      - name: Two browsers over private HTTPS to the pinned real staging pooler
+        if: inputs.operation == 'smoke'
+        run: npx playwright test --config playwright.staging.config.ts
+        env:
+          WP_STAGING_SMOKE: '1'
+          WP_SMOKE_TLS_KEY: ${{ runner.temp }}/wp-smoke.key
+          WP_SMOKE_TLS_CERT: ${{ runner.temp }}/wp-smoke.crt
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always() && inputs.operation == 'smoke'
+        with:
+          name: staging-https-smoke-ui
+          path: test-artifacts/staging-smoke-*.png
+          retention-days: 7
