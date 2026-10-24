@@ -8,7 +8,7 @@
  * Inputs are already aggregated participants by coarse approximate location;
  * never feed raw user/IP coordinates into this module or publish per-user cells.
  */
-import { TAGS, type PulseCollection, type TagId } from './demoData';
+import type { PulseCollection, TagId } from './demoData';
 
 export type SpatialAggregationOptions = {
   zoom: number;
@@ -71,7 +71,8 @@ function validatePopulation(population: PulseCollection): void {
     const p = feature?.properties;
     if (!Array.isArray(c) || c.length !== 2 || !c.every(Number.isFinite) ||
       Math.abs(c[1]) > 90 || !Number.isSafeInteger(p?.people) || p.people < 0 ||
-      !TAGS.some(t => t.id === p.tag)) {
+      typeof p.tag !== 'string' || p.tag.length === 0 ||
+      typeof p.color !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(p.color)) {
       throw new RangeError('Invalid aggregated population cell');
     }
   }
@@ -111,7 +112,7 @@ export function aggregateForZoom(
         if (!Number.isSafeInteger(total)) throw new RangeError('Participant total overflow');
         stored.people = total;
       } else {
-        const color = item.properties.color ?? TAGS.find(t => t.id === tag)?.color;
+        const color = item.properties.color;
         if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) throw new RangeError('Invalid hashtag color');
         grouped.set(key, { tag, color, x, y, people });
       }
@@ -172,7 +173,7 @@ export function describeOverlaps(aggregate: SpatialAggregate): SharedCell[] {
     cell.totalPeople += people;
     cell.participants.push({
       tag: feature.properties.tag,
-      color: feature.properties.color ?? TAGS.find(t => t.id === feature.properties.tag)?.color ?? '',
+      color: feature.properties.color ?? '',
       people,
       share: 0
     });
