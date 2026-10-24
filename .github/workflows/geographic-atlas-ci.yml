@@ -1,0 +1,50 @@
+name: Geographic Viewport Atlas CI
+
+on:
+  pull_request:
+    paths:
+      - "src/geographicAtlas.ts"
+      - "tests/geographicAtlas.test.mjs"
+      - "tests/browser/geographicAtlas.spec.ts"
+      - "experiments/geographic-atlas.html"
+      - ".github/workflows/geographic-atlas-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "src/geographicAtlas.ts"
+      - "tests/geographicAtlas.test.mjs"
+      - "tests/browser/geographicAtlas.spec.ts"
+      - "experiments/geographic-atlas.html"
+      - ".github/workflows/geographic-atlas-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  geographic-atlas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - run: npm ci --no-fund
+      - name: Domain and projection invariants, typecheck and Vite build
+        run: npm run check
+      - name: Install Chromium with software WebGL2
+        run: npx playwright install chromium --with-deps
+      - name: Projection, paging and GPU pick on desktop and mobile
+        run: |
+          mkdir -p test-artifacts
+          npx playwright test tests/browser/geographicAtlas.spec.ts --project=chromium --project=mobile-chromium
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: world-pulse-geographic-viewport-atlas
+          path: |
+            test-artifacts/geo-mercator-*.png
+            test-results/
+          retention-days: 7
