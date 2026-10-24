@@ -7,7 +7,7 @@ import * as store from './store.mjs';
 export function route(kind, operations = store) {
   const {
     findVisitor, createVisitor, requireVisitor, createOrGetTag,
-    selectTag, creditBatch, getCredits, getRanking, getActiveBalanceSnapshot
+    selectTag, creditBatch, getCredits, getRanking, getActiveBalanceSnapshot, consumeApiBudget
   } = operations;
   return async function handler(req, res) {
     try {
@@ -18,11 +18,15 @@ export function route(kind, operations = store) {
       }
       if (kind === 'history') {
         onlyMethod(req, 'GET');
+        await consumeApiBudget();
+        await consumeApiBudget('reads');
         const ranking = await getRanking();
         return json(res, 200, { type: 'historical', ranking });
       }
       if (kind === 'activity' || kind === 'ranking') {
         onlyMethod(req, 'GET');
+        await consumeApiBudget();
+        await consumeApiBudget('reads');
         // Public aggregate contains no individual session identifiers or
         // coordinates. Remains disabled by WP_API_ENABLED by default.
         return json(res, 200, await getActiveBalanceSnapshot());
@@ -31,6 +35,7 @@ export function route(kind, operations = store) {
       onlyMethod(req, 'POST');
       requireSameOrigin(req);
       const body = parseBody(req);
+      await consumeApiBudget();
       const token = readSessionCookie(req);
 
       if (kind === 'session') {

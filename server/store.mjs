@@ -1,6 +1,7 @@
 import pg from 'pg';
 import { randomUUID } from 'node:crypto';
 import { ApiError, batchFingerprint, newSession, randomColor, tokenHash } from './protocol.mjs';
+import { chargeBudget } from './costPolicy.mjs';
 
 let pool;
 
@@ -25,9 +26,23 @@ function getPool() {
     max: 3,
     idleTimeoutMillis: 10_000,
     connectionTimeoutMillis: 5_000,
+    statement_timeout: 5_000,
+    query_timeout: 6_000,
+    lock_timeout: 1_000,
     allowExitOnIdle: true
   });
   return pool;
+}
+
+export async function consumeApiBudget(category = 'requests') {
+  try {
+    if (!await chargeBudget(getPool(), category)) {
+      throw new ApiError(429,'operation_budget_exhausted','Limite temporário da plataforma atingido. Tente mais tarde.');
+    }
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(503,'operation_budget_unavailable','Controle de capacidade indisponível. Tente mais tarde.');
+  }
 }
 
 async function transaction(fn) {
@@ -59,6 +74,7 @@ export async function findVisitor(token) {
 }
 
 export async function createVisitor() {
+  await consumeApiBudget('sessions');
   const session = newSession();
   await getPool().query(
     "INSERT INTO world_pulse.visitors (id,session_hash,expires_at) VALUES($1,$2,now()+interval '30 days')",
@@ -76,6 +92,12 @@ export async function requireVisitor(token) {
 export async function createOrGetTag(rawName) {
   const { normalizeHashtag } = await import('./protocol.mjs');
   const normalized = normalizeHashtag(rawName);
+  const existing = await getPool().query('SELECT id,normalized,color FROM world_pulse.tags WHERE normalized=$1',[normalized]);
+  if (existing.rows.length) {
+    const tag=existing.rows[0];
+    return {id:tag.id,name:'#'+tag.normalized,color:tag.color};
+  }
+  await consumeApiBudget('tags');
   const id = randomUUID();
   const color = randomColor();
   const inserted = await getPool().query(

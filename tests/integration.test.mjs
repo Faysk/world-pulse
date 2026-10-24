@@ -31,6 +31,7 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
   await owner.query('INSERT INTO world_pulse.visitor_tags(visitor_id,tag_id,seconds) VALUES($1,$2,42)', [legacyVisitor,legacyTag]);
   await owner.query(await readFile(new URL('../infra/sql/0003-time-balances.sql', import.meta.url), 'utf8'));
   useTestPool(app);
+  await owner.query(await readFile(new URL('../infra/sql/0004-operation-budgets.sql', import.meta.url), 'utf8'));
 
   await t.test('Migration preserves history without inventing live balances and is repeatable', async () => {
     const [legacy] = await getCredits(legacyVisitor);
@@ -300,4 +301,24 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
   await t.test('Runtime role cannot create tables in isolated schema', async () => {
     await assert.rejects(app.query('CREATE TABLE world_pulse.unauthorized (id int)'), /permission denied/);
   });
+  await t.test('Global budgets are atomic across independent pools, reset windows, and bound row count', async () => {
+    const {chargeBudget}=await import('../server/costPolicy.mjs');
+    await owner.query(`INSERT INTO world_pulse.operation_budgets(scope,window_start,used)
+      VALUES('requests_minute',date_trunc('minute',statement_timestamp()),2997),
+        ('requests_day',date_trunc('day',statement_timestamp()),1)
+      ON CONFLICT(scope) DO UPDATE SET window_start=EXCLUDED.window_start,used=EXCLUDED.used`);
+    const secondPool=new pg.Pool({connectionString:'postgresql://world_pulse_app:local-only@localhost:5432/world_pulse_ci',ssl:false,max:4});
+    try {
+      const results=await Promise.all(Array.from({length:20},(_,i)=>chargeBudget(i%2?app:secondPool,'requests')));
+      assert.equal(results.filter(Boolean).length,3);
+      const counter=await owner.query("SELECT used FROM world_pulse.operation_budgets WHERE scope='requests_minute'");
+      assert.equal(counter.rows[0].used,3000);
+      await owner.query("UPDATE world_pulse.operation_budgets SET window_start=window_start-interval '1 minute' WHERE scope='requests_minute'");
+      assert.equal(await chargeBudget(secondPool,'requests'),true);
+      assert.equal((await owner.query("SELECT used FROM world_pulse.operation_budgets WHERE scope='requests_minute'")).rows[0].used,1);
+      assert.ok((await owner.query('SELECT count(*)::int AS n FROM world_pulse.operation_budgets')).rows[0].n<=5);
+      await assert.rejects(()=>chargeBudget(app,'user_supplied_scope'),RangeError);
+    } finally {await secondPool.end();}
+  });
+
 });

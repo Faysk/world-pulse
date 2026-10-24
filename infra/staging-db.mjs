@@ -50,7 +50,7 @@ export async function migrateStaging(ownerUrl, runtimeUrl) {
     const { rows } = await db.query(`SELECT m.rolname FROM pg_auth_members a
       JOIN pg_roles m ON m.oid=a.roleid JOIN pg_roles r ON r.oid=a.member WHERE r.rolname='world_pulse_app'`);
     if (rows.length) throw new Error('unexpected_runtime_membership');
-    for (const file of ['0001-runtime-access.sql', '0002-participation-core.sql', '0003-time-balances.sql']) {
+    for (const file of ['0001-runtime-access.sql', '0002-participation-core.sql', '0003-time-balances.sql', '0004-operation-budgets.sql']) {
       await db.query(await readFile(new URL(`sql/${file}`, import.meta.url), 'utf8'));
       console.log(`Staging migration applied: ${file}`);
     }

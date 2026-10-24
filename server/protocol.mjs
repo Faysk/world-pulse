@@ -114,6 +114,7 @@ export function json(res, status, data) {
 export function fail(res, error) {
   const e = error instanceof ApiError ? error : new ApiError(500, 'internal_error', 'Falha temporária.');
   if (!(error instanceof ApiError)) console.error('World Pulse API failure:', error?.name || 'unknown');
+  if (e.status === 429 || e.code === 'operation_budget_unavailable') res.setHeader('Retry-After','60');
   return json(res, e.status, { error: e.code, message: e.message });
 }
 
