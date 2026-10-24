@@ -1,8 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  projectCoarsePoint,planGeographicAtlas,pickGeographicAtlas,
-  type GeoViewport
+  projectCoarsePoint,planGeographicAtlas,pickGeographicAtlas
 } from '../src/geographicAtlas.ts';
 const viewport=(overrides={})=>({
   lng:0,lat:0,zoom:1,width:1200,height:720,cellZoom:5,...overrides
