@@ -13,6 +13,7 @@
 | Neon Free / PostgreSQL | Banco relacional com TLS e role runtime restrita | Conexão verificada; tabelas de participação ainda não migradas em produção |
 | Cloudflare R2 Standard | Armazenamento S3 privado | Apenas provisionamento/probes; não participa dos taps nem fornece os tiles |
 | GitHub Actions | Validar, sincronizar configuração e publicar | Environment `production`, branch `main`; sem secrets em PRs |
+| Feed Steam | Endpoint Vercel para dados externos de jogos | Código em `main` pelo PR #41; independente do banco e das manchas |
 
 O navegador recebe HTML/JS/CSS da Vercel e tiles do OpenFreeMap. Não recebe credenciais PostgreSQL ou R2. O GitHub é a origem da configuração de produção; o workflow sincroniza somente a lista autorizada de variáveis server-side para a Vercel.
 
@@ -20,7 +21,7 @@ O navegador recebe HTML/JS/CSS da Vercel e tiles do OpenFreeMap. Não recebe cre
 
 O [PR #31](https://github.com/Faysk/world-pulse/pull/31) contém endpoints Vercel para sessão anônima por cookie, criação/seleção de hashtags e lotes idempotentes de taps, além de cliente isolado e migração versionada. O gate `WP_API_ENABLED` é desligado por padrão. Não há aplicação automática dessa migração no deploy.
 
-Antes de integrar: alinhar histórico e `expires_at` ao [contrato de saldo](14-time-credit-contract.md), testar concorrência/retries no PostgreSQL descartável, definir retenção e limites de abuso. Antes de publicar manchas reais: resolver agregação geográfica/privacidade (#6) e testar dois navegadores (#13). O ranking do produto (#8) ainda não tem ordenação confirmada.
+O PR #43 já alinhou histórico e `expires_at` ao [contrato de saldo](14-time-credit-contract.md), com concorrência/retries validados em PostgreSQL descartável. Antes de integrar: staging, interface, retenção e limites de abuso. Antes de publicar manchas reais: resolver agregação geográfica/privacidade (#6) e testar dois navegadores (#13). O ranking do produto (#8) ainda não tem ordenação confirmada.
 
 Não foi adotado serviço externo de Auth/Realtime nem WebSocket por visitante. Agregados por viewport/zoom e mecanismo de atualização permanecem em projeto; H3 é alternativa de implementação, não dependência instalada.
 

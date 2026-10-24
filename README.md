@@ -16,6 +16,7 @@ Um planeta cinza que ganha cores com a participação das pessoas.
 | Objetos | Cloudflare R2, bucket privado `world-pulse-production` | Provisionado; ainda sem função no fluxo de taps |
 | Configuração e entrega | GitHub Actions + Environment `production` | Origem das secrets/configurações e deploy manual de `main` |
 | API de participação | [PR #31](https://github.com/Faysk/world-pulse/pull/31) | Draft, gate desligado, migração de domínio não aplicada |
+| Feed externo Steam | `api/steam.mjs` → API pública Steam | Integrado em `main` pelo PR #41; separado dos participantes/manchas |
 
 Não há serviço de autenticação externo, conexão direta do browser ao banco ou bucket público. Nenhum outro banco de outro projeto foi removido ou alterado.
 
@@ -31,6 +32,8 @@ flowchart LR
 ```
 
 Linhas pontilhadas representam trabalho ainda não ativado. Veja [arquitetura](docs/05-free-tier-architecture.md) e [operações](docs/11-infrastructure-operations.md).
+
+O feed Steam consulta uma amostra de jogos, sem banco ou chave de API, e não representa participantes do World Pulse nem localização. Seu código chegou a `main` depois do último deploy confirmado nesta revisão ([40041911767](https://github.com/Faysk/world-pulse/actions/runs/40041911767)); presença em `main` não é evidência de publicação. [Escopo do feed](docs/15-steam-live-signals.md).
 
 ## Regras do produto
 
@@ -68,11 +71,13 @@ tests/                      testes de domínio e navegador
 infra/                       probes Neon/R2, sincronização e publicação staged
 infra/sql/0001-runtime-access.sql  baseline de acesso SQL; não é schema da aplicação
 scripts/                     benchmark dos cenários agregados
+api/steam.mjs                endpoint do feed externo Steam
+server/steam.mjs             consulta/validação do feed externo
 .github/workflows/           validação, produção manual e organização de milestones
 docs/                        arquitetura, regras, evidências e pendências
 ```
 
-As pastas `api/`, `server/` e a migração `0002-participation-core.sql` estão **somente no PR #31** enquanto ele permanecer em draft.
+Os demais endpoints de participação, `server/store.mjs`, `server/handlers.mjs`, o cliente `participationClient.ts` e as migrações `0002`/`0003` estão **somente no PR #31** enquanto ele permanecer em draft. A correção de saldo e retries foi integrada nesse draft pelo [PR #43](https://github.com/Faysk/world-pulse/pull/43), com testes em PostgreSQL descartável; isso ainda não ativa participação em produção.
 
 ## Documentação e próximos passos
 
