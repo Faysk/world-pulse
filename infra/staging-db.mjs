@@ -17,7 +17,8 @@ export function validateStagingUrl(value, owner = false, now = Date.now()) {
 }
 
 export async function checkStaging(connectionString) {
-  const db = new pg.Client({ connectionString: validateStagingUrl(connectionString), connectionTimeoutMillis: 15_000 });
+  const db = new pg.Client({ connectionString: validateStagingUrl(connectionString), connectionTimeoutMillis: 15_000,
+    statement_timeout: 5000, query_timeout: 6000, lock_timeout: 1000 });
   try {
     await db.connect();
     const { rows: [role] } = await db.query(`SELECT current_user AS name, rolsuper, rolcreatedb,
@@ -28,6 +29,10 @@ export async function checkStaging(connectionString) {
     if (members.n) throw new Error('runtime_membership_rejected');
     await db.query('SELECT id FROM world_pulse.tags LIMIT 0');
     await db.query('SELECT expires_at FROM world_pulse.visitor_tags LIMIT 0');
+    await db.query('SELECT scope FROM world_pulse.operation_budgets LIMIT 0');
+    const {rows:[timeouts]}=await db.query(`SELECT current_setting('statement_timeout') AS statement,
+      current_setting('lock_timeout') AS lock`);
+    if (timeouts.statement !== '5s' || timeouts.lock !== '1s') throw new Error('runtime_timeouts_not_applied');
     await db.query('BEGIN');
     try {
       await db.query('CREATE TABLE world_pulse.__staging_permission_probe(id int)');
@@ -35,7 +40,7 @@ export async function checkStaging(connectionString) {
     } catch (error) {
       if (error.code !== '42501') throw error;
     } finally { await db.query('ROLLBACK'); }
-    console.log('Staging TLS, schema, role restrictions and DDL denial verified.');
+    console.log('Staging TLS, schema including budgets, pooler timeouts, role restrictions and DDL denial verified.');
   } finally { await db.end(); }
 }
 
