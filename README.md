@@ -15,6 +15,7 @@ Um planeta cinza que ganha cores com a participação das pessoas.
 | DNS | Cloudflare, zona `faysk.dev` | `map` aponta à Vercel, DNS only |
 | Objetos | Cloudflare R2, bucket privado `world-pulse-production` | Provisionado; ainda sem função no fluxo de taps |
 | Configuração e entrega | GitHub Actions + Environment `production` | Origem das secrets/configurações e deploy manual de `main` |
+| Steam LIVE | `GET /api/steam` · Steam Web API oficial | **Oculto na interface de produção**, código e endpoint preservados para desenvolvimento |
 | API de participação | [PR #31](https://github.com/Faysk/world-pulse/pull/31) | Draft, gate desligado, migração de domínio não aplicada |
 
 Não há serviço de autenticação externo, conexão direta do browser ao banco ou bucket público. Nenhum outro banco de outro projeto foi removido ou alterado.
@@ -31,6 +32,8 @@ flowchart LR
 ```
 
 Linhas pontilhadas representam trabalho ainda não ativado. Veja [arquitetura](docs/05-free-tier-architecture.md) e [operações](docs/11-infrastructure-operations.md).
+
+O feed da Steam foi mantido no código, mas o painel foi **ocultado da experiência pública** por não ser parte do conceito central do World Pulse. Não há consultas Steam feitas pela interface enquanto estiver oculto. [Decisão e documentação da integração](docs/16-steam-live-signals.md).
 
 ## Regras do produto
 
@@ -68,11 +71,13 @@ tests/                      testes de domínio e navegador
 infra/                       probes Neon/R2, sincronização e publicação staged
 infra/sql/0001-runtime-access.sql  baseline de acesso SQL; não é schema da aplicação
 scripts/                     benchmark dos cenários agregados
+api/steam.mjs                endpoint do feed externo Steam
+server/steam.mjs             consulta/validação do feed externo
 .github/workflows/           validação, produção manual e organização de milestones
 docs/                        arquitetura, regras, evidências e pendências
 ```
 
-As pastas `api/`, `server/` e a migração `0002-participation-core.sql` estão **somente no PR #31** enquanto ele permanecer em draft.
+As pastas `api/` e `server/` contêm o backend Steam preservado, porém sem painel visível no site público. Os demais endpoints de participação, `server/store.mjs`, `server/handlers.mjs`, o cliente `participationClient.ts` e as migrações `0002`/`0003` estão **somente no PR #31** enquanto ele permanecer em draft. A correção de saldo e retries foi integrada nesse draft pelo [PR #43](https://github.com/Faysk/world-pulse/pull/43), com testes em PostgreSQL descartável; isso ainda não ativa participação em produção.
 
 ## Documentação e próximos passos
 
@@ -82,7 +87,8 @@ As pastas `api/`, `server/` e a migração `0002-participation-core.sql` estão 
 - [Milestones e entregas](docs/10-milestones-and-progress.md) · [Runbook de produção](docs/11-infrastructure-operations.md)
 - [Revisão crítica atual](docs/12-project-review.md) · [Primeira publicação visual](docs/13-visual-release-v0.1.md)
 - [Saldo cronológico](docs/14-time-credit-contract.md) · [Cenários de 0 a 8 bilhões e 1 trilhão](docs/15-population-scenarios.md)
+- [Steam LIVE — integração oculta](docs/16-steam-live-signals.md) · [Issue #40](https://github.com/Faysk/world-pulse/issues/40)
 
-Próxima entrega: revisar a API, alinhar banco e respostas ao saldo cronológico, validar em banco descartável e integrar dois navegadores. Geografia pública, retenção, abuso e ranking exigem trabalho próprio antes da alpha. O laboratório suporta até 756 células sintéticas; isso não comprova capacidade de atender bilhões de usuários reais.
+Próxima entrega: validar a API em staging, integrar interface/saldo e testar dois navegadores. O draft já tem saldo e retries validados em banco descartável. Geografia pública, retenção, abuso e ranking exigem trabalho próprio antes da alpha. O laboratório suporta até 756 células sintéticas; isso não comprova capacidade de atender bilhões de usuários reais.
 
 [Issues](https://github.com/Faysk/world-pulse/issues) · [Milestones](https://github.com/Faysk/world-pulse/milestones) · Licença [MIT](LICENSE).

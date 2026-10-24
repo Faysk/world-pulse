@@ -1,0 +1,49 @@
+name: Steam Live CI
+
+on:
+  pull_request:
+    paths:
+      - "server/steam.mjs"
+      - "api/steam.mjs"
+      - "src/SteamPanel.tsx"
+      - "src/styles.css"
+      - "src/App.tsx"
+      - "tests/steam.test.mjs"
+      - "tests/browser/steam.spec.ts"
+      - ".github/workflows/steam-live-ci.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "server/steam.mjs"
+      - "api/steam.mjs"
+      - "src/SteamPanel.tsx"
+      - "src/styles.css"
+      - "src/App.tsx"
+      - "tests/steam.test.mjs"
+      - "tests/browser/steam.spec.ts"
+      - ".github/workflows/steam-live-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  steam-contract-and-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - run: npm ci --no-fund
+      - name: Steam API response contract tests
+        run: node --test tests/steam.test.mjs
+      - name: Typecheck and bundle frontend
+        run: npm run build
+      - name: Install Chromium
+        run: npx playwright install chromium --with-deps
+      - name: Steam panel smoke, desktop and mobile
+        run: npx playwright test tests/browser/steam.spec.ts

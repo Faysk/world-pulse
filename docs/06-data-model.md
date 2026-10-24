@@ -4,7 +4,7 @@
 
 **Atualização confirmada em 24/10/2026:** usar [saldo/expiração por participante e hashtag](14-time-credit-contract.md). `contributions` precisa de `expires_at` além do histórico de segundos creditados. Agregados ativos vêm dos pares com saldo positivo, não apenas de `participants.selected_hashtag_id`. Vários pares do mesmo participante podem ter saldo simultâneo. A proposta original abaixo deve ser lida com essa correção; o provedor implantado é Neon PostgreSQL.
 
-Os nomes abaixo são do domínio proposto. O draft #31 usa `tags`, `visitors`, `visitor_tags` e `tap_batches`; revisar sua implementação de expiração antes de integrar.
+Os nomes abaixo são do domínio proposto. O draft #31 usa `tags`, `visitors`, `visitor_tags` e `tap_batches`; o PR #43 acrescentou `expires_at` na migração `0003`, validada em PostgreSQL descartável. As migrações `0002`/`0003` continuam sem aplicação em produção.
 
 ## Entidades
 

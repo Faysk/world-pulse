@@ -4,6 +4,13 @@ import { TAGS, createCombinedPopulation, createScenarioPopulation, POPULATION_SC
   scenarioDescription, type ScenarioDistribution, type TagId } from './demoData';
 import { WorldGlobe, flyToTag, resetGlobe } from './WorldGlobe';
 import { EMPTY_SECONDS, creditTap, creditedTotal } from './domain';
+import { SteamPanel } from './SteamPanel';
+
+// Steam remains in the repository but is deliberately NOT part of the
+// public World Pulse experience. The development-only preview is opt-in.
+// Query parameters cannot re-enable it in production builds.
+const STEAM_PANEL_ENABLED = import.meta.env.DEV &&
+  new URLSearchParams(window.location.search).get('steamPreview') === '1';
 
 const format = (n: number) => Intl.NumberFormat('pt-BR').format(n);
 const compact = (n: number) => n >= 1_000_000 ? Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 2 }).format(n) : format(n);
@@ -131,6 +138,8 @@ export default function App() {
           <button className="icon-button help-btn" aria-label="Sobre este experimento" onClick={() => setShowHelp(true)}>?</button>
         </div>
       </header>
+
+      {STEAM_PANEL_ENABLED && <SteamPanel onOpen={() => setRankingOpen(false)} />}
 
       <aside className="left-rail glass">
         <div className="eyebrow">SIGNAL / 01</div>

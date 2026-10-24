@@ -16,7 +16,7 @@ O [contrato de saldo](14-time-credit-contract.md) está confirmado: cada tap adi
 
 ## Bloqueios concretos da API
 
-A revisão inicial do PR #31 encontrou ausência de expiração e mutação de lotes após falha de rede. A correção #39 acrescenta `expires_at`, snapshots do relógio/saldo e congelamento de lotes enviados/restaurados. Validar essas alterações no PostgreSQL descartável e revisar antes da integração. O ranking permanece explicitamente histórico; não habilitar manchas reais usando essa contagem.
+Na revisão inicial do PR #31 foram encontradas ausência de expiração e mutação de lotes após perda de resposta. O PR #43 corrigiu ambas dentro do draft: expiração por par, snapshots do relógio/saldo e congelamento de lotes enviados/restaurados. Build, navegador e [PostgreSQL descartável](https://github.com/Faysk/world-pulse/actions/runs/40043387032) passaram. A correção não aplicou migrações nem ativou a API de produção. O ranking ainda é explicitamente histórico; não habilitar manchas reais usando essa contagem.
 
 A seleção global por navegador e os lotes atrasados precisam de contrato coerente: o lote conserva sua hashtag original, não muda a seleção atual, e não permite usar retries para criar crédito adicional. Definir janela/retenção antes de limpar IDs de idempotência.
 
