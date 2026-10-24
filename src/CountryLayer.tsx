@@ -25,11 +25,12 @@ export function CountryLayer({map,snapshot,tagId,mode='selected',onError}:{map:M
     map.addLayer({id:'live-country-line',type:'line',source:'live-countries',paint:{'line-color':['get','outlineColor'],'line-width':1.4}});
     return()=>{
       generation.current++;
+      const imageIds=[...images.current.keys()];
+      images.current.clear();sourceSignature.current='';
       if(!map.getStyle())return;
       for(const id of ['live-country-line','live-country-fill'])if(map.getLayer(id))map.removeLayer(id);
       if(map.getSource('live-countries'))map.removeSource('live-countries');
-      for(const id of images.current.keys())if(map.hasImage(id))map.removeImage(id);
-      images.current.clear();sourceSignature.current='';
+      for(const id of imageIds)if(map.hasImage(id))map.removeImage(id);
     };
   },[map]);
   useEffect(()=>{
