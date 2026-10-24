@@ -22,7 +22,7 @@ promoção, migração de domínio ou habilitação de participação em produç
 | Geografia | SQL agregado por saldo positivo, consentimento opcional, supressão e polígonos nativos; [contrato e provas](31-country-geography.md). Fonte real da borda permanece desativada |
 | Legibilidade | Tinta calculada e marcador preservando cor persistida, com provas de azul escuro em navegador; [limites](34-tag-label-readability.md) |
 
-Localmente, a suíte tem 125 testes: 124 aprovados e um SQL pulado por não haver
+Localmente, após a composição multicolor, a suíte tem 133 testes: 132 aprovados e um SQL pulado por não haver
 PostgreSQL local. O SQL foi executado separadamente no Actions. Os 25 testes de
 infraestrutura e o build TypeScript/Vite passaram. Testes emulados não são
 medidas de FPS ou gestos em dispositivos físicos. O benchmark de 0 a 1 trilhão
@@ -61,7 +61,7 @@ medidas de FPS ou gestos em dispositivos físicos. O benchmark de 0 a 1 trilhão
 3. **Operação antes do público:** conferir logs/backups/restore e métricas do
    provedor, aplicar migrações de produção em operação própria, atestar host e
    ativar/verificar retenção. Limites de banco não garantem custo zero ou DDoS.
-4. **Visual/hardware:** hoje o mapa mostra países da hashtag selecionada, sem
+4. **Visual/hardware:** o mapa oferece países multicolor com foco opcional, sem
    posição de pessoas. Composição orgânica multicolor simultânea é pesquisa
    separada (#32), e QA de touchpad/iOS/Android e FPS físico continua em #3/#12.
 
@@ -74,3 +74,9 @@ A sequência de liberação/interrupção/rollback está em
 [operações antes da publicação](32-prepublication-operations.md). O teste remoto
 sem Vercel e a captura de evidência estão em
 [HTTPS privado de staging](35-staging-private-https-smoke.md).
+
+## Avanço visual sem publicação
+
+[Países multicolor](38-multicolor-countries.md): visão geral, foco, busca e páginas
+de 20 hashtags. Faixas aproximadas preservam números exatos na lista. Composição
+orgânica e FPS físico continuam pendentes; os gates operacionais não mudaram.

@@ -39,13 +39,13 @@ Orçamentos compartilhados e timeouts também se aplicam à leitura.
 
 ## Visual e limites
 
-O globo usa polígonos nativos MapLibre, uma source e duas layers para a hashtag
-selecionada. Selecionar outra troca a cor e o conjunto de países; não mistura
-cores nem esconde uma hashtag atrás de outra. Sem país conhecido, o globo fica
-sem área de participação. `OTHER` e `ZZ` aparecem somente na lista. A área do
-país não codifica quantidade, intensidade ou posição de pessoas. Todas as
-contagens estão na lista. Tocar numa área inspeciona o país e não adiciona tempo;
-o botão +1 e taps elegíveis fora dessas áreas mantêm a interação documentada.
+O globo usa polígonos nativos MapLibre, uma source e duas layers, com várias
+hashtags por país e foco opcional na selecionada. Até quatro cores e cinza para
+as demais compõem faixas aproximadas; busca e paginação preservam acesso a todas
+as hashtags e seus números exatos. [Algoritmo e limites](38-multicolor-countries.md).
+Sem país conhecido, não há área de participação. `OTHER` e `ZZ` ficam na lista.
+A área não codifica quantidade ou posição de pessoas. Tocar numa área inspeciona
+o país e não adiciona tempo; botão +1 e taps elegíveis fora dela mantêm a interação.
 
 Natural Earth 110m, 174 países/territórios com código disponível, é um desenho
 generalizado. Algumas ilhas, microestados e territórios ficam sem geometria;
@@ -54,7 +54,7 @@ são cartográficas, não uma declaração política. O arquivo é servido local
 sem enviar identificação do participante ao fornecedor. Fonte, versão e licença
 estão em [COUNTRIES-SOURCE](../src/assets/COUNTRIES-SOURCE.md).
 
-Polígonos de uma hashtag por vez são um fallback funcional. Composição orgânica
+Faixas multicolor com foco opcional são um fallback funcional. Composição orgânica
 multicolor simultânea e FPS em aparelho físico continuam na issue #32, e não
 foram comprovados pelos laboratórios sintéticos. Bilhões de contagens podem ser
 representados aritmeticamente; isso não significa bilhões de conexões suportadas.
