@@ -24,6 +24,7 @@ function response() {
 }
 function stub(overrides = {}) {
   return {
+    consumeApiBudget: async () => undefined,
     findVisitor: async () => ({ id: randomUUID(), active_tag_id: null }),
     createVisitor: async () => newSession(),
     requireVisitor: async () => ({ id: randomUUID(), active_tag_id: null }),
@@ -92,6 +93,18 @@ test('Main ranking is current participation, independent from historical seconds
   assert.equal(res.payload.type,'active');
   assert.equal(res.payload.metric,'distinct_anonymous_sessions_with_positive_balance');
   assert.equal(res.payload.asOfMs,1000);
+});
+
+test('A shared budget denial never executes the domain operation and has retry guidance', async () => {
+  let created=false;
+  const res=response();
+  await route('session',stub({
+    consumeApiBudget:async()=>{throw new ApiError(429,'operation_budget_exhausted','Limite temporário.');},
+    findVisitor:async()=>{created=true;return null;}
+  }))(request('POST'),res);
+  assert.equal(res.code,429);
+  assert.equal(res.headers['Retry-After'],'60');
+  assert.equal(created,false);
 });
 test('Session POST sets HttpOnly, SameSite and Secure cookie for new visitor', async () => {
   const visitor = { id: randomUUID(), active_tag_id: null };

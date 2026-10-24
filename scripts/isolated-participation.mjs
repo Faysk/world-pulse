@@ -12,7 +12,7 @@ if (process.env.WP_ISOLATED_TEST !== '1' || process.env.DATABASE_URL || process.
 const owner = new pg.Pool({ connectionString: 'postgresql://postgres:local-only@127.0.0.1:5432/world_pulse_ci', ssl:false });
 try {
   await owner.query("DO $$ BEGIN IF NOT EXISTS(SELECT FROM pg_roles WHERE rolname='world_pulse_app') THEN CREATE ROLE world_pulse_app LOGIN PASSWORD 'local-only'; END IF; END $$");
-  for (const name of ['0001-runtime-access.sql','0002-participation-core.sql','0003-time-balances.sql']) {
+  for (const name of ['0001-runtime-access.sql','0002-participation-core.sql','0003-time-balances.sql','0004-operation-budgets.sql']) {
     await owner.query(await readFile(new URL('../infra/sql/'+name,import.meta.url),'utf8'));
   }
 } finally { await owner.end(); }

@@ -1,6 +1,12 @@
 name: Staging database
 on:
   workflow_dispatch:
+    inputs:
+      operation:
+        description: Check runtime access, or deliberately apply reviewed staging migrations
+        type: choice
+        default: check
+        options: [check, migrate]
   push:
     branches: [codex/remote-staging]
     paths: ['infra/staging-db*', '.github/workflows/infra-staging.yml']
@@ -27,8 +33,16 @@ jobs:
       - run: npm ci --prefix infra --ignore-scripts
       - run: npm test --prefix infra
       - name: Verify TLS, schema and restricted runtime access
+        if: inputs.operation != 'migrate'
         run: node infra/staging-db.mjs
         env:
           WP_STAGING_OPERATION: check
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      # No migration owner secret and no production credentials in this job.
+      - name: Apply reviewed migrations only to the pinned temporary staging branch
+        if: inputs.operation == 'migrate'
+        run: node infra/staging-db.mjs
+        env:
+          WP_STAGING_OPERATION: migrate
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
+      # The owner is present only in an explicit migration step, never in runtime checks.
