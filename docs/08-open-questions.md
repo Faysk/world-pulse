@@ -2,7 +2,7 @@
 
 **Não transformar suposições em requisitos confirmados.**
 
-**Q1/Q2 resolvidas em 24/10/2026:** participação depende de saldo de tempo positivo por hashtag; diminui em tempo real, inclusive offline. Várias hashtags podem permanecer simultaneamente, mas novos taps aumentam somente a selecionada. O [contrato confirmado](14-time-credit-contract.md) substitui as alternativas antigas de Q1/Q2 abaixo. Q4 (ordenação do ranking) permanece aberta.
+**Q1/Q2 resolvidas em 24/10/2026:** participação depende de saldo de tempo positivo por hashtag; diminui em tempo real, inclusive offline. Várias hashtags podem permanecer simultaneamente, mas novos taps aumentam somente a selecionada. O [contrato confirmado](14-time-credit-contract.md) substitui as alternativas antigas de Q1/Q2 abaixo. Q4 (ranking atual por saldo positivo) também foi resolvida; histórico começa na seleção. [Contrato atual](24-ranking-contract.md).
 
 ## Decisões de produto ainda abertas
 
@@ -19,7 +19,7 @@ Tap/click sobre planeta pode somar; drag/pinch devem navegar. E se tocar sobre *
 
 ### Q4. Qual métrica ordena o Top 10?
 
-Confirmado: **qualquer hashtag entra, sem mínimo de pessoas**; mostrar origem geográfica. Definir se ranking ordena por pessoas distintas atuais, pessoas históricas ou segundos.
+Resolvida: **qualquer hashtag entra, sem mínimo**; ordenação por participações atuais com saldo positivo. Ao zerar, sai do ranking e da mancha. Tempo não multiplica nem desempata a contagem. Histórico começa na seleção e é separado; máxima histórica não implementada. [Contrato](24-ranking-contract.md). Origem geográfica pública ainda depende de #6.
 
 ### Q5. O que é um "participante distinto" sem login?
 
@@ -43,7 +43,7 @@ Confirmar quotas vigentes, terms of use, banco hibernado, acesso R2 e mapa base 
 
 ### Q10. Motor gráfico e transições
 
-MapLibre GL é o motor efetivamente usado na POC publicada. A comparação de alternativas (#1) e o aceite de desempenho em dispositivo físico (#12) continuam pendentes; não há motivo validado para uma migração agora.
+MapLibre GL é o motor efetivamente usado na POC publicada. A comparação de alternativas (#1) foi encerrada como não planejada, sem alegar benchmark comparativo. O aceite de desempenho em dispositivo físico (#12) continua pendente; não há motivo validado para uma migração agora.
 
 ## Critérios para decidir
 

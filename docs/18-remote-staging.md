@@ -18,7 +18,7 @@ O script recusa operações após essa data; renovar/recriar exige atualizar o
 destino fixado, as credenciais e a documentação. Não houve upgrade de plano.
 
 Aplicadas somente no staging: `0001-runtime-access.sql`,
-`0002-participation-core.sql`, `0003-time-balances.sql`.
+`0002-participation-core.sql`, `0003-time-balances.sql` e `0004-operation-budgets.sql`.
 
 O runtime usa `world_pulse_app`, sem SUPERUSER, CREATEDB, CREATEROLE, INHERIT,
 BYPASSRLS ou memberships. Conexão pooled com `sslmode=verify-full`.
@@ -39,7 +39,8 @@ criado nessa branch. O proprietário nunca deve ir para o runtime Vercel.
 O Environment permite somente `main` e a branch de preparação
 `codex/remote-staging`. A checagem manual/push em `infra-staging.yml` usa apenas
 `DATABASE_URL`: TLS, colunas migradas, atributos/memberships e negação de DDL.
-Não aplica SQL automaticamente, não usa o proprietário e não publica produção.
+Não aplica SQL automaticamente. A operação manual `migrate` fornece o proprietário
+somente no passo deliberado; o modo `check` usa apenas runtime. Não publica produção.
 
 `infra/staging-db.mjs` fixa endpoint, banco, roles, TLS e expiração. Operações
 exigem `WP_STAGING_OPERATION=check` ou `migrate`; o modo migrate deve receber
@@ -65,3 +66,13 @@ aprovada usando a secret do GitHub, em 24/10/2026.
 O preview do PR #55 foi recusado pela Vercel com `build-rate-limit` e orientação
 de aguardar 24 horas. Nenhum upgrade foi solicitado. Isso bloqueia a validação
 do preview HTTPS, mas não a preparação nem a checagem remota do banco.
+
+
+## Atualização do staging — 24/10/2026
+
+A migração 0004 foi aplicada via Actions no run 40051933404, que detectou depois
+que o pooler não preservava timeouts de startup. A API agora aplica SET LOCAL
+dentro de cada transação. [Run 40052178137](https://github.com/Faysk/world-pulse/actions/runs/40052178137)
+aprovou TLS, schema com orçamentos, timeouts efetivos no pooler, role restrita e
+negação de DDL. Nenhuma credencial foi trazida de volta do GitHub para a máquina.
+Staging HTTPS pela Vercel continua sendo uma validação distinta pendente.

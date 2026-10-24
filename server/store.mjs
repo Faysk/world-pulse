@@ -2,6 +2,7 @@ import pg from 'pg';
 import { randomUUID } from 'node:crypto';
 import { ApiError, batchFingerprint, newSession, randomColor, tokenHash } from './protocol.mjs';
 import { chargeBudget } from './costPolicy.mjs';
+import { beginLimitedTransaction } from './databaseLimits.mjs';
 
 let pool;
 
@@ -26,9 +27,7 @@ function getPool() {
     max: 3,
     idleTimeoutMillis: 10_000,
     connectionTimeoutMillis: 5_000,
-    statement_timeout: 5_000,
     query_timeout: 6_000,
-    lock_timeout: 1_000,
     allowExitOnIdle: true
   });
   return pool;
@@ -36,7 +35,7 @@ function getPool() {
 
 export async function consumeApiBudget(category = 'requests') {
   try {
-    if (!await chargeBudget(getPool(), category)) {
+    if (!await chargeBudget({query}, category)) {
       throw new ApiError(429,'operation_budget_exhausted','Limite temporário da plataforma atingido. Tente mais tarde.');
     }
   } catch (error) {
@@ -48,7 +47,7 @@ export async function consumeApiBudget(category = 'requests') {
 async function transaction(fn) {
   const client = await getPool().connect();
   try {
-    await client.query('BEGIN');
+    await beginLimitedTransaction(client);
     const result = await fn(client);
     await client.query('COMMIT');
     return result;
@@ -60,9 +59,13 @@ async function transaction(fn) {
   }
 }
 
+function query(text, values) {
+  return transaction(client => client.query(text, values));
+}
+
 export async function findVisitor(token) {
   if (!token) return null;
-  const { rows } = await getPool().query(
+  const { rows } = await query(
     `SELECT v.id, v.active_tag_id,
       t.normalized AS active_tag_name, t.color AS active_tag_color
     FROM world_pulse.visitors v
@@ -76,7 +79,7 @@ export async function findVisitor(token) {
 export async function createVisitor() {
   await consumeApiBudget('sessions');
   const session = newSession();
-  await getPool().query(
+  await query(
     "INSERT INTO world_pulse.visitors (id,session_hash,expires_at) VALUES($1,$2,now()+interval '30 days')",
     [session.visitorId, session.hash]
   );
@@ -92,7 +95,7 @@ export async function requireVisitor(token) {
 export async function createOrGetTag(rawName) {
   const { normalizeHashtag } = await import('./protocol.mjs');
   const normalized = normalizeHashtag(rawName);
-  const existing = await getPool().query('SELECT id,normalized,color FROM world_pulse.tags WHERE normalized=$1',[normalized]);
+  const existing = await query('SELECT id,normalized,color FROM world_pulse.tags WHERE normalized=$1',[normalized]);
   if (existing.rows.length) {
     const tag=existing.rows[0];
     return {id:tag.id,name:'#'+tag.normalized,color:tag.color};
@@ -100,11 +103,11 @@ export async function createOrGetTag(rawName) {
   await consumeApiBudget('tags');
   const id = randomUUID();
   const color = randomColor();
-  const inserted = await getPool().query(
+  const inserted = await query(
     'INSERT INTO world_pulse.tags (id, normalized, color) VALUES($1,$2,$3) ON CONFLICT(normalized) DO NOTHING RETURNING id,normalized,color',
     [id, normalized, color]
   );
-  const record = inserted.rows[0] ?? (await getPool().query(
+  const record = inserted.rows[0] ?? (await query(
     'SELECT id,normalized,color FROM world_pulse.tags WHERE normalized=$1', [normalized]
   )).rows[0];
   if (!record) throw new ApiError(503,'tag_unavailable','Hashtag indisponível.');
@@ -204,7 +207,7 @@ function serializeBalance(row) {
 }
 
 export async function getCredits(visitorId) {
-  const rows = await getPool().query(`
+  const rows = await query(`
     SELECT vt.tag_id, vt.seconds::text AS seconds, vt.expires_at, statement_timestamp() AS server_now,t.normalized,t.color
     FROM world_pulse.visitor_tags vt JOIN world_pulse.tags t ON t.id=vt.tag_id
     WHERE vt.visitor_id=$1 AND vt.seconds > 0 ORDER BY vt.tag_id LIMIT 200
@@ -213,7 +216,7 @@ export async function getCredits(visitorId) {
 }
 
 export async function getRanking() {
-  const rows = await getPool().query(`
+  const rows = await query(`
     SELECT t.id, t.normalized, t.color,
            COUNT(vt.visitor_id)::text AS historical_participants,
            COALESCE(SUM(vt.seconds),0)::text AS credited_seconds
@@ -241,7 +244,7 @@ export async function getRanking() {
  * view. Both remain gated. Country/coordinates are unavailable in this model.
  */
 export async function getActiveBalanceSnapshot() {
-  const { rows } = await getPool().query(`
+  const { rows } = await query(`
     WITH snapshot AS (
       SELECT statement_timestamp() AS observed_at
     ), counts AS (
@@ -294,7 +297,7 @@ export async function pruneExpiredSessionBatches({ limit = 500 } = {}) {
   if (!Number.isSafeInteger(limit) || limit < 1 || limit > 5000) {
     throw new RangeError('Batch maintenance limit must be 1..5000');
   }
-  const result = await getPool().query(`
+  const result = await query(`
     WITH expired_batches AS (
       SELECT b.visitor_id, b.batch_id
       FROM world_pulse.tap_batches AS b

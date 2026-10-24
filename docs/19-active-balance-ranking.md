@@ -1,3 +1,5 @@
+> Atualização: a ordenação final já foi confirmada e `/api/ranking` é atual, com histórico separado em `/api/history`. O [contrato 24](24-ranking-contract.md) substitui alternativas/pedidos de aprovação antigos nesta página.
+
 # 19 — Prévia de ranking por saldo ativo (issue #8)
 
 **Estado:** rota e consulta SQL experimentais na branch da API, **não lançadas no World Pulse público**.

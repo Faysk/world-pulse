@@ -6,6 +6,8 @@
 
 Os nomes abaixo são do domínio proposto. O draft #31 usa `tags`, `visitors`, `visitor_tags` e `tap_batches`; o PR #43 acrescentou `expires_at` na migração `0003`, validada em PostgreSQL descartável. As migrações `0002`/`0003` continuam sem aplicação em produção.
 
+O [inventário real de tabelas/ambientes](26-readiness.md) é a referência operacional atual; nomes conceituais abaixo não são nomes de tabelas implantadas.
+
 ## Entidades
 
 ### `hashtags`
@@ -66,7 +68,7 @@ Agregação espacial ativa deve ser derivada dos pares participante/hashtag com 
 
 ## Queries/visões pretendidas
 
-- `top_hashtags` — Top 10 por **métrica ainda a definir** (participantes com saldo positivo, participantes históricos ou segundos).
+- `top_hashtags` — Top 10 por **participações atuais com saldo positivo**, sem desempate por segundos; histórico em contrato separado.
 - `top_hashtags_counters` — `participants_ever`, `participants_present` (se houver regra de validade), `seconds_total`.
 - `hashtag_origin_by_country` — quantidade agregada por país para cada hashtag.
 - `globe_density_by_cell` — participantes distintos por # e célula geográfica/resolução.

@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import pg from 'pg';
+import { beginLimitedTransaction } from '../server/databaseLimits.mjs';
 
 // Deliberately pinned to the disposable branch, never an arbitrary DATABASE_URL.
 export const stagingEndpoint = 'ep-misty-glade-za9nxlhg';
@@ -17,9 +18,11 @@ export function validateStagingUrl(value, owner = false, now = Date.now()) {
 }
 
 export async function checkStaging(connectionString) {
-  const db = new pg.Client({ connectionString: validateStagingUrl(connectionString), connectionTimeoutMillis: 15_000 });
+  const db = new pg.Client({ connectionString: validateStagingUrl(connectionString), connectionTimeoutMillis: 15_000,
+    query_timeout: 6000 });
   try {
     await db.connect();
+    await beginLimitedTransaction(db);
     const { rows: [role] } = await db.query(`SELECT current_user AS name, rolsuper, rolcreatedb,
       rolcreaterole, rolinherit, rolbypassrls FROM pg_roles WHERE rolname=current_user`);
     if (role.name !== 'world_pulse_app' || role.rolsuper || role.rolcreatedb ||
@@ -28,14 +31,17 @@ export async function checkStaging(connectionString) {
     if (members.n) throw new Error('runtime_membership_rejected');
     await db.query('SELECT id FROM world_pulse.tags LIMIT 0');
     await db.query('SELECT expires_at FROM world_pulse.visitor_tags LIMIT 0');
-    await db.query('BEGIN');
+    await db.query('SELECT scope FROM world_pulse.operation_budgets LIMIT 0');
+    const {rows:[timeouts]}=await db.query(`SELECT current_setting('statement_timeout') AS statement,
+      current_setting('lock_timeout') AS lock`);
+    if (timeouts.statement !== '5s' || timeouts.lock !== '1s') throw new Error('runtime_timeouts_not_applied');
     try {
       await db.query('CREATE TABLE world_pulse.__staging_permission_probe(id int)');
       throw new Error('runtime_ddl_allowed');
     } catch (error) {
       if (error.code !== '42501') throw error;
     } finally { await db.query('ROLLBACK'); }
-    console.log('Staging TLS, schema, role restrictions and DDL denial verified.');
+    console.log('Staging TLS, schema including budgets, pooler timeouts, role restrictions and DDL denial verified.');
   } finally { await db.end(); }
 }
 
@@ -65,9 +71,14 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     } else if (process.env.WP_STAGING_OPERATION === 'check') {
       await checkStaging(process.env.DATABASE_URL);
     } else throw new Error('explicit_staging_operation_required');
-  } catch {
+  } catch (error) {
     // Drivers can embed credentials in errors. Never print private error objects.
     console.error('Staging database operation failed; verify target, expiry, schema and role permissions.');
+    const safeReasons = ['staging_expired','staging_target_rejected','runtime_role_too_powerful',
+      'runtime_membership_rejected','runtime_timeouts_not_applied','runtime_ddl_allowed',
+      'explicit_staging_operation_required','unexpected_runtime_membership'];
+    if (safeReasons.includes(error.message)) console.error(`Safe failure reason: ${error.message}`);
+    if (/^[0-9A-Z]{5}$/.test(error.code ?? '')) console.error(`SQLSTATE: ${error.code}`);
     process.exitCode = 1;
   }
 }

@@ -37,10 +37,13 @@ ou a migração estiver ausente. `Retry-After: 60` orienta espera mínima; não
 significa que quotas diárias/horárias já terão sido renovadas após esse minuto.
 O laboratório mantém lotes e exige retry deliberado após erro.
 
-Pool de produção: até 3 conexões por instância, connect 5s, statement 5s, query
-6s e lock 1s, usando as opções documentadas do
-[node-postgres](https://node-postgres.com/apis/client). A compatibilidade efetiva
-desses parâmetros com o pooler remoto ainda deve ser validada no staging HTTPS.
+Pool da API: até 3 conexões por instância, connect 5s e timeout do driver em
+6s. Statement 5s, lock 1s e idle-in-transaction 10s são configurados com `SET LOCAL`
+dentro da mesma transação de cada operação SQL, incluindo leituras e orçamento.
+O pooler Neon não preservou parâmetros de startup: a verificação detectou isso
+e a correção transacional passou no pooler real de staging (run 40052178137).
+Não confundir timeout no driver com cancelamento do trabalho no servidor.
+[node-postgres](https://node-postgres.com/apis/client) documenta os parâmetros do driver.
 
 ## Limites que permanecem
 
@@ -58,8 +61,10 @@ desses parâmetros com o pooler remoto ainda deve ser validada no staging HTTPS.
 
 ## Operação e verificação
 
-Produção permanece `WP_API_ENABLED` desligado. A migração 0004 é aplicada no
-PostgreSQL descartável do CI e só deve ir ao staging por ação deliberada.
+Produção permanece `WP_API_ENABLED` desligado. A migração 0004 foi aplicada no
+PostgreSQL descartável e no staging pelo Actions (run 40051933404). Esse primeiro
+run aplicou SQL mas falhou na checagem de timeouts; a checagem corrigida foi
+aprovada em 40052178137. Nenhuma dessas migrações foi aplicada na produção.
 `infra-staging.yml` ganha escolha `check`/`migrate`: o proprietário só é fornecido
 no passo manual migrate; o script recusa endpoint/banco/role/TLS/expiração errados.
 Nenhum deploy aplica SQL, e nenhum runtime recebe a conexão de proprietário.
