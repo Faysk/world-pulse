@@ -25,11 +25,9 @@ export function SteamPanel({ onOpen }: { onOpen?: () => void }) {
   const [refreshCounter, setRefreshCounter] = useState(0);
 
   const toggle = useCallback(() => {
-    setOpen(value => {
-      if (!value) onOpen?.();
-      return !value;
-    });
-  }, [onOpen]);
+    if (!open) onOpen?.();
+    setOpen(value => !value);
+  }, [open, onOpen]);
 
   useEffect(() => {
     if (!open) return;
