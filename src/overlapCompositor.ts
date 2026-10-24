@@ -143,8 +143,8 @@ export function renderCellPalette(canvas: HTMLCanvasElement,p: CellPalette): Web
     stops[i]=s.to;
   });
   gl.uniform1i(gl.getUniformLocation(program,'uCount'),p.sectors.length);
-  gl.uniform3fv(gl.getUniformLocation(program,'uColors'),colors);
-  gl.uniform1fv(gl.getUniformLocation(program,'uStops'),stops);
+  gl.uniform3fv(gl.getUniformLocation(program,'uColors[0]'),colors);
+  gl.uniform1fv(gl.getUniformLocation(program,'uStops[0]'),stops);
   gl.uniform1f(gl.getUniformLocation(program,'uOffset'),p.offset);
   gl.uniform1f(gl.getUniformLocation(program,'uGlow'),p.glow);
   gl.viewport(0,0,canvas.width,canvas.height);
