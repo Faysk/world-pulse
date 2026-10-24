@@ -40,11 +40,11 @@ não usar isso como rotina de retenção antes de decidir preservação/privacid
 | Ambiente | Estado |
 |---|---|
 | Produção Neon `main` | Baseline de acesso; domínio da API não migrado/ativado por este trabalho |
-| Neon `world-pulse-staging` | Separado, schema-only, credenciais próprias no GitHub; 0001/2/3 verificadas. Expira 31/10 às 01:15 UTC |
+| Neon `world-pulse-staging` | Separado, schema-only, credenciais próprias no GitHub; 0001–0004 e timeouts transacionais no pooler verificados. Expira 31/10 às 01:15 UTC |
 | CI PostgreSQL descartável | Migrações 0001–0004; testes HTTP/duas sessões/abas e concorrência, sem secrets reais |
 | Local visual | Funciona sem secrets; teste SQL requer PostgreSQL descartável do CI ou instalação local explícita |
 
-0004 e qualquer migração futura só vão ao staging por operação manual revisada;
+0004 foi aplicada no staging pelo Actions; qualquer migração futura exige operação manual revisada;
 deploy não aplica SQL. `check` não recebe proprietário; `migrate` recebe esse
 segredo apenas no passo deliberado. O script fixa endpoint, roles, banco, TLS
 e expiração, recusando atingir produção por engano.
