@@ -1,0 +1,37 @@
+name: Spatial Aggregation CI
+
+on:
+  pull_request:
+    paths:
+      - "src/spatialAggregation.ts"
+      - "tests/spatialAggregation.test.mjs"
+      - "scripts/spatial-benchmark.mjs"
+      - "package.json"
+      - ".github/workflows/spatial-aggregation-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  cpu-and-payload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - run: npm ci --no-audit --no-fund
+      - name: Exact totals and bounded geometry
+        run: node --experimental-strip-types --test tests/spatialAggregation.test.mjs
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Benchmark CPU and serialized payload
+        run: npm run benchmark:spatial > spatial-benchmark.csv
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: world-pulse-spatial-benchmark
+          path: spatial-benchmark.csv
+          retention-days: 14
