@@ -15,20 +15,29 @@ function fakeStorage() {
     setItem: (name, value) => { map.set(name, value); }
   };
 }
-function mockTransport({ failOnce = false, loseResponseOnce = false } = {}) {
+function mockTransport({ failOnce = false, loseResponseOnce = false, clock = () => 1000 } = {}) {
   const calls = [];
   const credited = new Map();
   const accepted = new Map();
+  const balances = new Map();
+  let activeTagId = null;
   let shouldFail = failOnce;
   const handle = async (path, init) => {
     const body = init.body ? JSON.parse(init.body) : null;
     calls.push({ path, body });
-    if (path === '/api/session') return Response.json({ anonymous: true, sessionFresh: false, sessionBinding: SESSION_BINDING, activeTagId: null, activeTag: null, credits: [] });
+    if (path === '/api/session') return Response.json({
+      anonymous:true,sessionFresh:false,sessionBinding:SESSION_BINDING,
+      activeTagId,activeTag:activeTagId?{id:activeTagId,
+        name:activeTagId===ID_A?'#gta6':'#lofi',color:'#aabbcc'}:null,
+      credits:[...balances.values()].map(b=>({
+        ...b,serverNowMs:clock(),remainingMs:Math.max(0,b.expiresAtMs-clock())
+      }))
+    });
     if (path === '/api/tags') {
       const a = body.name.toLowerCase().includes('gta');
       return Response.json({ tag: { id: a ? ID_A : ID_B, color: a ? '#ffffff' : '#123456', name: a ? '#gta6' : '#lofi' } });
     }
-    if (path === '/api/select') return Response.json({ activeTagId: body.tagId });
+    if (path === '/api/select') { activeTagId=body.tagId; return Response.json({activeTagId}); }
     if (path === '/api/ranking') return Response.json({ type: 'historical', ranking: [] });
     if (path === '/api/taps') {
       if (shouldFail) { shouldFail = false; throw new Error('network-failure'); }
@@ -38,10 +47,17 @@ function mockTransport({ failOnce = false, loseResponseOnce = false } = {}) {
       } else {
         accepted.set(body.batchId, body);
         credited.set(body.tagId, (credited.get(body.tagId) || 0) + body.clicks);
+        const oldBalance=balances.get(body.tagId);
+        balances.set(body.tagId,{
+          tagId:body.tagId,
+          creditedSeconds:String(credited.get(body.tagId)),
+          expiresAtMs:Math.max(oldBalance?.expiresAtMs??0,clock())+body.clicks*1000
+        });
       }
       if (loseResponseOnce) { loseResponseOnce = false; throw new Error('response-lost'); }
-      return Response.json({ batchId: body.batchId, tagId:body.tagId, duplicate: Boolean(existing),
-        creditedSeconds: String(credited.get(body.tagId)), serverNowMs:1000, expiresAtMs:5000, remainingMs:4000 });
+      const balance=balances.get(body.tagId);
+      return Response.json({batchId:body.batchId,duplicate:Boolean(existing),...balance,
+        serverNowMs:clock(),remainingMs:Math.max(0,balance.expiresAtMs-clock())});
     }
     throw new Error('unexpected API route ' + path);
   };
@@ -159,7 +175,7 @@ test('Returning browser restores selected tag and independent server balance sna
 
 test('Each balance counts down on its own monotonic clock, including while topping up another tag', async () => {
   let elapsed=100000;
-  const transport=mockTransport();
+  const transport=mockTransport({clock:()=>elapsed});
   const client=new ParticipationClient(transport.handle,fakeStorage(),randomUUID,()=>elapsed);
   await client.selectTag('#GTA6');client.creditClick();await client.flush();
   assert.equal(client.remainingMilliseconds(ID_A),4000);
