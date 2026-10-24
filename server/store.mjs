@@ -203,3 +203,58 @@ export async function getRanking() {
     creditedSeconds: row.credited_seconds
   }));
 }
+
+/**
+ * Active-balance snapshot (#8) — distinct pseudonymous sessions, not humans.
+ *
+ * Presence is defined ONLY by a balance with expires_at > the SAME server
+ * statement_timestamp() for the entire query. Historical contributions never
+ * count as current presence. A visitor may be active in multiple hashtags.
+ *
+ * This is an experimental NON-GEO preview, separate from the historical
+ * /api/ranking route until the product metric and regional privacy are signed off.
+ */
+export async function getActiveBalanceSnapshot() {
+  const { rows } = await getPool().query(`
+    WITH snapshot AS (
+      SELECT statement_timestamp() AS observed_at
+    ), counts AS (
+      SELECT t.id, t.normalized, t.color,
+        COUNT(vt.visitor_id) FILTER (
+          WHERE vt.expires_at > snapshot.observed_at
+        ) AS active_participants,
+        COUNT(vt.visitor_id) FILTER (
+          WHERE vt.seconds > 0
+        ) AS historical_participants,
+        COALESCE(SUM(vt.seconds), 0) AS credited_seconds
+      FROM world_pulse.tags AS t
+      CROSS JOIN snapshot
+      LEFT JOIN world_pulse.visitor_tags AS vt ON vt.tag_id = t.id
+      GROUP BY t.id, t.normalized, t.color
+    )
+    SELECT id, normalized, color,
+      active_participants::text AS active_participants,
+      historical_participants::text AS historical_participants,
+      credited_seconds::text AS credited_seconds,
+      (SELECT observed_at FROM snapshot) AS as_of
+    FROM counts
+    ORDER BY active_participants DESC, historical_participants DESC,
+      normalized ASC, id ASC
+    LIMIT 10
+  `);
+  const asOfMs = rows[0]?.as_of?.getTime() ?? Date.now();
+  return {
+    type: 'active_balance_preview',
+    asOfMs,
+    metric: 'distinct_anonymous_sessions_with_positive_balance',
+    geography: 'unavailable',
+    ranking: rows.map(row => ({
+      id: row.id,
+      name: '#' + row.normalized,
+      color: row.color,
+      activeParticipants: row.active_participants,
+      historicalParticipants: row.historical_participants,
+      creditedSeconds: row.credited_seconds
+    }))
+  };
+}

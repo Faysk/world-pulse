@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 import pg from 'pg';
 import {
   useTestPool, createVisitor, findVisitor, createOrGetTag, selectTag,
-  creditBatch, getCredits, getRanking
+  creditBatch, getCredits, getRanking, getActiveBalanceSnapshot
 } from '../server/store.mjs';
 
 test('PostgreSQL: anonymous participation and transaction invariants', {
@@ -166,6 +166,71 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
   await t.test('Expired browser sessions cannot be reused', async () => {
     await owner.query("UPDATE world_pulse.visitors SET expires_at=now()-interval '1 second' WHERE id=$1", [sessionB.visitorId]);
     assert.equal(await findVisitor(sessionB.token), null);
+  });
+
+
+  await t.test('Active balance preview excludes expired accounts without erasing history', async () => {
+    const title = await createOrGetTag('#activebalanceqa');
+    const other = await createOrGetTag('#secondactiveqa');
+    const a = await createVisitor();
+    const b = await createVisitor();
+
+    await selectTag(a.visitorId,title.id);
+    await selectTag(b.visitorId,title.id);
+    const selectedOnly = await getActiveBalanceSnapshot();
+    assert.equal(selectedOnly.ranking.find(x => x.id === title.id).activeParticipants, '0',
+      'selecting without tapping is not participation');
+    assert.equal(selectedOnly.ranking.find(x => x.id === title.id).historicalParticipants, '0');
+
+    const batchA={tagId:title.id,batchId:randomUUID(),clicks:1};
+    const batchB={tagId:title.id,batchId:randomUUID(),clicks:30};
+    await creditBatch(a.visitorId,batchA);
+    await creditBatch(b.visitorId,batchB);
+    let snapshot=await getActiveBalanceSnapshot();
+    let tag=snapshot.ranking.find(x => x.id === title.id);
+    assert.equal(tag.activeParticipants,'2','30 taps are still one participant');
+    assert.equal(tag.historicalParticipants,'2');
+    assert.equal(tag.creditedSeconds,'31');
+    assert.equal(snapshot.type,'active_balance_preview');
+    assert.equal(snapshot.geography,'unavailable');
+    assert.ok(snapshot.asOfMs > 0);
+    assert.ok(!JSON.stringify(snapshot).includes(a.visitorId));
+    assert.ok(!JSON.stringify(snapshot).includes(b.visitorId));
+
+    // Simulate passage of time from the database server, not a browser clock.
+    await owner.query(`
+      UPDATE world_pulse.visitor_tags
+      SET expires_at = statement_timestamp() - interval '1 minute'
+      WHERE visitor_id=$1 AND tag_id=$2
+    `,[b.visitorId,title.id]);
+    snapshot=await getActiveBalanceSnapshot();
+    tag=snapshot.ranking.find(x => x.id === title.id);
+    assert.equal(tag.activeParticipants,'1','expired balance must not count');
+    assert.equal(tag.historicalParticipants,'2','history must survive expiry');
+    assert.equal(tag.creditedSeconds,'31','expired balances retain historical taps');
+
+    // Retry cannot resurrect an expired balance.
+    await creditBatch(b.visitorId,batchB);
+    snapshot=await getActiveBalanceSnapshot();
+    assert.equal(snapshot.ranking.find(x => x.id === title.id).activeParticipants,'1');
+
+    await selectTag(a.visitorId,other.id);
+    await creditBatch(a.visitorId,{tagId:other.id,batchId:randomUUID(),clicks:2});
+    snapshot=await getActiveBalanceSnapshot();
+    assert.equal(snapshot.ranking.find(x => x.id === title.id).activeParticipants,'1',
+      'a visitor may have positive balances in multiple hashtags');
+    assert.equal(snapshot.ranking.find(x => x.id === other.id).activeParticipants,'1');
+    assert.equal(snapshot.ranking.find(x => x.id === other.id).historicalParticipants,'1');
+    assert.equal(snapshot.ranking.find(x => x.id === other.id).creditedSeconds,'2');
+
+    // A tag with no taps is represented honestly with zero, not omitted.
+    const empty = await createOrGetTag('#emptyactivityqa');
+    snapshot=await getActiveBalanceSnapshot();
+    const emptyRow=snapshot.ranking.find(x=>x.id===empty.id);
+    assert.ok(emptyRow);
+    assert.equal(emptyRow.activeParticipants,'0');
+    assert.equal(emptyRow.historicalParticipants,'0');
+    assert.equal(emptyRow.creditedSeconds,'0');
   });
 
   await t.test('Runtime role cannot create tables in isolated schema', async () => {
