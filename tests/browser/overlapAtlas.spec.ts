@@ -37,7 +37,7 @@ test('GPU pixels preserve one original hashtag pigment per coarse region',async(
     const angle=((sector.from+sector.to)/2-atlas.rgba[metadata+1]/255-.5)*Math.PI*2;
     const radius=.24;
     const x=Math.round(((.5+radius*Math.cos(angle))/atlas.columns)*gl.canvas.width);
-    const y=Math.round((1-(.5+radius*Math.sin(angle))/atlas.rows)*gl.canvas.height);
+    const y=Math.round(((1-(.5+radius*Math.sin(angle)))/atlas.rows)*gl.canvas.height);
     // readPixels uses BOTTOM-left, so y is mirrored from HTML top-down.
     const out=new Uint8Array(4);
     gl.readPixels(x,gl.canvas.height-y,1,1,gl.RGBA,gl.UNSIGNED_BYTE,out);
