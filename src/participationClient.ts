@@ -13,6 +13,12 @@ export type ApiRanking = {
     historicalParticipants: string; creditedSeconds: string;
   }>;
 };
+export type ActiveRanking = {
+  type: 'active'; asOfMs: number;
+  metric: 'distinct_anonymous_sessions_with_positive_balance';
+  geography: 'unavailable';
+  ranking: Array<LiveTag & { activeParticipants: string; historicalParticipants: string; creditedSeconds: string }>;
+};
 
 type FetchLike = typeof fetch;
 type StoreLike = Pick<Storage, 'getItem' | 'setItem'>;
@@ -332,7 +338,11 @@ export class ParticipationClient {
     return this.sending;
   }
 
-  ranking(): Promise<ApiRanking> {
-    return this.request<ApiRanking>('/api/ranking');
+  ranking(): Promise<ActiveRanking> {
+    return this.request<ActiveRanking>('/api/ranking');
+  }
+
+  historicalRanking(): Promise<ApiRanking> {
+    return this.request<ApiRanking>('/api/history');
   }
 }

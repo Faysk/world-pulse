@@ -12,3 +12,6 @@
 .participation-balances { padding: 0; list-style: none; }
 .participation-balances li { display: grid; gap: 8px; padding: 14px 0; border-top: 1px solid #425265; font-size: 12px; }
 .participation-lab [role=alert] { color: #ffd1aa; }
+.participation-ranking { padding-left: 22px; }
+.participation-ranking li { padding: 8px 0; font-size: 12px; }
+.participation-ranking span, .participation-ranking small { display: block; margin-top: 5px; }

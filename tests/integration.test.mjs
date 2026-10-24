@@ -179,8 +179,8 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
     await selectTag(b.visitorId,title.id);
     const selectedOnly = await getActiveBalanceSnapshot();
     assert.equal(selectedOnly.ranking.find(x => x.id === title.id).activeParticipants, '0',
-      'selecting without tapping is not participation');
-    assert.equal(selectedOnly.ranking.find(x => x.id === title.id).historicalParticipants, '0');
+      'selection registers history but creates no positive time balance');
+    assert.equal(selectedOnly.ranking.find(x => x.id === title.id).historicalParticipants, '2');
 
     const batchA={tagId:title.id,batchId:randomUUID(),clicks:1};
     const batchB={tagId:title.id,batchId:randomUUID(),clicks:30};
@@ -191,7 +191,7 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
     assert.equal(tag.activeParticipants,'2','30 taps are still one participant');
     assert.equal(tag.historicalParticipants,'2');
     assert.equal(tag.creditedSeconds,'31');
-    assert.equal(snapshot.type,'active_balance_preview');
+    assert.equal(snapshot.type,'active');
     assert.equal(snapshot.geography,'unavailable');
     assert.ok(snapshot.asOfMs > 0);
     assert.ok(!JSON.stringify(snapshot).includes(a.visitorId));
@@ -233,6 +233,28 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
     assert.equal(emptyRow.creditedSeconds,'0');
   });
 
+
+  await t.test('Selection counts in history immediately; live ties never rank by seconds', async () => {
+    const a=await createOrGetTag('#aaa_live_tie');
+    const z=await createOrGetTag('#zzz_live_tie');
+    const visitor=await createVisitor();
+    await selectTag(visitor.visitorId,a.id);
+    await selectTag(visitor.visitorId,a.id);
+    let history=await getRanking();
+    assert.equal(history.find(tag=>tag.id===a.id).historicalParticipants,'1');
+    assert.equal(history.find(tag=>tag.id===a.id).creditedSeconds,'0');
+    await selectTag(visitor.visitorId,z.id);
+    await creditBatch(visitor.visitorId,{tagId:a.id,batchId:randomUUID(),clicks:1});
+    await creditBatch(visitor.visitorId,{tagId:z.id,batchId:randomUUID(),clicks:30});
+    const snapshot=await getActiveBalanceSnapshot();
+    assert.equal(snapshot.ranking.find(tag=>tag.id===a.id).activeParticipants,'1');
+    assert.equal(snapshot.ranking.find(tag=>tag.id===z.id).activeParticipants,'1');
+    assert.ok(snapshot.ranking.findIndex(tag=>tag.id===a.id)<snapshot.ranking.findIndex(tag=>tag.id===z.id));
+    await owner.query("UPDATE world_pulse.visitor_tags SET expires_at=statement_timestamp()-interval '1 second' WHERE visitor_id=$1",[visitor.visitorId]);
+    const expired=await getActiveBalanceSnapshot();
+    assert.equal(expired.ranking.find(tag=>tag.id===a.id).activeParticipants,'0');
+    assert.equal(expired.ranking.find(tag=>tag.id===a.id).historicalParticipants,'1');
+  });
 
   await t.test('Maintenance prunes only old dedupe IDs, never active IDs or historical seconds',async()=>{
     const tag=await createOrGetTag('#cleanup_case');
