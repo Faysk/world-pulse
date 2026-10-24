@@ -11,6 +11,7 @@ import {
 setWorkerUrl(workerUrl);
 
 export type GlobeProps = {
+  ariaLabel?: string;
   population?: PulseCollection;
   scale: number;
   selected: TagId | null;
@@ -227,7 +228,7 @@ function installLights(map: MapInstance, scale: number, population?: PulseCollec
 }
 
 export function WorldGlobe({
-  scale, population, selected, cityLights, onReady, onZoom, onFps, onTap, onCountryPick, onTagPick, onFailure
+  scale, population, selected, cityLights, onReady, onZoom, onFps, onTap, onCountryPick, onTagPick, onFailure, ariaLabel='Globo interativo de atividade simulada'
 }: GlobeProps) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapInstance | null>(null);
@@ -417,7 +418,7 @@ export function WorldGlobe({
     if (map) applyNeutralLights(map, cityLights);
   }, [cityLights]);
 
-  return <div className="map-canvas" ref={container} aria-label="Globo interativo de atividade simulada" />;
+  return <div className="map-canvas" ref={container} aria-label={ariaLabel} />;
 }
 
 export function flyToTag(map: MapInstance | null, tag: TagId): void {

@@ -11,3 +11,5 @@ Retrieved 2026-10-24. Only ISO-alpha2/name and original polygon geometry retaine
 Terms: https://www.naturalearthdata.com/about/terms-of-use/
 
 O código XK do dataset é de uso excepcional e não pertence à lista ISO atribuída usada pela API; seu polígono foi omitido, sem inferir outro país.
+
+Reproduce: `node scripts/refresh-country-geometry.mjs` verifies the original SHA256 and regenerates the 174 accepted-code polygons. Requires network only for this maintenance command, not at runtime.

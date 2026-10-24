@@ -26,7 +26,7 @@ export default function LiveExperience(){
   const [mapVersion,setMapVersion]=useState(0);
   async function select(event:FormEvent){event.preventDefault();await live.select(name);}
   return <main className="live-world" aria-label="World Pulse participação">
-    <WorldGlobe key={mapVersion} scale={0} population={EMPTY_GEOGRAPHY} selected={null} cityLights={false}
+    <WorldGlobe key={mapVersion} ariaLabel="Globo interativo com países agregados" scale={0} population={EMPTY_GEOGRAPHY} selected={null} cityLights={false}
       onReady={instance=>{setMap(instance);setMapReady(true);setMapError('');}}
       onCountryPick={code=>{setCountryPick(code);setCountriesOpen(true);setRankingOpen(false);setBalancesOpen(false);}} onZoom={()=>{}} onFps={()=>{}}
       onTap={()=>void live.tap()} onTagPick={()=>{}} onFailure={setMapError}/>
