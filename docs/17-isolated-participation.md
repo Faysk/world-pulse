@@ -116,6 +116,10 @@ O preview remoto deste PR foi recusado pela Vercel com `build-rate-limit` e
 orientação de aguardar 24 horas. Nenhum upgrade foi feito. O CI e a validação
 isolada concluíram independentemente; staging remoto continua pendente.
 
+Atualização: o [banco do staging remoto](18-remote-staging.md) já foi preparado
+e verificado pelo Actions. A interface/API pelo preview HTTPS ainda está
+pendente; isso não altera o escopo descartável das evidências desta página.
+
 ## Antes de produção
 
 Validar staging Vercel/Neon isolado, integrar a UX definitiva, resolver retenção,

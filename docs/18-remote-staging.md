@@ -23,15 +23,18 @@ Aplicadas somente no staging: `0001-runtime-access.sql`,
 O runtime usa `world_pulse_app`, sem SUPERUSER, CREATEDB, CREATEROLE, INHERIT,
 BYPASSRLS ou memberships. Conexão pooled com `sslmode=verify-full`.
 O proprietário de migrações usa a conexão direta, exclusivamente operacional.
+Sua senha foi regenerada somente nessa branch e a conexão atualizada no
+GitHub, para não depender da credencial herdada ao criar a branch. A nova
+conexão foi autenticada com sucesso. Nenhuma senha da branch main foi alterada.
 Foi verificada a recusa efetiva de CREATE TABLE pelo runtime (transação revertida).
 
 ## Fonte das credenciais
 
 GitHub Environment **staging** contém `DATABASE_URL` e
 `DATABASE_MIGRATION_URL`. Valores não entram em código, issues, screenshots,
-logs, argumentos de processos nem bundles do navegador. Nenhuma credencial
-de produção foi copiada para o staging. O proprietário nunca deve ir para o
-runtime Vercel.
+logs, argumentos de processos nem bundles do navegador. Todas as conexões
+salvas apontam exclusivamente ao endpoint de staging; o usuário runtime foi
+criado nessa branch. O proprietário nunca deve ir para o runtime Vercel.
 
 O Environment permite somente `main` e a branch de preparação
 `codex/remote-staging`. A checagem manual/push em `infra-staging.yml` usa apenas
@@ -52,3 +55,13 @@ drivers são suprimidos.
 - `WP_API_ENABLED` continua desligado em produção; o mapa permanece sintético.
 
 O banco pronto e a checagem verde não equivalem a uma release pública da API.
+
+## Evidência
+
+[Actions 40049427842](https://github.com/Faysk/world-pulse/actions/runs/40049427842):
+17 testes de infraestrutura aprovados e verificação ao vivo do banco de staging
+aprovada usando a secret do GitHub, em 24/10/2026.
+
+O preview do PR #55 foi recusado pela Vercel com `build-rate-limit` e orientação
+de aguardar 24 horas. Nenhum upgrade foi solicitado. Isso bloqueia a validação
+do preview HTTPS, mas não a preparação nem a checagem remota do banco.
