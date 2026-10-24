@@ -22,7 +22,7 @@ process.env.NODE_ENV='test';
 useTestPool(app);
 process.env.NODE_ENV='development'; // HTTP/cookies accepted only in this loopback harness.
 process.env.WP_API_ENABLED='true';
-const handlers = Object.fromEntries(['session','tags','select','taps','ranking'].map(kind=>['/api/'+kind,route(kind)]));
+const handlers = Object.fromEntries(['session','tags','select','taps','ranking','activity','history'].map(kind=>['/api/'+kind,route(kind)]));
 
 const server = await createServer({
   server:{host:'127.0.0.1',port:4174,strictPort:true},

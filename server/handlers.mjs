@@ -1,6 +1,6 @@
 import {
   ApiError, onlyMethod, parseBody, readSessionCookie,
-  requireSameOrigin, json, fail, normalizeHashtag, validateTagId, validateTapBatch
+  requireSameOrigin, json, fail, normalizeHashtag, validateTagId, validateTapBatch, tokenHash
 } from './protocol.mjs';
 import * as store from './store.mjs';
 
@@ -16,12 +16,12 @@ export function route(kind, operations = store) {
       if (process.env.WP_API_ENABLED !== 'true') {
         throw new ApiError(503, 'participation_disabled', 'Participação real ainda não foi liberada.');
       }
-      if (kind === 'ranking') {
+      if (kind === 'history') {
         onlyMethod(req, 'GET');
         const ranking = await getRanking();
         return json(res, 200, { type: 'historical', ranking });
       }
-      if (kind === 'activity') {
+      if (kind === 'activity' || kind === 'ranking') {
         onlyMethod(req, 'GET');
         // Public aggregate contains no individual session identifiers or
         // coordinates. Remains disabled by WP_API_ENABLED by default.
@@ -48,7 +48,15 @@ export function route(kind, operations = store) {
         }
         return json(res, 200, {
           anonymous: true,
+          sessionFresh: !existing,
+          // Stable non-authenticating queue marker derived from a 256-bit random
+          // HttpOnly cookie. It is only returned to the same-origin client;
+          // the backend NEVER accepts it as proof of identity.
+          sessionBinding: tokenHash('world-pulse-queue-binding-v1:' + (newToken ?? token)),
           activeTagId: visitor.active_tag_id ?? null,
+          activeTag: visitor.active_tag_id && visitor.active_tag_name
+            ? { id: visitor.active_tag_id, name: '#' + visitor.active_tag_name, color: visitor.active_tag_color }
+            : null,
           credits: await getCredits(visitor.id)
         });
       }
@@ -64,6 +72,15 @@ export function route(kind, operations = store) {
         return json(res, 200, await selectTag(visitor.id, tagId));
       }
       if (kind === 'taps') {
+        // The cookie can rotate in ANOTHER TAB after a session check and
+        // before this request. Bind the batch to the cookie at THIS request.
+        // The marker is not authentication; the HttpOnly cookie still is.
+        const binding = req.headers?.['x-wp-session-binding'];
+        const expected = tokenHash('world-pulse-queue-binding-v1:' + token);
+        if (typeof binding !== 'string' || binding !== expected) {
+          throw new ApiError(409, 'session_binding_mismatch',
+            'Lote vinculado a outra sessão anônima.');
+        }
         return json(res, 200, await creditBatch(visitor.id, validateTapBatch(body)));
       }
       throw new ApiError(404,'not_found','Rota inexistente.');

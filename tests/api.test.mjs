@@ -32,7 +32,7 @@ function stub(overrides = {}) {
     creditBatch: async (_visitorId, batch) => ({ batchId: batch.batchId, tagId: batch.tagId, creditedSeconds: String(batch.clicks), duplicate: false }),
     getCredits: async () => [],
     getRanking: async () => [],
-    getActiveBalanceSnapshot: async () => ({ type: 'active_balance_preview', asOfMs: 1000, geography: 'unavailable', metric: 'distinct_anonymous_sessions_with_positive_balance', ranking: [] }),
+    getActiveBalanceSnapshot: async () => ({ type: 'active', asOfMs: 1000, geography: 'unavailable', metric: 'distinct_anonymous_sessions_with_positive_balance', ranking: [] }),
     ...overrides
   };
 }
@@ -74,14 +74,24 @@ test('Same origin is required for write operations', () => {
 test('Requests exceeding the body limit are rejected', () => {
   assert.throws(() => parseBody(request('POST', { payload: 'x'.repeat(9000) })), { status: 413 });
 });
-test('Public ranking GET never requires or returns visitor identity', async () => {
+test('Historical GET is separate from current ranking and never returns visitor identity', async () => {
   const res = response();
-  await route('ranking', stub({ getRanking: async () => [{ name: '#gta6', historicalParticipants: '3', creditedSeconds: '12' }] }))(
+  await route('history', stub({ getRanking: async () => [{ name: '#gta6', historicalParticipants: '3', creditedSeconds: '12' }] }))(
     { method: 'GET', headers: {} }, res
   );
   assert.equal(res.code, 200);
   assert.equal(res.payload.type, 'historical');
   assert.equal(res.payload.ranking[0].historicalParticipants, '3');
+});
+
+test('Main ranking is current participation, independent from historical seconds', async () => {
+  const res=response();
+  await route('ranking',stub({getRanking:async()=>{throw new Error('historical route must not be used');}}))(
+    {method:'GET',headers:{}},res);
+  assert.equal(res.code,200);
+  assert.equal(res.payload.type,'active');
+  assert.equal(res.payload.metric,'distinct_anonymous_sessions_with_positive_balance');
+  assert.equal(res.payload.asOfMs,1000);
 });
 test('Session POST sets HttpOnly, SameSite and Secure cookie for new visitor', async () => {
   const visitor = { id: randomUUID(), active_tag_id: null };
@@ -118,8 +128,12 @@ test('Writes are rejected for unsupported methods', async () => {
 test('Tap endpoint attributes clicks to the originally supplied hashtag', async () => {
   const a=randomUUID(), batchId=randomUUID();let received;
   const res=response();
+  const token=newSession().token;
+  const req=request('POST',{tagId:a,batchId,clicks:2});
+  req.headers.cookie='wp_session='+token;
+  req.headers['x-wp-session-binding']=tokenHash('world-pulse-queue-binding-v1:'+token);
   await route('taps',stub({ creditBatch:async (_visitor, batch)=>{received=batch;return {acceptedClicks:batch.clicks};} }))(
-    request('POST',{tagId:a,batchId,clicks:2}),res
+    req,res
   );
   assert.equal(res.code,200);
   assert.deepEqual(received,{tagId:a,batchId,clicks:2});
@@ -152,7 +166,7 @@ test('Real participation endpoints default to disabled even with valid requests'
 test('Experimental activity route labels active pseudonymous balances, not historical seconds', async () => {
   const res = response();
   await route('activity', stub({ getActiveBalanceSnapshot: async () => ({
-    type: 'active_balance_preview',
+    type: 'active',
     asOfMs: 1000,
     metric: 'distinct_anonymous_sessions_with_positive_balance',
     geography: 'unavailable',
@@ -182,4 +196,37 @@ test('Activity route never accepts writes and is disabled by default', async () 
   } finally {
     process.env.WP_API_ENABLED='true';
   }
+});
+
+test('Taps cannot cross anonymous cookie rotation even if tag ID was valid', async () => {
+  const token=newSession().token;
+  let called=false;
+  const req=request('POST',{tagId:randomUUID(),batchId:randomUUID(),clicks:1});
+  req.headers.cookie='wp_session='+token;
+  req.headers['x-wp-session-binding']='f'.repeat(64);
+  const res=response();
+  await route('taps',stub({creditBatch:async()=>{called=true;}}))(req,res);
+  assert.equal(res.code,409);
+  assert.equal(res.payload.error,'session_binding_mismatch');
+  assert.equal(called,false,'must reject BEFORE the database credit function');
+});
+
+test('New sessions return a non-authenticating queue binding and current hashtag metadata',async()=>{
+  const token=newSession().token;
+  const selected=randomUUID();
+  const res=response();
+  await route('session',stub({
+    findVisitor:async()=>({id:randomUUID(),active_tag_id:selected,
+      active_tag_name:'gta6',active_tag_color:'#ff8758'})
+  }))({...request('POST',{}),headers:{
+    ...request('POST',{}).headers,cookie:'wp_session='+token
+  }},res);
+  assert.equal(res.code,200);
+  assert.equal(res.payload.sessionFresh,false);
+  assert.equal(res.payload.activeTag.id,selected);
+  assert.equal(res.payload.activeTag.name,'#gta6');
+  assert.equal(res.payload.activeTag.color,'#ff8758');
+  assert.equal(res.payload.sessionBinding,tokenHash('world-pulse-queue-binding-v1:'+token));
+  assert.equal('visitorId' in res.payload,false);
+  assert.equal('sessionToken' in res.payload,false);
 });

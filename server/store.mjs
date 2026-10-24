@@ -48,7 +48,11 @@ async function transaction(fn) {
 export async function findVisitor(token) {
   if (!token) return null;
   const { rows } = await getPool().query(
-    'SELECT id, active_tag_id FROM world_pulse.visitors WHERE session_hash = $1 AND expires_at > now()',
+    `SELECT v.id, v.active_tag_id,
+      t.normalized AS active_tag_name, t.color AS active_tag_color
+    FROM world_pulse.visitors v
+    LEFT JOIN world_pulse.tags t ON t.id = v.active_tag_id
+    WHERE v.session_hash = $1 AND v.expires_at > now()`,
     [tokenHash(token)]
   );
   return rows[0] ?? null;
@@ -192,9 +196,9 @@ export async function getRanking() {
            COUNT(vt.visitor_id)::text AS historical_participants,
            COALESCE(SUM(vt.seconds),0)::text AS credited_seconds
     FROM world_pulse.tags t
-    JOIN world_pulse.visitor_tags vt ON vt.tag_id=t.id AND vt.seconds>0
+    JOIN world_pulse.visitor_tags vt ON vt.tag_id=t.id
     GROUP BY t.id,t.normalized,t.color
-    ORDER BY COUNT(vt.visitor_id) DESC, COALESCE(SUM(vt.seconds),0) DESC, t.normalized ASC
+    ORDER BY COUNT(vt.visitor_id) DESC, t.normalized ASC, t.id ASC
     LIMIT 10
   `);
   return rows.rows.map(row => ({
@@ -211,8 +215,8 @@ export async function getRanking() {
  * statement_timestamp() for the entire query. Historical contributions never
  * count as current presence. A visitor may be active in multiple hashtags.
  *
- * This is an experimental NON-GEO preview, separate from the historical
- * /api/ranking route until the product metric and regional privacy are signed off.
+ * /api/ranking uses this current metric; /api/history is a separate historical
+ * view. Both remain gated. Country/coordinates are unavailable in this model.
  */
 export async function getActiveBalanceSnapshot() {
   const { rows } = await getPool().query(`
@@ -223,9 +227,7 @@ export async function getActiveBalanceSnapshot() {
         COUNT(vt.visitor_id) FILTER (
           WHERE vt.expires_at > snapshot.observed_at
         ) AS active_participants,
-        COUNT(vt.visitor_id) FILTER (
-          WHERE vt.seconds > 0
-        ) AS historical_participants,
+        COUNT(vt.visitor_id) AS historical_participants,
         COALESCE(SUM(vt.seconds), 0) AS credited_seconds
       FROM world_pulse.tags AS t
       CROSS JOIN snapshot
@@ -238,13 +240,12 @@ export async function getActiveBalanceSnapshot() {
       credited_seconds::text AS credited_seconds,
       (SELECT observed_at FROM snapshot) AS as_of
     FROM counts
-    ORDER BY active_participants DESC, historical_participants DESC,
-      normalized ASC, id ASC
+    ORDER BY active_participants DESC, normalized ASC, id ASC
     LIMIT 10
   `);
   const asOfMs = rows[0]?.as_of?.getTime() ?? Date.now();
   return {
-    type: 'active_balance_preview',
+    type: 'active',
     asOfMs,
     metric: 'distinct_anonymous_sessions_with_positive_balance',
     geography: 'unavailable',
