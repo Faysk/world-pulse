@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import pg from 'pg';
+import { beginLimitedTransaction } from '../server/databaseLimits.mjs';
 
 // Deliberately pinned to the disposable branch, never an arbitrary DATABASE_URL.
 export const stagingEndpoint = 'ep-misty-glade-za9nxlhg';
@@ -18,9 +19,10 @@ export function validateStagingUrl(value, owner = false, now = Date.now()) {
 
 export async function checkStaging(connectionString) {
   const db = new pg.Client({ connectionString: validateStagingUrl(connectionString), connectionTimeoutMillis: 15_000,
-    statement_timeout: 5000, query_timeout: 6000, lock_timeout: 1000 });
+    query_timeout: 6000 });
   try {
     await db.connect();
+    await beginLimitedTransaction(db);
     const { rows: [role] } = await db.query(`SELECT current_user AS name, rolsuper, rolcreatedb,
       rolcreaterole, rolinherit, rolbypassrls FROM pg_roles WHERE rolname=current_user`);
     if (role.name !== 'world_pulse_app' || role.rolsuper || role.rolcreatedb ||
@@ -33,7 +35,6 @@ export async function checkStaging(connectionString) {
     const {rows:[timeouts]}=await db.query(`SELECT current_setting('statement_timeout') AS statement,
       current_setting('lock_timeout') AS lock`);
     if (timeouts.statement !== '5s' || timeouts.lock !== '1s') throw new Error('runtime_timeouts_not_applied');
-    await db.query('BEGIN');
     try {
       await db.query('CREATE TABLE world_pulse.__staging_permission_probe(id int)');
       throw new Error('runtime_ddl_allowed');

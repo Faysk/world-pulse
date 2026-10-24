@@ -321,4 +321,16 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
     } finally {await secondPool.end();}
   });
 
+  await t.test('Statement timeout is enforced on the server inside the actual transaction', async () => {
+    const {beginLimitedTransaction}=await import('../server/databaseLimits.mjs');
+    const client=await app.connect();
+    try {
+      await beginLimitedTransaction(client);
+      const settings=await client.query("SELECT current_setting('statement_timeout') AS statement,current_setting('lock_timeout') AS lock");
+      assert.equal(settings.rows[0].statement,'5s');
+      assert.equal(settings.rows[0].lock,'1s');
+      await assert.rejects(()=>client.query('SELECT pg_sleep(7)'),error=>error.code==='57014');
+    } finally {await client.query('ROLLBACK');client.release();}
+  });
+
 });
