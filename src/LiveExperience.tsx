@@ -4,6 +4,7 @@ import { CountryLayer } from './CountryLayer';
 import { WorldGlobe } from './WorldGlobe';
 import type { PulseCollection } from './demoData';
 import { useParticipation } from './useParticipation';
+import {tagLabelStyle} from './tagLabel';
 import './liveExperience.css';
 
 const EMPTY_GEOGRAPHY:PulseCollection={type:'FeatureCollection',features:[]};
@@ -51,7 +52,7 @@ export default function LiveExperience(){
         {live.ranking.ranking.length===0?<p>Nenhuma hashtag registrada ainda.</p>:<ol>
           {live.ranking.ranking.map(tag=><li key={tag.id}>
             <button disabled={!live.ready||live.selecting} onClick={()=>void live.select(tag.name)} aria-label={`Selecionar ${tag.name}`}>
-              <span style={{color:tag.color}}>{tag.name}</span><strong>{count(tag.activeParticipants)}</strong>
+              <span style={tagLabelStyle(tag.color)}>{tag.name}</span><strong>{count(tag.activeParticipants)}</strong>
             </button>
           </li>)}
         </ol>}
@@ -62,7 +63,7 @@ export default function LiveExperience(){
       <p>Todos os saldos continuam diminuindo com a página fechada.</p>
       {live.balancesLimited&&<p role="status">Mostrando até 200 saldos: a hashtag selecionada e os positivos têm prioridade. Os demais continuam no servidor; digite a hashtag para recuperar seu saldo.</p>}
       {live.balances.length===0?<p>Nenhum saldo confirmado ainda.</p>:<ul>{live.balances.map(balance=><li key={balance.tagId} data-live-tag={balance.name}>
-        <button disabled={!live.ready||live.selecting} style={{color:balance.color}} onClick={()=>void live.select(balance.name??'')}>{balance.name??'Hashtag'}</button>
+        <button disabled={!live.ready||live.selecting} style={tagLabelStyle(balance.color)} onClick={()=>void live.select(balance.name??'')}>{balance.name??'Hashtag'}</button>
         <strong>{duration(live.remaining(balance.tagId))}</strong>
         <small>Histórico: {count(balance.creditedSeconds)} {balance.creditedSeconds==='1'?'segundo':'segundos'}</small>
       </li>)}</ul>}
@@ -74,7 +75,7 @@ export default function LiveExperience(){
         <small>Leitura: {new Date(live.countrySnapshot.asOfMs).toLocaleTimeString('pt-BR')} · até 5s de intervalo</small>
         {!countryTag?.countries.length?<p>Nenhuma participação ativa nesta hashtag.</p>:<ul>{countryTag.countries.map(country=><li key={country.countryCode}><span>{country.countryCode==='ZZ'?'Origem desconhecida / sem compartilhamento':country.countryCode==='OTHER'?'Outros países (grupos menores que 5)':country.countryCode}</span><strong>{count(country.activeParticipants)}</strong></li>)}</ul>}
         {countryPick&&<p>País inspecionado: {countryPick}. Este toque não adiciona segundos.</p>}
-        <p>Hashtags ativas nesta leitura (até 20, sem ordem de ranking):</p><ul>{live.countrySnapshot.tags.slice(0,20).map(tag=><li key={tag.id}><button disabled={!live.ready||live.selecting} style={{color:tag.color}} onClick={()=>void live.select(tag.name)}>{tag.name}</button><strong>{count(tag.activeParticipants)}</strong></li>)}</ul>
+        <p>Hashtags ativas nesta leitura (até 20, sem ordem de ranking):</p><ul>{live.countrySnapshot.tags.slice(0,20).map(tag=><li key={tag.id}><button disabled={!live.ready||live.selecting} style={tagLabelStyle(tag.color)} onClick={()=>void live.select(tag.name)}>{tag.name}</button><strong>{count(tag.activeParticipants)}</strong></li>)}</ul>
         {live.countrySnapshot.tags.length>20&&<p>Exibindo 20 de {live.countrySnapshot.tags.length} hashtags. Digite outra hashtag para consultar seus países; o Top 10 é um painel separado.</p>}
       </>}
       <p>País estimado pela conexão, sujeito a VPN e erros. Pequenos grupos são agrupados. Algumas ilhas e territórios não têm desenho nesta escala; seus totais continuam na lista.</p>
@@ -89,7 +90,7 @@ export default function LiveExperience(){
           <button type="submit" disabled={!live.ready||live.selecting}>Participar</button></div>
       </form>
       <div className="live-contribution">
-        <div><strong data-testid="live-selected" style={{color:live.selected?.color}}>{live.selected?.name??'Escolha uma hashtag'}</strong>
+        <div><strong data-testid="live-selected" style={tagLabelStyle(live.selected?.color)}>{live.selected?.name??'Escolha uma hashtag'}</strong>
           <span data-testid="live-selected-balance">{live.selected?duration(live.remaining(live.selected.id)):'Cada tap adiciona 1 segundo'}</span></div>
         <button className="live-tap" disabled={!live.ready||live.selecting||!live.selected} onClick={()=>void live.tap()}>+1 segundo</button>
       </div>

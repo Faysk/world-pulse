@@ -40,7 +40,7 @@ export function validateTapBatch(body) {
 }
 
 export function randomColor() {
-  // Deliberately vivid, high-contrast HSL -> RGB for per-tag persistence.
+  // Vivid HSL -> RGB for persistent identity; label ink handles text contrast.
   const hue = randomBytes(2).readUInt16BE(0) % 360;
   const s = 0.72;
   const l = 0.63;

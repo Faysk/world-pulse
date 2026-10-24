@@ -57,9 +57,9 @@ test('Country sharing is optional, displays suppressed groups and survives withd
     const path=new URL(route.request().url()).pathname;
     if(path==='/api/session'){
       const body=route.request().postDataJSON();if(typeof body.geoConsent==='boolean')consent=body.geoConsent;
-      return route.fulfill({json:{anonymous:true,sessionFresh:false,sessionBinding:'a'.repeat(64),activeTagId:id,activeTag:{id,name:'#gta6',color:'#ff9465'},credits:[],geoConsent:consent,geoCountry:consent?'PT':'ZZ',geographyAvailable:true}});
+      return route.fulfill({json:{anonymous:true,sessionFresh:false,sessionBinding:'a'.repeat(64),activeTagId:id,activeTag:{id,name:'#gta6',color:'#5d5de5'},credits:[],geoConsent:consent,geoCountry:consent?'PT':'ZZ',geographyAvailable:true}});
     }
-    if(path==='/api/countries')return route.fulfill({json:{type:'country_snapshot',asOfMs:Math.floor(Date.now()/5000)*5000,validUntilMs:Math.floor(Date.now()/5000)*5000+5000,granularity:'country',privacyThreshold:5,tags:[{id,name:'#gta6',color:'#ff9465',activeParticipants:'12',countries:[{countryCode:'OTHER',activeParticipants:'2'},{countryCode:'PT',activeParticipants:'5'},{countryCode:'ZZ',activeParticipants:'5'}]}]}});
+    if(path==='/api/countries')return route.fulfill({json:{type:'country_snapshot',asOfMs:Math.floor(Date.now()/5000)*5000,validUntilMs:Math.floor(Date.now()/5000)*5000+5000,granularity:'country',privacyThreshold:5,tags:[{id,name:'#gta6',color:'#5d5de5',activeParticipants:'12',countries:[{countryCode:'OTHER',activeParticipants:'2'},{countryCode:'PT',activeParticipants:'5'},{countryCode:'ZZ',activeParticipants:'5'}]}]}});
     if(path==='/api/ranking')return route.fulfill({json:{type:'active',asOfMs:Date.now(),metric:'distinct_anonymous_sessions_with_positive_balance',geography:'unavailable',ranking:[]}});
     return route.fulfill({status:404,json:{error:'not_found'}});
   });
@@ -74,6 +74,8 @@ test('Country sharing is optional, displays suppressed groups and survives withd
   await page.getByRole('button',{name:'Países',exact:true}).click();
   await expect(page.getByText('Outros países (grupos menores que 5)',{exact:true})).toBeVisible();
   await expect(page.getByTestId('live-selected')).toHaveText('#gta6');
+  await expect(page.getByTestId('live-selected')).toHaveCSS('color','rgb(230, 243, 244)');
+  await expect(page.getByTestId('live-selected')).toHaveCSS('border-left-color','rgb(93, 93, 229)');
   await expect(page.getByTestId('live-pending')).toHaveText('0');
   await expect(page.getByText('Não foi possível desenhar os países.',{exact:false})).toHaveCount(0);
   await page.screenshot({path:`test-artifacts/countries-${info.project.name}.png`});

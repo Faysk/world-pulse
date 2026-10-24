@@ -1,5 +1,5 @@
 /**
- * Future real-participation transport. Not mounted in the visual POC yet.
+ * Real-participation transport mounted only through explicit experience gates.
  * The browser never receives database credentials or direct visitor IDs.
  */
 import type { CountrySnapshot } from './countryTypes';
