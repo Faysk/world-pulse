@@ -256,7 +256,10 @@ export async function getCredits(visitorId) {
   const rows = await query(`
     SELECT vt.tag_id, vt.seconds::text AS seconds, vt.expires_at, statement_timestamp() AS server_now,t.normalized,t.color
     FROM world_pulse.visitor_tags vt JOIN world_pulse.tags t ON t.id=vt.tag_id
-    WHERE vt.visitor_id=$1 AND vt.seconds > 0 ORDER BY vt.tag_id LIMIT 200
+    JOIN world_pulse.visitors v ON v.id=vt.visitor_id
+    WHERE vt.visitor_id=$1 AND vt.seconds > 0
+    ORDER BY (vt.tag_id=v.active_tag_id) DESC NULLS LAST,
+      (vt.expires_at>statement_timestamp()) DESC,vt.expires_at DESC,vt.tag_id ASC LIMIT 201
   `, [visitorId]);
   return rows.rows.map(serializeBalance);
 }

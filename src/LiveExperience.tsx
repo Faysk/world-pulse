@@ -60,6 +60,7 @@ export default function LiveExperience(){
     {balancesOpen&&<aside id="live-balances" className="live-panel live-balances" aria-label="Meus saldos">
       <div className="live-panel-title"><h2>Seu tempo</h2><button aria-label="Fechar saldos" onClick={()=>setBalancesOpen(false)}>×</button></div>
       <p>Todos os saldos continuam diminuindo com a página fechada.</p>
+      {live.balancesLimited&&<p role="status">Mostrando até 200 saldos: a hashtag selecionada e os positivos têm prioridade. Os demais continuam no servidor; digite a hashtag para recuperar seu saldo.</p>}
       {live.balances.length===0?<p>Nenhum saldo confirmado ainda.</p>:<ul>{live.balances.map(balance=><li key={balance.tagId} data-live-tag={balance.name}>
         <button disabled={!live.ready||live.selecting} style={{color:balance.color}} onClick={()=>void live.select(balance.name??'')}>{balance.name??'Hashtag'}</button>
         <strong>{duration(live.remaining(balance.tagId))}</strong>

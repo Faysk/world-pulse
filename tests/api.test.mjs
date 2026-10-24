@@ -283,3 +283,13 @@ test('country consent uses attested edge metadata, never client JSON country/coo
   assert.equal('latitude'in res.payload,false);assert.equal('longitude'in res.payload,false);
  }finally{for(const key of ['VERCEL','WP_GEO_COUNTRY_ENABLED','WP_GEO_DIRECT_EDGE']){if(prior[key]===undefined)delete process.env[key];else process.env[key]=prior[key];}}
 });
+
+
+test('Session and selection explicitly mark a bounded balance view without deleting omitted balances',async()=>{
+  const tagId=randomUUID(),credits=Array.from({length:201},()=>({tagId:randomUUID(),creditedSeconds:'10'}));
+  for(const kind of ['session','select']){
+    const res=response();await route(kind,stub({getCredits:async()=>credits}))(request('POST',kind==='select'?{tagId}:{}),res);
+    assert.equal(res.code,200);assert.equal(res.payload.credits.length,200);assert.equal(res.payload.creditsHasMore,true);
+  }
+  assert.equal(credits.length,201);
+});

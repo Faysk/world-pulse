@@ -46,6 +46,7 @@ export class ParticipationClient {
   private queueBinding: string | null = null;
   private readonly sealed = new Set<string>();
   private latestBalances: TimeBalance[] = [];
+  private creditsHasMore=false;
   private readonly receivedAt = new Map<string, number>();
   private readonly clock: () => number;
   private sessionPromise: Promise<void> | null = null;
@@ -197,7 +198,7 @@ export class ParticipationClient {
     if (this.quarantined) throw new Error('session_rotated_pending');
     const session = await this.request<{
       anonymous: true; sessionFresh: boolean; sessionBinding: string;
-      activeTagId: string | null; activeTag: LiveTag | null; credits: TimeBalance[];
+      activeTagId: string | null; activeTag: LiveTag | null; credits: TimeBalance[];creditsHasMore?:boolean;
       geoConsent?:boolean;geoCountry?:string;geographyAvailable?:boolean;
     }>('/api/session', geoConsent===undefined?{}:{geoConsent});
     if (typeof session.sessionBinding !== 'string' ||
@@ -220,6 +221,7 @@ export class ParticipationClient {
     this.selectedTagId = session.activeTagId;
     this.selectedTag = session.activeTag;
     this.latestBalances = session.credits;
+    this.creditsHasMore=session.creditsHasMore===true;
     for (const balance of session.credits) this.receivedAt.set(balance.tagId, this.clock());
   }
 
@@ -273,9 +275,13 @@ export class ParticipationClient {
     return this.enqueueSelection(() => this.withWriter(async () => {
       await this.connectUnlocked();
       const response = await this.request<{ tag: LiveTag }>('/api/tags', { name });
-      await this.request('/api/select', { tagId: response.tag.id });
+      const selection=await this.request<{credits?:TimeBalance[];creditsHasMore?:boolean}>('/api/select', { tagId: response.tag.id });
       this.selectedTagId = response.tag.id;
       this.selectedTag = response.tag;
+      if(Array.isArray(selection.credits)){
+        this.latestBalances=selection.credits;this.creditsHasMore=selection.creditsHasMore===true;
+        for(const balance of selection.credits)this.receivedAt.set(balance.tagId,this.clock());
+      }else await this.loadSession();
       this.signalSelectionChange();
       return response.tag;
     }));
@@ -320,6 +326,7 @@ export class ParticipationClient {
   }
 
   persistsPending(): boolean { return this.storage !== null; }
+  balancesLimited():boolean{return this.creditsHasMore;}
 
   /** Server snapshots, including expired history. Rendering a countdown must
    * use the elapsed time since receipt, not assume the browser clock is correct. */
