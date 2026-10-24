@@ -20,6 +20,11 @@ test('Development lab renders server snapshots and sends taps; public view stays
     a=snapshot(first,String(Number(a.creditedSeconds)+body.clicks),a.name,a.color,8*3600000);
     return route.fulfill({json:{...a,batchId:body.batchId,duplicate:false,acceptedClicks:body.clicks}});
   });
+  await page.route('**/api/ranking',route=>route.fulfill({json:{
+    type:'active',asOfMs:Date.now(),metric:'distinct_anonymous_sessions_with_positive_balance',
+    geography:'unavailable',ranking:[{id:first,name:a.name,color:a.color,activeParticipants:'1',
+      historicalParticipants:'7',creditedSeconds:a.creditedSeconds}]
+  }}));
   await page.goto('/');
   await expect(page.getByRole('region',{name:'Laboratório de participação isolada'})).toHaveCount(0);
   expect(requests).toBe(0);
@@ -32,5 +37,6 @@ test('Development lab renders server snapshots and sends taps; public view stays
   await expect(page.locator('[data-tag-name="#gta6"]').getByTestId('live-history')).toHaveText('28802');
   await expect(page.getByTestId('participation-pending')).toHaveText('0');
   await expect(page.locator('[data-tag-name="#lofi"]').getByTestId('live-history')).toHaveText('1920');
+  await expect(page.getByRole('region',{name:'Ranking atual de teste'})).toContainText('1 participações atuais');
   await page.screenshot({path:`test-artifacts/participation-mock-ui-${info.project.name}.png`});
 });

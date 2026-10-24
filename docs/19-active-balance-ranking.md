@@ -57,3 +57,11 @@ A implementação usa uma consulta agregada SQL com `LEFT JOIN` e um `statement_
 - [ ] Testar escala e cache de agregados fora do banco CI antes de lançar.
 
 **Este endpoint não é a integração final #13.** A presença ainda representa sessões anônimas reconhecidas, não pessoas humanas verificadas.
+
+## Contrato final do ranking — 24/10/2026
+
+A decisão mais recente do usuário substitui a ordenação antes pendente:
+[ranking atual e histórico separados](24-ranking-contract.md). `/api/ranking`
+passa a expor participações com saldo positivo e `/api/history` conserva o
+histórico, que começa na seleção mesmo sem taps. Segundos não desempatarão o
+ranking atual. A API continua gated; geografia permanece indisponível.

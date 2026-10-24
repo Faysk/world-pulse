@@ -38,7 +38,8 @@ function mockTransport({ failOnce = false, loseResponseOnce = false, clock = () 
       return Response.json({ tag: { id: a ? ID_A : ID_B, color: a ? '#ffffff' : '#123456', name: a ? '#gta6' : '#lofi' } });
     }
     if (path === '/api/select') { activeTagId=body.tagId; return Response.json({activeTagId}); }
-    if (path === '/api/ranking') return Response.json({ type: 'historical', ranking: [] });
+    if (path === '/api/history') return Response.json({ type: 'historical', ranking: [] });
+    if (path === '/api/ranking') return Response.json({type:'active',asOfMs:clock(),metric:'distinct_anonymous_sessions_with_positive_balance',geography:'unavailable',ranking:[]});
     if (path === '/api/taps') {
       if (shouldFail) { shouldFail = false; throw new Error('network-failure'); }
       const existing = accepted.get(body.batchId);
@@ -145,9 +146,12 @@ test('Restored unacknowledged batches stay frozen even after new taps in the sam
   assert.equal(restored.pendingClicks(),0);
 });
 
-test('Ranking is explicitly historical, never real-time presence', async () => {
+test('Current ranking and historical participation are distinct API contracts', async () => {
   const transport = mockTransport(), client = new ParticipationClient(transport.handle, fakeStorage());
-  const result = await client.ranking();
+  const current = await client.ranking();
+  assert.equal(current.type,'active');
+  assert.equal(current.metric,'distinct_anonymous_sessions_with_positive_balance');
+  const result = await client.historicalRanking();
   assert.equal(result.type, 'historical');
   assert.deepEqual(result.ranking, []);
 });

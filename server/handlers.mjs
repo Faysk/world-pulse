@@ -16,12 +16,12 @@ export function route(kind, operations = store) {
       if (process.env.WP_API_ENABLED !== 'true') {
         throw new ApiError(503, 'participation_disabled', 'Participação real ainda não foi liberada.');
       }
-      if (kind === 'ranking') {
+      if (kind === 'history') {
         onlyMethod(req, 'GET');
         const ranking = await getRanking();
         return json(res, 200, { type: 'historical', ranking });
       }
-      if (kind === 'activity') {
+      if (kind === 'activity' || kind === 'ranking') {
         onlyMethod(req, 'GET');
         // Public aggregate contains no individual session identifiers or
         // coordinates. Remains disabled by WP_API_ENABLED by default.

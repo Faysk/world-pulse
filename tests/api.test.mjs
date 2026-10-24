@@ -32,7 +32,7 @@ function stub(overrides = {}) {
     creditBatch: async (_visitorId, batch) => ({ batchId: batch.batchId, tagId: batch.tagId, creditedSeconds: String(batch.clicks), duplicate: false }),
     getCredits: async () => [],
     getRanking: async () => [],
-    getActiveBalanceSnapshot: async () => ({ type: 'active_balance_preview', asOfMs: 1000, geography: 'unavailable', metric: 'distinct_anonymous_sessions_with_positive_balance', ranking: [] }),
+    getActiveBalanceSnapshot: async () => ({ type: 'active', asOfMs: 1000, geography: 'unavailable', metric: 'distinct_anonymous_sessions_with_positive_balance', ranking: [] }),
     ...overrides
   };
 }
@@ -74,14 +74,24 @@ test('Same origin is required for write operations', () => {
 test('Requests exceeding the body limit are rejected', () => {
   assert.throws(() => parseBody(request('POST', { payload: 'x'.repeat(9000) })), { status: 413 });
 });
-test('Public ranking GET never requires or returns visitor identity', async () => {
+test('Historical GET is separate from current ranking and never returns visitor identity', async () => {
   const res = response();
-  await route('ranking', stub({ getRanking: async () => [{ name: '#gta6', historicalParticipants: '3', creditedSeconds: '12' }] }))(
+  await route('history', stub({ getRanking: async () => [{ name: '#gta6', historicalParticipants: '3', creditedSeconds: '12' }] }))(
     { method: 'GET', headers: {} }, res
   );
   assert.equal(res.code, 200);
   assert.equal(res.payload.type, 'historical');
   assert.equal(res.payload.ranking[0].historicalParticipants, '3');
+});
+
+test('Main ranking is current participation, independent from historical seconds', async () => {
+  const res=response();
+  await route('ranking',stub({getRanking:async()=>{throw new Error('historical route must not be used');}}))(
+    {method:'GET',headers:{}},res);
+  assert.equal(res.code,200);
+  assert.equal(res.payload.type,'active');
+  assert.equal(res.payload.metric,'distinct_anonymous_sessions_with_positive_balance');
+  assert.equal(res.payload.asOfMs,1000);
 });
 test('Session POST sets HttpOnly, SameSite and Secure cookie for new visitor', async () => {
   const visitor = { id: randomUUID(), active_tag_id: null };
@@ -156,7 +166,7 @@ test('Real participation endpoints default to disabled even with valid requests'
 test('Experimental activity route labels active pseudonymous balances, not historical seconds', async () => {
   const res = response();
   await route('activity', stub({ getActiveBalanceSnapshot: async () => ({
-    type: 'active_balance_preview',
+    type: 'active',
     asOfMs: 1000,
     metric: 'distinct_anonymous_sessions_with_positive_balance',
     geography: 'unavailable',

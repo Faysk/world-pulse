@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { ParticipationClient, SELECTION_NOTICE_KEY, PENDING_NOTICE_KEY, type LiveTag, type TimeBalance } from './participationClient';
+import { ParticipationClient, SELECTION_NOTICE_KEY, PENDING_NOTICE_KEY, type LiveTag, type TimeBalance, type ActiveRanking } from './participationClient';
 import './participationLab.css';
 
 const errorMessage = (error: unknown) => error instanceof Error && error.message === 'rate_limited'
@@ -32,6 +32,8 @@ export default function ParticipationLab() {
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [ranking, setRanking] = useState<ActiveRanking | null>(null);
+  const [rankingError, setRankingError] = useState(false);
   const [, tick] = useState(0);
 
   const refreshView = useCallback(() => {
@@ -99,6 +101,25 @@ export default function ParticipationLab() {
     };
   }, [client, ready, refreshView]);
 
+  useEffect(() => {
+    if (!ready) return;
+    let disposed = false;
+    let running = false;
+    const update = async () => {
+      if (disposed || running || document.hidden) return;
+      running = true;
+      try {
+        const snapshot = await client.ranking();
+        if (!disposed) { setRanking(snapshot); setRankingError(false); }
+      } catch { if (!disposed) setRankingError(true); }
+      finally { running = false; }
+    };
+    void update();
+    const interval = window.setInterval(() => void update(), 5000);
+    document.addEventListener('visibilitychange', update);
+    return () => { disposed = true; window.clearInterval(interval); document.removeEventListener('visibilitychange', update); };
+  }, [client, ready]);
+
   const sync = useCallback(async () => {
     if (!ready || busy || !client.pendingClicks()) return;
     setBusy(true);
@@ -164,5 +185,21 @@ export default function ParticipationLab() {
     </ul>
     {!balances.length && ready && <p>Nenhum saldo confirmado. Selecione uma hashtag e contribua.</p>}
     <small>O saldo diminui inclusive com a página fechada. Trocar de hashtag preserva os outros saldos. Histórico não é saldo disponível.</small>
+    <section aria-label="Ranking atual de teste">
+      <h3>Top 10 atual</h3>
+      <p>Uma participação por sessão e hashtag com saldo positivo. Atualização a cada 5 segundos, com a aba visível. Origem geográfica ainda indisponível.</p>
+      {rankingError && <p role="status">Ranking indisponível. A última leitura, se exibida, pode estar desatualizada.</p>}
+      {!ranking && !rankingError && <p>Carregando ranking…</p>}
+      {ranking && <>
+        <p>Leitura do servidor: <time dateTime={new Date(ranking.asOfMs).toISOString()}>{new Date(ranking.asOfMs).toLocaleTimeString('pt-BR')}</time></p>
+        {ranking.ranking.length === 0 ? <p>Nenhuma hashtag registrada ainda.</p> : <ol className="participation-ranking">
+          {ranking.ranking.map(tag => <li key={tag.id}>
+            <strong style={{color:tag.color}}>{tag.name}</strong>
+            <span>{Intl.NumberFormat('pt-BR').format(BigInt(tag.activeParticipants))} participações atuais</span>
+            <small>{Intl.NumberFormat('pt-BR').format(BigInt(tag.historicalParticipants))} no histórico · {Intl.NumberFormat('pt-BR').format(BigInt(tag.creditedSeconds))} segundos históricos</small>
+          </li>)}
+        </ol>}
+      </>}
+    </section>
   </section>;
 }
