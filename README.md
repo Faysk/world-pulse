@@ -15,6 +15,7 @@ Um planeta cinza que ganha cores com a participação das pessoas.
 | DNS | Cloudflare, zona `faysk.dev` | `map` aponta à Vercel, DNS only |
 | Objetos | Cloudflare R2, bucket privado `world-pulse-production` | Provisionado; ainda sem função no fluxo de taps |
 | Configuração e entrega | GitHub Actions + Environment `production` | Origem das secrets/configurações e deploy manual de `main` |
+| Steam LIVE | `GET /api/steam` · Steam Web API oficial | **Publicado:** 16 jogos monitorados, contagens reais e cache de 5 min; independente do globo |
 | API de participação | [PR #31](https://github.com/Faysk/world-pulse/pull/31) | Draft, gate desligado, migração de domínio não aplicada |
 
 Não há serviço de autenticação externo, conexão direta do browser ao banco ou bucket público. Nenhum outro banco de outro projeto foi removido ou alterado.
@@ -72,7 +73,7 @@ scripts/                     benchmark dos cenários agregados
 docs/                        arquitetura, regras, evidências e pendências
 ```
 
-As pastas `api/`, `server/` e a migração `0002-participation-core.sql` estão **somente no PR #31** enquanto ele permanecer em draft.
+As pastas `api/` e `server/` já contêm a fonte pública **Steam LIVE**. A API de participação, os demais handlers e a migração `0002-participation-core.sql` permanecem **somente no PR #31** enquanto estiver em draft.
 
 ## Documentação e próximos passos
 
@@ -82,6 +83,7 @@ As pastas `api/`, `server/` e a migração `0002-participation-core.sql` estão 
 - [Milestones e entregas](docs/10-milestones-and-progress.md) · [Runbook de produção](docs/11-infrastructure-operations.md)
 - [Revisão crítica atual](docs/12-project-review.md) · [Primeira publicação visual](docs/13-visual-release-v0.1.md)
 - [Saldo cronológico](docs/14-time-credit-contract.md) · [Cenários de 0 a 8 bilhões e 1 trilhão](docs/15-population-scenarios.md)
+- [Steam LIVE — jogos monitorados](docs/16-steam-live-signals.md) · [Painel público](https://map.faysk.dev) · [Issue #40](https://github.com/Faysk/world-pulse/issues/40)
 
 Próxima entrega: revisar a API, alinhar banco e respostas ao saldo cronológico, validar em banco descartável e integrar dois navegadores. Geografia pública, retenção, abuso e ranking exigem trabalho próprio antes da alpha. O laboratório suporta até 756 células sintéticas; isso não comprova capacidade de atender bilhões de usuários reais.
 
