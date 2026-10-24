@@ -261,6 +261,7 @@ export class ParticipationClient {
         !/^#[0-9a-f]{6}$/i.test(tag.color)||!decimal(tag.activeParticipants)||!Array.isArray(tag.countries)||tag.countries.length>251||
         tag.countries.some(row=>!row||!(/^[A-Z]{2}$/.test(row.countryCode)||row.countryCode==='OTHER')||!decimal(row.activeParticipants)||
           (row.countryCode!=='ZZ'&&row.countryCode!=='OTHER'&&BigInt(row.activeParticipants)<5n))))throw new Error('invalid_country_snapshot');
+    if(new Set(snapshot.tags.map(tag=>tag.id)).size!==snapshot.tags.length||snapshot.tags.some(tag=>new Set(tag.countries.map(row=>row.countryCode)).size!==tag.countries.length))throw new Error('invalid_country_snapshot');
     return snapshot;
   }
 

@@ -34,3 +34,26 @@ test('Native spherical countries are selectable without crediting taps, bounded 
   await expect.poll(()=>page.evaluate(()=>Boolean((window as any).testMap.getSource('live-countries')))).toBe(false);
   await expect(page.getByTestId('error')).toHaveText('');expect(errors).toEqual([]);
 });
+
+test('Multiple colors share native country resources and focus reuses the same image',async({page},info)=>{
+  await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/,route=>route.fulfill({json:{version:8,sources:{},layers:[{id:'bg',type:'background',paint:{'background-color':'#172333'}}]}}));
+  await page.goto('/tests/fixtures/country-map.html');
+  await expect.poll(()=>page.evaluate(()=>Boolean((window as any).testMap?.hasImage('live-country-pattern-PT')))).toBe(true);
+  await page.getByRole('button',{name:'Overview',exact:true}).click();
+  const palette=()=>page.evaluate(()=>{
+    const map=(window as any).testMap,image=map.getImage('live-country-pattern-PT');
+    const bytes=image.data.data,colors=new Set<string>();
+    for(let i=0;i<bytes.length;i+=4)colors.add([...bytes.slice(i,i+3)].join(','));
+    return [...colors].sort();
+  });
+  await expect.poll(palette).toEqual(['255,119,85','51,204,255']);
+  await page.evaluate(()=>(window as any).countrySource=(window as any).testMap.getSource('live-countries'));
+  await page.waitForTimeout(300);
+  await page.screenshot({path:`test-artifacts/country-multicolor-${info.project.name}.png`});
+  await page.getByRole('button',{name:'Focus',exact:true}).click();
+  await expect.poll(palette).toEqual(['255,119,85']);
+  expect(await page.evaluate(()=>(window as any).countrySource===(window as any).testMap.getSource('live-countries'))).toBe(true);
+  expect(await page.evaluate(()=>(window as any).testMap.getStyle().layers.filter((l:any)=>l.id.startsWith('live-country-')).length)).toBe(2);
+  await page.getByRole('button',{name:'Unmount layer',exact:true}).click();
+  await expect.poll(()=>page.evaluate(()=>(window as any).testMap.hasImage('live-country-pattern-PT'))).toBe(false);
+});

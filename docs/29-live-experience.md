@@ -8,7 +8,8 @@ após confirmação e a cada 5s com aba visível; falha é indicada sem inventar
 ## Dados e mapa
 
 Nenhuma população sintética é passada ao globo nesta experiência. A [geografia por país](31-country-geography.md) desenha somente áreas agregadas
-da hashtag selecionada, quando a leitura foi autorizada e existem grupos publicáveis.
+de várias hashtags por país, com foco opcional na selecionada, quando existem grupos
+publicáveis. [Composição e busca](38-multicolor-countries.md) mantêm acesso às minorias.
 Sem dados confiáveis, mantém coleção vazia e luzes decorativas desligadas.
 Não converter país/IP em posição individual. A demonstração permanece padrão
 enquanto a flag específica da alpha estiver desligada.

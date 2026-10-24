@@ -123,3 +123,34 @@ test('Disabling geography clears old and in-flight areas while authenticated wit
     await expect(page.getByTestId('live-pending')).toHaveText('0');expect(taps).toBe(0);expect(consent).toBe(false);
   }finally{release();}
 });
+
+test('Country overview pages all hashtags and minority selection never credits time',async({page})=>{
+  let selected=0,taps=0;
+  const tags=Array.from({length:53},(_,i)=>({id:`11111111-1111-4111-8111-${String(i).padStart(12,'0')}`,name:`#tag${String(i).padStart(2,'0')}`,color:'#33ccff',activeParticipants:'5',countries:[{countryCode:'PT',activeParticipants:'5'}]}));
+  await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/,route=>route.fulfill({json:{version:8,sources:{},layers:[]}}));
+  await page.route('**/api/**',route=>{
+    const path=new URL(route.request().url()).pathname;
+    if(path==='/api/session')return route.fulfill({json:{anonymous:true,sessionFresh:false,sessionBinding:'a'.repeat(64),activeTagId:tags[selected].id,activeTag:tags[selected],credits:[],geoConsent:false,geoCountry:'ZZ',geographyAvailable:true}});
+    if(path==='/api/countries'){const asOfMs=Math.floor(Date.now()/5000)*5000;return route.fulfill({json:{type:'country_snapshot',asOfMs,validUntilMs:asOfMs+5000,granularity:'country',privacyThreshold:5,tags}});}
+    if(path==='/api/tags'){selected=tags.findIndex(tag=>tag.name===route.request().postDataJSON().name);return route.fulfill({json:{tag:tags[selected]}});}
+    if(path==='/api/select')return route.fulfill({json:{activeTagId:tags[selected].id}});
+    if(path==='/api/taps')taps++;
+    if(path==='/api/ranking')return route.fulfill({json:{type:'active',asOfMs:Date.now(),metric:'distinct_anonymous_sessions_with_positive_balance',geography:'unavailable',ranking:[]}});
+    return route.fulfill({status:404,json:{error:'not_found'}});
+  });
+  await page.goto('/?experiencePreview=1');
+  await expect(page.getByTestId('live-connection')).toHaveText('Sessão conectada');
+  await page.getByRole('button',{name:'Países',exact:true}).click();
+  const panel=page.getByRole('complementary',{name:'Participação por país'});
+  await expect(panel.getByText('Página 1 de 3',{exact:true})).toBeVisible();
+  await expect(panel.locator('li button')).toHaveCount(20);
+  await panel.getByRole('button',{name:'Próxima',exact:true}).click();
+  await expect(panel.getByText('Página 2 de 3',{exact:true})).toBeVisible();
+  await page.getByLabel('Buscar hashtag nesta leitura').fill('#tag52');
+  await expect(panel.locator('li button')).toHaveCount(1);
+  await panel.getByRole('button',{name:'#tag52',exact:true}).click();
+  await expect(page.getByTestId('live-selected')).toHaveText('#tag52');
+  await panel.getByRole('button',{name:'Focar hashtag selecionada',exact:true}).click();
+  await expect(panel.getByRole('button',{name:'Ver todas as cores',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect(page.getByTestId('live-pending')).toHaveText('0');expect(taps).toBe(0);
+});
