@@ -52,7 +52,7 @@ drivers são suprimidos.
 - Configurar somente um preview Vercel aprovado com a conexão runtime de staging.
 - Automatizar sincronização GitHub → preview e validar sessão/retorno/retry
   pelo HTTPS remoto em dois navegadores.
-- O laboratório atual é DEV-only; ainda não aparece em builds de preview.
+- A experiência integrada pode ser incluída em preview por gate de build explícito; o laboratório antigo continua DEV-only.
 - `WP_API_ENABLED` continua desligado em produção; o mapa permanece sintético.
 
 O banco pronto e a checagem verde não equivalem a uma release pública da API.
@@ -79,3 +79,5 @@ Staging HTTPS pela Vercel continua sendo uma validação distinta pendente.
 
 
 Migração 0005 aplicada no staging via [run 40053116588](https://github.com/Faysk/world-pulse/actions/runs/40053116588), incluindo checagem de schema e timeouts. `maintain` é operação manual limitada, somente runtime, para a política de [retenção](27-retention-policy.md). Produção não foi migrada nem agendada.
+
+Migração 0006 (consentimento de país e cache agregado) aplicada somente no staging: [40058318799](https://github.com/Faysk/world-pulse/actions/runs/40058318799). Check após migração: [40058318548](https://github.com/Faysk/world-pulse/actions/runs/40058318548). Os gates de origem geográfica continuam desligados. Fluxo preparado de [plano/sync de preview](32-prepublication-operations.md) não publica.

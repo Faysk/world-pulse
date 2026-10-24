@@ -54,6 +54,11 @@ jobs:
       APP_URL: ${{ vars.APP_URL }}
       R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
       R2_BUCKET_NAME: ${{ vars.R2_BUCKET_NAME }}
+      WP_ALPHA_RELEASE: ${{ vars.WP_ALPHA_RELEASE || 'false' }}
+      WP_API_ENABLED: ${{ vars.WP_API_ENABLED || 'false' }}
+      WP_GEO_PUBLIC_ENABLED: ${{ vars.WP_GEO_PUBLIC_ENABLED || 'false' }}
+      WP_GEO_COUNTRY_ENABLED: ${{ vars.WP_GEO_COUNTRY_ENABLED || 'false' }}
+      WP_GEO_DIRECT_EDGE: ${{ vars.WP_GEO_DIRECT_EDGE || 'false' }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:

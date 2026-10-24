@@ -6,7 +6,7 @@ on:
         description: Check runtime access, or deliberately apply reviewed staging migrations
         type: choice
         default: check
-        options: [check, migrate, maintain]
+        options: [check, migrate, maintain, preview-plan]
   push:
     branches: [codex/remote-staging]
     paths: ['infra/staging-db*', '.github/workflows/infra-staging.yml']
@@ -51,4 +51,10 @@ jobs:
         run: node infra/staging-db.mjs
         env:
           WP_STAGING_OPERATION: maintain
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Plan preview configuration without accessing Vercel or publishing
+        if: inputs.operation == 'preview-plan'
+        run: node infra/preview-sync.mjs
+        env:
+          WP_PREVIEW_OPERATION: plan
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

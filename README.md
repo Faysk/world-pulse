@@ -113,3 +113,5 @@ O fluxo **interface → API → PostgreSQL descartável → dois navegadores** e
 [Issues](https://github.com/Faysk/world-pulse/issues) · [Milestones](https://github.com/Faysk/world-pulse/milestones) · Licença [MIT](LICENSE).
 
 [Geografia por país com consentimento e limites reais](docs/31-country-geography.md): implementação na branch da API, sem ativação pública.
+
+[Operações finais: preview, retenção e ativação explícita da alpha](docs/32-prepublication-operations.md), com gates fechados e publicação pausada.

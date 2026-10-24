@@ -73,3 +73,11 @@ texto de privacidade; conferir hardware e custos. Não ativar flags de produçã
 ou migrar o domínio de produção como consequência de um build bem-sucedido.
 
 O código XK do dataset é de uso excepcional e não pertence à lista ISO atribuída usada pela API; seu polígono foi omitido, sem inferir outro país.
+
+## Evidência de 24/10/2026
+
+- PostgreSQL e dois navegadores: [40058311911](https://github.com/Faysk/world-pulse/actions/runs/40058311911), aprovados.
+- Build, gates compilados e UI desktop/mobile: [40058311961](https://github.com/Faysk/world-pulse/actions/runs/40058311961), aprovados.
+- Migração 0001–0006 e acesso restrito no Neon staging: [40058318799](https://github.com/Faysk/world-pulse/actions/runs/40058318799), aprovado.
+- Check de staging após migração: [40058318548](https://github.com/Faysk/world-pulse/actions/runs/40058318548), aprovado na repetição após o schema novo existir.
+- Oito testes locais de UI/renderer em desktop e celular emulado aprovados, inclusive inspeção sem crédito. Emulação não é teste de hardware físico.

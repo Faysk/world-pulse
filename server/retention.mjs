@@ -1,5 +1,21 @@
 import { beginLimitedTransaction } from './databaseLimits.mjs';
 
+export async function inspectInactive(pool,{limit=10000}={}){
+  if(!Number.isSafeInteger(limit)||limit<1||limit>10000)throw new RangeError('Inspection limit must be 1..10000');
+  const client=await pool.connect();
+  try{
+    await beginLimitedTransaction(client);
+    await client.query('SET TRANSACTION READ ONLY');
+    const {rows:[row]}=await client.query(`SELECT count(*)::int AS eligible FROM (
+      SELECT 1 FROM world_pulse.visitors v
+      WHERE v.last_seen_at<statement_timestamp()-interval '30 days'
+      AND NOT EXISTS(SELECT 1 FROM world_pulse.visitor_tags vt WHERE vt.visitor_id=v.id AND vt.expires_at>statement_timestamp())
+      LIMIT $1) eligible`,[limit]);
+    await client.query('COMMIT');
+    return {eligibleAtLeast:row.eligible,capped:row.eligible===limit};
+  }catch(error){await client.query('ROLLBACK');throw error;}finally{client.release();}
+}
+
 export async function consolidateInactive(pool, {limit=100}={}) {
   if (!Number.isSafeInteger(limit) || limit<1 || limit>1000) throw new RangeError('Retention limit must be 1..1000');
   const client=await pool.connect();
