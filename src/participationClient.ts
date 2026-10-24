@@ -17,9 +17,16 @@ export type ApiRanking = {
 type FetchLike = typeof fetch;
 type StoreLike = Pick<Storage, 'getItem' | 'setItem'>;
 const STORAGE_KEY = 'world-pulse-pending-v1';
+export const PENDING_NOTICE_KEY = STORAGE_KEY;
 const QUARANTINE_KEY = 'world-pulse-pending-quarantined-v1';
 export const SELECTION_NOTICE_KEY = 'world-pulse-selection-changed-v1';
 const MAX_PENDING_CLICKS = 3000;
+const QUEUE_LOCK = 'world-pulse-pending-writer-v1';
+const memoryWriters = new WeakMap<StoreLike, Promise<unknown>>();
+function defaultStorage(): StoreLike | null {
+  try { return typeof window === 'undefined' ? null : window.localStorage; }
+  catch { return null; }
+}
 
 export class ParticipationClient {
   private readonly fetcher: FetchLike;
@@ -37,10 +44,11 @@ export class ParticipationClient {
   private sessionPromise: Promise<void> | null = null;
   private sending: Promise<void> | null = null;
   private selectionQueue: Promise<unknown> = Promise.resolve();
+  private memoryWriter: Promise<unknown> = Promise.resolve();
 
   constructor(
     fetcher: FetchLike = (input, init) => fetch(input, init),
-    storage: StoreLike | null = typeof window === 'undefined' ? null : window.localStorage,
+    storage: StoreLike | null = defaultStorage(),
     makeId: () => string = () => crypto.randomUUID(),
     clock: () => number = () => performance.now()
   ) {
@@ -50,10 +58,7 @@ export class ParticipationClient {
     this.clock = clock;
     this.pending = this.readPending();
     try { this.quarantined = this.storage?.getItem(QUARANTINE_KEY) === '1'; } catch { this.quarantined = false; }
-    if (this.pending.length && !this.queueBinding) this.quarantinePending();
-    // A restored request may have reached the server before its response was
-    // lost. Its ID and fingerprint must never receive new taps.
-    for (const batch of this.pending) this.sealed.add(batch.batchId);
+    if (this.pending.length && !this.queueBinding) this.quarantined = true;
   }
 
   private readPending(): PendingTapBatch[] {
@@ -63,19 +68,25 @@ export class ParticipationClient {
       // A legacy array is deliberately unbound: keep it for the user to
       // explicitly discard rather than ever credit it to an unknown cookie.
       const envelope = value && typeof value === 'object' && !Array.isArray(value)
-        ? value as { version?: number; binding?: unknown; batches?: unknown }
+        ? value as { version?: number; binding?: unknown; batches?: unknown; sealed?: unknown }
         : { version: 0, binding: null, batches: value };
-      if (envelope.version === 2 && typeof envelope.binding === 'string' &&
+      if ((envelope.version === 2 || envelope.version === 3) && typeof envelope.binding === 'string' &&
         /^[0-9a-f]{64}$/.test(envelope.binding)) {
         this.queueBinding = envelope.binding;
       }
       if (!Array.isArray(envelope.batches)) return [];
-      return envelope.batches.filter((v): v is PendingTapBatch =>
+      const batches = envelope.batches.filter((v): v is PendingTapBatch =>
         Boolean(v && typeof v === 'object' &&
           typeof v.batchId === 'string' && /^[0-9a-f-]{36}$/i.test(v.batchId) &&
           typeof v.tagId === 'string' && /^[0-9a-f-]{36}$/i.test(v.tagId) &&
           Number.isSafeInteger(v.clicks) && v.clicks >= 1 && v.clicks <= 30)
       ).slice(0, 2000);
+      // Legacy queues have no durable submitted marker: freeze them all.
+      const frozen = envelope.version === 3 && Array.isArray(envelope.sealed)
+        ? new Set(envelope.sealed) : new Set(batches.map(b => b.batchId));
+      this.sealed.clear();
+      for (const batch of batches) if (frozen.has(batch.batchId)) this.sealed.add(batch.batchId);
+      return batches;
     } catch {
       return [];
     }
@@ -84,9 +95,35 @@ export class ParticipationClient {
   private persist() {
     try {
       this.storage?.setItem(STORAGE_KEY, JSON.stringify({
-        version: 2, binding: this.queueBinding, batches: this.pending
+        version: 3, binding: this.queueBinding, batches: this.pending, sealed: [...this.sealed]
       }));
-    } catch { /* Storage may be unavailable in private mode. In-memory queue remains. */ }
+    } catch { throw new Error('queue_storage_unavailable'); }
+  }
+
+  private withWriter<T>(task: () => Promise<T> | T): Promise<T> {
+    const run = async () => {
+      if (this.storage) {
+        this.queueBinding = null;
+        this.pending = this.readPending();
+        this.quarantined = this.storage.getItem(QUARANTINE_KEY) === '1' ||
+          (this.pending.length > 0 && !this.queueBinding);
+      }
+      return task();
+    };
+    if (typeof navigator !== 'undefined' && navigator.locks) {
+      return navigator.locks.request(QUEUE_LOCK, { signal: AbortSignal.timeout(30_000) }, run).then(value => value);
+    }
+    if (!this.storage) {
+      const next = this.memoryWriter.then(run, run);
+      this.memoryWriter = next.catch(() => undefined);
+      return next;
+    }
+    // This in-process mutex is for Node tests / non-browser callers only.
+    // Never pretend it coordinates real browser tabs without Web Locks.
+    if (typeof window !== 'undefined') return Promise.reject(new Error('queue_coordination_unavailable'));
+    const next = (memoryWriters.get(this.storage) ?? Promise.resolve()).then(run, run);
+    memoryWriters.set(this.storage, next.catch(() => undefined));
+    return next;
   }
 
   private quarantinePending(): void {
@@ -100,18 +137,21 @@ export class ParticipationClient {
    * User must explicitly choose to abandon this orphaned queue; automatic
    * recovery or silently moving old credits to a new cookie is forbidden.
    */
-  discardOrphanedPending(): void {
-    if (!this.quarantined) return;
-    this.pending = [];
-    this.queueBinding = null;
-    this.sealed.clear();
-    this.persist();
-    this.quarantined = false;
-    try { this.storage?.setItem(QUARANTINE_KEY, '0'); } catch { /* best effort */ }
-    this.sessionPromise = null;
+  discardOrphanedPending(): Promise<void> {
+    return this.withWriter(() => {
+      if (!this.quarantined) return;
+      this.pending = [];
+      this.queueBinding = null;
+      this.sealed.clear();
+      this.persist();
+      this.quarantined = false;
+      try { this.storage?.setItem(QUARANTINE_KEY, '0'); } catch { /* best effort */ }
+      this.sessionPromise = null;
+    });
   }
 
   isQuarantined(): boolean { return this.quarantined; }
+  refreshPending(): Promise<void> { return this.withWriter(() => undefined); }
 
   private signalSelectionChange(): void {
     try { this.storage?.setItem(SELECTION_NOTICE_KEY, this.makeId()); }
@@ -126,6 +166,7 @@ export class ParticipationClient {
         ...(path === '/api/taps' ? { 'X-WP-Session-Binding': this.queueBinding ?? '' } : {})
       },
       credentials: 'same-origin',
+      signal: AbortSignal.timeout(10_000),
       ...(body === undefined ? {} : { body: JSON.stringify(body) })
     });
     const payload: unknown = await response.json();
@@ -168,7 +209,9 @@ export class ParticipationClient {
     for (const balance of session.credits) this.receivedAt.set(balance.tagId, this.clock());
   }
 
-  async connect(): Promise<void> {
+  connect(): Promise<void> { return this.withWriter(() => this.connectUnlocked()); }
+
+  private async connectUnlocked(): Promise<void> {
     if (this.quarantined) throw new Error('session_rotated_pending');
     if (!this.sessionPromise) {
       this.sessionPromise = this.loadSession()
@@ -180,10 +223,10 @@ export class ParticipationClient {
   /** Reconcile selection against the authoritative server after another tab
    * switches hashtags. Never infer the current choice from a storage event. */
   refreshSession(): Promise<void> {
-    return this.enqueueSelection(async () => {
+    return this.enqueueSelection(() => this.withWriter(async () => {
       await this.loadSession();
       this.sessionPromise = Promise.resolve();
-    });
+    }));
   }
 
   private enqueueSelection<T>(task: () => Promise<T>): Promise<T> {
@@ -194,45 +237,49 @@ export class ParticipationClient {
   }
 
   selectTag(name: string): Promise<LiveTag> {
-    return this.enqueueSelection(async () => {
-      await this.connect();
+    return this.enqueueSelection(() => this.withWriter(async () => {
+      await this.connectUnlocked();
       const response = await this.request<{ tag: LiveTag }>('/api/tags', { name });
       await this.request('/api/select', { tagId: response.tag.id });
       this.selectedTagId = response.tag.id;
       this.selectedTag = response.tag;
       this.signalSelectionChange();
       return response.tag;
-    });
+    }));
   }
 
   clearSelection(): Promise<void> {
-    return this.enqueueSelection(async () => {
-      await this.connect();
+    return this.enqueueSelection(() => this.withWriter(async () => {
+      await this.connectUnlocked();
       await this.request('/api/select', { tagId: null });
       this.selectedTagId = null;
       this.selectedTag = null;
       this.signalSelectionChange();
-    });
+    }));
   }
 
   /** Call this method on a validated user click/tap, never on clock ticks. */
-  creditClick(): boolean {
-    if (!this.selectedTagId || this.quarantined) return false;
-    const queued = this.pending.reduce((sum, b) => sum + b.clicks, 0);
-    if (queued >= MAX_PENDING_CLICKS) return false;
+  creditClick(): Promise<boolean> {
+    // Capture the hashtag at the gesture, before waiting for another tab.
+    const clickedTagId = this.selectedTagId;
+    return this.withWriter(() => {
+      if (!clickedTagId || !this.queueBinding || this.quarantined) return false;
+      const queued = this.pending.reduce((sum, b) => sum + b.clicks, 0);
+      if (queued >= MAX_PENDING_CLICKS) return false;
 
-    // A submitted batch is frozen until acknowledged; never mutate its
-    // fingerprint while a request may be in flight.
-    const last = this.sending ? null : this.pending[this.pending.length - 1];
-    if (last && !this.sealed.has(last.batchId) && last.tagId === this.selectedTagId && last.clicks < 30) {
-      last.clicks++;
-    } else {
-      this.pending.push({
-        tagId: this.selectedTagId, batchId: this.makeId(), clicks: 1
-      });
-    }
-    this.persist();
-    return true;
+      // A submitted batch is frozen until acknowledged; never mutate its
+      // fingerprint while a request may be in flight.
+      const last = this.pending[this.pending.length - 1];
+      if (last && !this.sealed.has(last.batchId) && last.tagId === clickedTagId && last.clicks < 30) {
+        last.clicks++;
+      } else {
+        this.pending.push({
+          tagId: clickedTagId, batchId: this.makeId(), clicks: 1
+        });
+      }
+      this.persist();
+      return true;
+    });
   }
 
   pendingClicks(): number {
@@ -260,13 +307,19 @@ export class ParticipationClient {
     if (this.quarantined) throw new Error('session_rotated_pending');
     if (this.sending) return this.sending;
     const task = async () => {
-      await this.connect();
+      await this.connectUnlocked();
       // Cached connect() alone is not safe across cookie rotations in other
       // tabs. Refresh the binding BEFORE any queued batch is transmitted.
       if (this.pending.length) await this.loadSession();
-      while (this.pending.length) {
+      // Yield after three batches so another tab can add taps or change
+      // selection. Each fetch also has a bounded timeout.
+      let sent = 0;
+      const yieldAt = this.clock() + 5000;
+      while (this.pending.length && sent < 3 && (sent === 0 || this.clock() < yieldAt)) {
+        sent++;
         const batch = { ...this.pending[0] };
         this.sealed.add(batch.batchId);
+        this.persist(); // Durable BEFORE fetch, including if this tab crashes.
         const credited = await this.request<TimeBalance>('/api/taps', batch);
         this.receivedAt.set(credited.tagId, this.clock());
         this.latestBalances = [...this.latestBalances.filter(b => b.tagId !== credited.tagId), credited];
@@ -275,7 +328,7 @@ export class ParticipationClient {
         this.persist();
       }
     };
-    this.sending = task().finally(() => { this.sending = null; });
+    this.sending = this.withWriter(task).finally(() => { this.sending = null; });
     return this.sending;
   }
 

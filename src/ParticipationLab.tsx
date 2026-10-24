@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { ParticipationClient, SELECTION_NOTICE_KEY, type LiveTag, type TimeBalance } from './participationClient';
+import { ParticipationClient, SELECTION_NOTICE_KEY, PENDING_NOTICE_KEY, type LiveTag, type TimeBalance } from './participationClient';
 import './participationLab.css';
 
 const errorMessage = (error: unknown) => error instanceof Error && error.message === 'rate_limited'
@@ -10,7 +10,11 @@ const errorMessage = (error: unknown) => error instanceof Error && error.message
       ? 'Esta sessão mudou ou expirou enquanto havia taps pendentes. Eles foram colocados em quarentena e NÃO serão enviados para a nova sessão.'
       : error instanceof Error && error.message === 'session_expired'
         ? 'A sessão expirou. Recarregue a conexão antes de continuar; nenhum tap pendente será transferido automaticamente.'
-        : 'Não foi possível sincronizar. Os taps pendentes foram preservados para tentar novamente.';
+        : error instanceof Error && error.message === 'queue_coordination_unavailable'
+          ? 'Este navegador não permite coordenar a fila entre abas. Use um navegador atualizado com conexão segura.'
+          : error instanceof Error && error.message === 'queue_storage_unavailable'
+            ? 'Não foi possível salvar a fila neste navegador. Este tap não está confirmado. Verifique o armazenamento antes de continuar.'
+            : 'Não foi possível sincronizar. Os taps pendentes foram preservados para tentar novamente.';
 
 function duration(ms: number): string {
   const seconds = Math.ceil(ms / 1000);
@@ -77,6 +81,10 @@ export default function ParticipationLab() {
     };
     const onStorage = (event: StorageEvent) => {
       if (event.key === SELECTION_NOTICE_KEY) void reconcile();
+      if (event.key === PENDING_NOTICE_KEY) {
+        client.refreshPending().then(() => { if (!disposed) refreshView(); })
+          .catch(reason => { if (!disposed) setError(errorMessage(reason)); });
+      }
     };
     const onFocus = () => { if (!document.hidden) void reconcile(); };
     const onVisible = () => { if (!document.hidden) void reconcile(); };
@@ -128,7 +136,9 @@ export default function ParticipationLab() {
     </form>
     <div className="participation-selected" data-testid="participation-selected" style={{ color: active?.color }}>{active?.name ?? 'Escolha uma hashtag para contribuir'}</div>
     <div className="participation-actions">
-      <button disabled={!ready || !active || busy} onClick={() => { if (client.creditClick()) refreshView(); }}>Adicionar 1 segundo</button>
+      <button disabled={!ready || !active || busy} onClick={() => {
+        client.creditClick().then(() => refreshView()).catch(reason => setError(errorMessage(reason)));
+      }}>Adicionar 1 segundo</button>
       <button disabled={!ready || busy || pending === 0} onClick={() => void sync()}>Sincronizar agora</button>
     </div>
     <p><strong data-testid="participation-pending">{pending}</strong> taps aguardando confirmação. O saldo só é confirmado quando o servidor aceita o lote.</p>
@@ -136,9 +146,8 @@ export default function ParticipationLab() {
     {client.isQuarantined() && <div className="participation-quarantine">
       <p>Fila antiga isolada. Descartar esta fila significa perder os taps que não tenham sido reconhecidos na sessão anterior.</p>
       <button type="button" onClick={() => {
-        client.discardOrphanedPending();
         setReady(false);
-        client.connect().then(() => {
+        client.discardOrphanedPending().then(() => client.connect()).then(() => {
           setActive(client.selectedTagDetails());
           refreshView();
           setReady(true);

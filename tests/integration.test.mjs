@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 import pg from 'pg';
 import {
   useTestPool, createVisitor, findVisitor, createOrGetTag, selectTag,
-  creditBatch, getCredits, getRanking, getActiveBalanceSnapshot
+  creditBatch, getCredits, getRanking, pruneExpiredSessionBatches, getActiveBalanceSnapshot
 } from '../server/store.mjs';
 
 test('PostgreSQL: anonymous participation and transaction invariants', {
@@ -231,6 +231,48 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
     assert.equal(emptyRow.activeParticipants,'0');
     assert.equal(emptyRow.historicalParticipants,'0');
     assert.equal(emptyRow.creditedSeconds,'0');
+  });
+
+
+  await t.test('Maintenance prunes only old dedupe IDs, never active IDs or historical seconds',async()=>{
+    const tag=await createOrGetTag('#cleanup_case');
+    const expired=await createVisitor();
+    const active=await createVisitor();
+    await selectTag(expired.visitorId,tag.id);
+    await selectTag(active.visitorId,tag.id);
+    await creditBatch(expired.visitorId,{tagId:tag.id,batchId:randomUUID(),clicks:2});
+    await creditBatch(expired.visitorId,{tagId:tag.id,batchId:randomUUID(),clicks:3});
+    await creditBatch(active.visitorId,{tagId:tag.id,batchId:randomUUID(),clicks:1});
+    await owner.query(`
+      UPDATE world_pulse.visitors
+      SET expires_at=statement_timestamp()-interval '26 hours'
+      WHERE id=$1
+    `,[expired.visitorId]);
+    await assert.rejects(
+      Promise.resolve().then(()=>pruneExpiredSessionBatches({limit:5001})),
+      RangeError
+    );
+    const first=await pruneExpiredSessionBatches({limit:1});
+    assert.deepEqual(first,{deletedBatches:1,limit:1});
+    const second=await pruneExpiredSessionBatches({limit:1});
+    assert.deepEqual(second,{deletedBatches:1,limit:1});
+    const third=await pruneExpiredSessionBatches({limit:500});
+    assert.equal(third.deletedBatches,0);
+    const batches=await owner.query(`
+      SELECT visitor_id,count(*)::int AS count
+      FROM world_pulse.tap_batches WHERE visitor_id IN ($1,$2)
+      GROUP BY visitor_id
+    `,[expired.visitorId,active.visitorId]);
+    assert.equal(batches.rows.find(x=>x.visitor_id===expired.visitorId),undefined);
+    assert.equal(batches.rows.find(x=>x.visitor_id===active.visitorId).count,1);
+    const credits=await owner.query(`
+      SELECT visitor_id,seconds::int AS seconds FROM world_pulse.visitor_tags
+      WHERE visitor_id IN ($1,$2)
+    `,[expired.visitorId,active.visitorId]);
+    assert.equal(credits.rows.find(x=>x.visitor_id===expired.visitorId).seconds,5);
+    assert.equal(credits.rows.find(x=>x.visitor_id===active.visitorId).seconds,1);
+    assert.equal(await findVisitor(expired.token),null);
+    assert.ok(await findVisitor(active.token));
   });
 
   await t.test('Runtime role cannot create tables in isolated schema', async () => {

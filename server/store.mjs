@@ -262,3 +262,33 @@ export async function getActiveBalanceSnapshot() {
     }))
   };
 }
+
+/**
+ * Retention maintenance preview (#5), NOT scheduled or exposed over HTTP.
+ *
+ * Expired visitors can never authenticate their old batch IDs again, so
+ * their deduplication rows can be safely removed after 24h extra grace.
+ * This function deliberately DOES NOT delete visitors, visitor_tags,
+ * credited seconds, or active sessions. Those require an approved GDPR policy.
+ */
+export async function pruneExpiredSessionBatches({ limit = 500 } = {}) {
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 5000) {
+    throw new RangeError('Batch maintenance limit must be 1..5000');
+  }
+  const result = await getPool().query(`
+    WITH expired_batches AS (
+      SELECT b.visitor_id, b.batch_id
+      FROM world_pulse.tap_batches AS b
+      JOIN world_pulse.visitors AS v ON v.id = b.visitor_id
+      WHERE v.expires_at < statement_timestamp() - interval '24 hours'
+      ORDER BY b.created_at ASC, b.visitor_id ASC, b.batch_id ASC
+      LIMIT $1
+      FOR UPDATE OF b SKIP LOCKED
+    )
+    DELETE FROM world_pulse.tap_batches AS b
+    USING expired_batches AS e
+    WHERE b.visitor_id = e.visitor_id AND b.batch_id = e.batch_id
+    RETURNING b.batch_id
+  `, [limit]);
+  return { deletedBatches: result.rowCount, limit };
+}

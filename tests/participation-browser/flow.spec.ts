@@ -124,3 +124,57 @@ test('Expired anonymous cookie with pending taps cannot replay old clicks as a n
     await expect(page.getByTestId('participation-pending')).toHaveText('0');
   } finally {await db.end();}
 });
+
+test('Web Locks coordinate simultaneous durable taps in two tabs against the real database',async({page})=>{
+  const other=await page.context().newPage();
+  const db=new pg.Pool({connectionString:'postgresql://postgres:local-only@127.0.0.1:5432/world_pulse_ci',ssl:false});
+  const name='queue_'+randomUUID().slice(0,8);
+  const boot=async(p:Page)=>{
+    await p.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/,route=>route.fulfill({json:style}));
+    await p.goto('/');
+    await p.evaluate(async()=>{
+      const {ParticipationClient}=await import('/src/participationClient.ts');
+      (window as any).__queueClient=new ParticipationClient();
+      await (window as any).__queueClient.connect();
+    });
+  };
+  try {
+    await boot(page); await boot(other);
+    await page.evaluate(async n=>{await (window as any).__queueClient.selectTag(n);},name);
+    await other.evaluate(async()=>{await (window as any).__queueClient.refreshSession();});
+    await Promise.all([page,other].map(p=>p.evaluate(async()=>{
+      await Promise.all(Array.from({length:30},()=>(window as any).__queueClient.creditClick()));
+    })));
+    await Promise.all([page,other].map(p=>p.evaluate(async()=>{await (window as any).__queueClient.flush();})));
+    const result=await db.query(`SELECT vt.seconds::text FROM world_pulse.visitor_tags vt
+      JOIN world_pulse.tags t ON t.id=vt.tag_id WHERE t.normalized=$1`,[name]);
+    expect(result.rows.map((r:{seconds:string})=>r.seconds)).toEqual(['60']);
+    for(const p of [page,other]) expect(await p.evaluate(async()=>{
+      await (window as any).__queueClient.refreshPending();
+      return (window as any).__queueClient.pendingClicks();
+    })).toBe(0);
+
+    // Commit the next batch, then close its tab before delivering the response.
+    let committed!:()=>void;
+    const committedSignal=new Promise<void>(resolve=>{committed=resolve;});
+    let release!:()=>void;
+    const hold=new Promise<void>(resolve=>{release=resolve;});
+    await page.route('**/api/taps',async route=>{
+      await route.fetch(); committed(); await hold;
+      await route.abort().catch(()=>{});
+    });
+    await page.evaluate(async()=>{await (window as any).__queueClient.creditClick();});
+    const inFlight=page.evaluate(async()=>{await (window as any).__queueClient.flush();}).catch(()=>{});
+    await committedSignal;
+    const afterClosing=other.evaluate(async()=>{
+      await (window as any).__queueClient.creditClick();
+      await (window as any).__queueClient.flush();
+      return (window as any).__queueClient.pendingClicks();
+    });
+    await page.close(); release(); await inFlight;
+    expect(await afterClosing).toBe(0);
+    const final=await db.query(`SELECT vt.seconds::text FROM world_pulse.visitor_tags vt
+      JOIN world_pulse.tags t ON t.id=vt.tag_id WHERE t.normalized=$1`,[name]);
+    expect(final.rows[0].seconds).toBe('62');
+  } finally {await other.close();await db.end();}
+});
