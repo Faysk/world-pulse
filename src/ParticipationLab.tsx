@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { ParticipationClient, type LiveTag, type TimeBalance } from './participationClient';
+import { ParticipationClient, SELECTION_NOTICE_KEY, type LiveTag, type TimeBalance } from './participationClient';
 import './participationLab.css';
 
 const errorMessage = (error: unknown) => error instanceof Error && error.message === 'rate_limited'
   ? 'Limite temporário atingido. Aguarde antes de sincronizar novamente.'
   : error instanceof Error && error.message === 'participation_disabled'
     ? 'A API está desativada neste ambiente.'
-    : 'Não foi possível sincronizar. Os taps pendentes foram preservados para tentar novamente.';
+    : error instanceof Error && error.message === 'session_rotated_pending'
+      ? 'Esta sessão mudou ou expirou enquanto havia taps pendentes. Eles foram colocados em quarentena e NÃO serão enviados para a nova sessão.'
+      : error instanceof Error && error.message === 'session_expired'
+        ? 'A sessão expirou. Recarregue a conexão antes de continuar; nenhum tap pendente será transferido automaticamente.'
+        : 'Não foi possível sincronizar. Os taps pendentes foram preservados para tentar novamente.';
 
 function duration(ms: number): string {
   const seconds = Math.ceil(ms / 1000);
@@ -35,13 +39,49 @@ export default function ParticipationLab() {
     let disposed = false;
     client.connect().then(() => {
       if (disposed) return;
-      const selected = client.balances().find(b => b.tagId === client.selection());
-      if (client.selection()) setActive({ id: client.selection()!, name: selected?.name ?? 'Hashtag selecionada', color: selected?.color ?? '#9edbda' });
+      setActive(client.selectedTagDetails());
       refreshView(); setReady(true);
     }).catch(reason => { if (!disposed) setError(errorMessage(reason)); });
     const timer = window.setInterval(() => tick(n => n + 1), 250);
     return () => { disposed = true; window.clearInterval(timer); };
   }, [client, refreshView]);
+
+  // Same-origin tabs share a server cookie, so the server is the authority.
+  // The storage event is only a notification: always re-read server selection.
+  // A focus/visibility refresh covers missed events after sleeping or offline.
+  useEffect(() => {
+    if (!ready) return;
+    let disposed = false;
+    let refreshing = false;
+    const reconcile = async () => {
+      if (disposed || refreshing) return;
+      refreshing = true;
+      try {
+        await client.refreshSession();
+        if (!disposed) {
+          setActive(client.selectedTagDetails());
+          refreshView();
+          setError('');
+        }
+      } catch (reason) {
+        if (!disposed) setError(errorMessage(reason));
+      } finally { refreshing = false; }
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === SELECTION_NOTICE_KEY) void reconcile();
+    };
+    const onFocus = () => { if (!document.hidden) void reconcile(); };
+    const onVisible = () => { if (!document.hidden) void reconcile(); };
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      disposed = true;
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [client, ready, refreshView]);
 
   const sync = useCallback(async () => {
     if (!ready || busy || !client.pendingClicks()) return;
@@ -85,6 +125,19 @@ export default function ParticipationLab() {
     </div>
     <p><strong data-testid="participation-pending">{pending}</strong> taps aguardando confirmação. O saldo só é confirmado quando o servidor aceita o lote.</p>
     {error && <p role="alert">{error}</p>}
+    {client.isQuarantined() && <div className="participation-quarantine">
+      <p>Fila antiga isolada. Descartar esta fila significa perder os taps que não tenham sido reconhecidos na sessão anterior.</p>
+      <button type="button" onClick={() => {
+        client.discardOrphanedPending();
+        setReady(false);
+        client.connect().then(() => {
+          setActive(client.selectedTagDetails());
+          refreshView();
+          setReady(true);
+          setError('');
+        }).catch(reason => setError(errorMessage(reason)));
+      }}>Descartar fila antiga e conectar nova sessão</button>
+    </div>}
     <ul className="participation-balances">
       {balances.map(balance => <li key={balance.tagId} data-tag-name={balance.name} data-tag-id={balance.tagId}>
         <strong style={{ color: balance.color }}>{balance.name ?? 'Hashtag'}</strong>
