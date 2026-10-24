@@ -45,3 +45,32 @@ O contador confirmado usa snapshots/relógio monotônico, sem inventar saldo loc
 
 Ainda pendentes: conectar fonte geográfica confiável, globo de agregados reais,
 preview HTTPS com secrets de staging e validação física antes da alpha pública.
+
+## Evidências de execução — 24/10/2026
+
+Primeira rodada completa [PostgreSQL/canvas 40054647463](https://github.com/Faysk/world-pulse/actions/runs/40054647463)
+e [UI/builds 40054647474](https://github.com/Faysk/world-pulse/actions/runs/40054647474)
+aprovada. Revisão posterior acrescentou aviso de fila volátil, formatter reutilizado
+e teste do resultado durável do envio automático, evitando depender de um estado
+transitório da fila. A fonte inclui também os spikes visuais isolados da main,
+sem conectá-los a dados de pessoas nem inventar manchas.
+
+![Experiência local com cartografia OpenFreeMap real e participação controlada de teste](assets/experience-cartography.png)
+
+Cartografia carregada da rede no Chromium desktop; participação é fixture de
+leitura para revisão visual, não usuários públicos nem medição de backend.
+Nenhuma exceção JS de página foi observada nessa captura. Isso não substitui QA
+em hardware físico, nem valida a origem geográfica das participações.
+
+![Fluxo mobile com PostgreSQL descartável e saldo restaurável](assets/experience-mobile-db.png)
+
+Captura mobile da primeira rodada HTTP/PostgreSQL real descartável no CI;
+cartografia mínima de teste, identidade/hashtag geradas no teste. O saldo pode
+já ter zerado na captura porque foi creditado somente um segundo.
+
+Rodada final: [PostgreSQL/canvas/duas sessões 40055254747](https://github.com/Faysk/world-pulse/actions/runs/40055254747)
+aprovada; [build, gates e suíte desktop/mobile 40055254780](https://github.com/Faysk/world-pulse/actions/runs/40055254780)
+aprovados. Spikes GPU/atlas/Mercator e painel Steam oculto também passaram na
+integração. PR #70 integrado somente à branch experimental do PR #31.
+A política de [publicações deliberadas](30-deliberate-deployments.md) foi
+incorporada: novos pushes desta branch não solicitam preview automático.

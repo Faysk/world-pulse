@@ -47,6 +47,15 @@ O feed da Steam foi mantido no código, mas o painel foi **ocultado da experiên
 
 A POC publicada ainda possui contador local por sessão; não confundir esse teste com saldo persistido em produção. [Contrato confirmado](docs/14-time-credit-contract.md).
 
+## Experiência integrada em homologação
+
+Na branch experimental da API, `/?experiencePreview=1` em desenvolvimento abre
+o fluxo de hashtags livres, taps no planeta, fila confirmada, saldos simultâneos
+e ranking atual. O mapa não recebe população sintética nesse modo: aguarda
+geografia confiável. Build remoto exige preview explicitamente autorizado;
+parâmetro de URL não ativa a experiência em produção.
+[Interface, gates e evidências](docs/29-live-experience.md).
+
 ## Executar e verificar
 
 Node compatível com `package.json` (CI visual usa Node 22; infraestrutura usa Node 24):

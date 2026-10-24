@@ -73,8 +73,9 @@ e expiração, recusando atingir produção por engano.
    puro country-only na main não equivale a origem geográfica funcionando.
 3. Validar a operação/agendamento monitorado da retenção já aprovada, backups/logs
    do provedor e informação ao usuário. [Política e limites](27-retention-policy.md).
-4. Geografia/contagens reais integradas ao globo e UX definitiva sem mistura com
-   demo sintética; composição multicolor em concentração extrema (#32).
+4. Conectar geografia real ao globo da [experiência integrada](29-live-experience.md),
+   já disponível em homologação sem pontos fictícios; composição multicolor em
+   concentração extrema (#32) ainda é etapa própria.
 5. Medidas de tráfego/custo no provedor e benchmark em hardware físico. Contador
    no banco não impede DDoS nem garante que o plano gratuito nunca esgote.
 
