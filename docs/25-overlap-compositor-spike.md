@@ -1,6 +1,6 @@
 # 25 — Composição multicolorida por célula (issue #32)
 
-**Estado:** experimento Vite DEV-only, não ligado ao globo MapLibre, nenhuma mudança no público \`map.faysk.dev\`.
+**Estado:** experimento Vite DEV-only, não ligado ao globo MapLibre, nenhuma mudança no público `map.faysk.dev`.
 
 ## Problema resolvido no experimento
 
@@ -10,7 +10,7 @@ A entrada é um agregado por célula **geográfica ampla, previamente sujeito à
 
 ## Implementação
 
-- \`src/overlapCompositor.ts\` prepara paleta determinística independentemente da ordem original das tags.
+- `src/overlapCompositor.ts` prepara paleta determinística independentemente da ordem original das tags.
 - A ordenação dos setores é pelo identificador de hashtag; o ângulo inicial varia de forma reprodutível apenas pela chave da célula regional.
 - Em cada pixel o shader WebGL2 calcula radialmente brilho/alpha e atribui o matiz **de uma hashtag**, sem mistura RGB.
 - A seleção reutiliza um sampler CPU de referência compatível com a fórmula angular da GPU. O laboratório permite clicar numa cor e ver a hashtag correspondente, sem creditar segundos.
@@ -21,18 +21,18 @@ A entrada é um agregado por célula **geográfica ampla, previamente sujeito à
 
 ## Abrir e avaliar localmente
 
-\`\`\`bash
+```bash
 npm ci
 npm run dev
 # http://localhost:5173/experiments/overlap-lab.html
-\`\`\`
+```
 
-O arquivo \`experiments/overlap-lab.html\` **não pertence ao bundle de produção** gerado pelo Vite: serve apenas como laboratório visual sob o dev server. Contém cenários sintéticos (3 hashtags, 999 vs 1, 1 trilhão e vazio). Nenhum dado é persistido. As cores da demo não são a lógica de sorteio persistente da API real.
+O arquivo `experiments/overlap-lab.html` **não pertence ao bundle de produção** gerado pelo Vite: serve apenas como laboratório visual sob o dev server. Contém cenários sintéticos (3 hashtags, 999 vs 1, 1 trilhão e vazio). Nenhum dado é persistido. As cores da demo não são a lógica de sorteio persistente da API real.
 
 ## Verificação técnica
 
-- \`tests/overlapCompositor.test.mjs\`: ordem inversa, determinismo, população exata, matizes preservados, zero, contagem de 1 trilhão sintético após agregação e erro explícito ao extrapolar a capacidade.
-- \`tests/browser/overlapCompositor.spec.ts\`: compilação e renderização WebGL2 efetivas, leitura dos canais RGBA do framebuffer, seleção de hashtag minoritária e screenshots Chromium desktop/mobile.
+- `tests/overlapCompositor.test.mjs`: ordem inversa, determinismo, população exata, matizes preservados, zero, contagem de 1 trilhão sintético após agregação e erro explícito ao extrapolar a capacidade.
+- `tests/browser/overlapCompositor.spec.ts`: compilação e renderização WebGL2 efetivas, leitura dos canais RGBA do framebuffer, seleção de hashtag minoritária e screenshots Chromium desktop/mobile.
 - Tempo exibido no laboratório é apenas **CPU+draw** naquela máquina; não é FPS, p95 GPU, benchmark de VRAM, rede ou escala de usuários reais. Medições em hardware físico ainda pendentes.
 
 ## Limitações antes de integrar no MapLibre
@@ -46,3 +46,7 @@ O arquivo \`experiments/overlap-lab.html\` **não pertence ao bundle de produç�
 7. Nenhum FPS real, memory profiling, cache por viewport e cenário 0–1 trilhão em GPU móvel física foi ainda medido.
 
 **Status issue #32:** primeiro shader funcional isolado; composição aprovada no renderer real, fluidez mobile e geometria privada ainda em aberto.
+
+## Evidência de CI (24/10/2026)
+
+A [GitHub Action #40052205797](https://github.com/Faysk/world-pulse/actions/runs/40052205797) concluiu com **success**: `npm run check`, compilação WebGL2 e leitura dos pixels no Chromium desktop e emulado mobile. Capturas dos cenários ficaram no artefato [world-pulse-overlap-webgl-spike](https://github.com/Faysk/world-pulse/actions/runs/40052205797). O código e os testes validam preservação das cores, não aprovação visual final em aparelho físico.
