@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>World Pulse — laboratório geográfico 2D | não publicado</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,sans-serif;color:#dff2f7;background:#080e16}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 42% -10%,#163f49 0%,transparent 56%),#080e16;min-height:100vh}
+main{max-width:1300px;padding:clamp(18px,4vw,48px);margin:auto}
+.eyebrow{text-transform:uppercase;letter-spacing:.19em;font-weight:800;font-size:11px;color:#7cbaca}
+h1{font-size:clamp(32px,4.5vw,58px);letter-spacing:-.06em;margin:10px 0}
+p{font-size:14px;color:#91a9b6;line-height:1.65;max-width:820px}
+strong{color:#e3f0f5}
+.controls{display:flex;gap:9px;flex-wrap:wrap;margin:20px 0 14px}
+button{border:1px solid #315367;background:#132c3b;color:#d5f0f4;border-radius:9px;font-weight:700;padding:11px 14px;cursor:pointer}
+button[aria-pressed=true]{background:#30556a;border-color:#89ccdc}
+.dashboard{display:grid;grid-template-columns:minmax(0,3fr) minmax(250px,1fr);gap:18px}
+.panel{border:1px solid #284556;background:#101d2ccf;border-radius:20px;padding:20px;min-width:0}
+.map{position:relative;overflow:hidden;width:100%;aspect-ratio:5/3;background:linear-gradient(160deg,#11222c,#091523);border:1px solid #234152;border-radius:14px}
+.map svg,.map canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.map canvas{cursor:crosshair;touch-action:pan-y}
+.statgroup{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:16px}
+.stat{border-top:1px solid #2d4b59;padding-top:12px}
+.stat b{font-size:24px;letter-spacing:-.045em;display:block;font-variant-numeric:tabular-nums}
+.stat span{font-size:11px;color:#93aaba}
+.controlrow{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 0;border-bottom:1px solid #263a48}
+.controlrow label{font-size:13px;color:#d0e5ef}
+input[type=range]{accent-color:#8acbdb;max-width:55%}
+#chosen{font-size:22px;color:#bde8f1;overflow-wrap:anywhere;min-height:50px}
+#status{font-size:12px;color:#9dcdb1;min-height:18px}
+small{display:block;color:#829cac;line-height:1.7;margin-top:16px;font-size:11px}
+.footer{font-size:12px;margin-top:18px;color:#7790a2}
+@media(max-width:850px){.dashboard{grid-template-columns:1fr}.stat b{font-size:20px}.panel{padding:14px}}
+</style>
+</head>
+<body>
+<main>
+<div class="eyebrow">World Pulse / Laboratório / Geografia #32</div>
+<h1>Luzes geográficas. Sem perder ninguém.</h1>
+<p>Pesquisa isolada de células aproximadas numa <strong>projeção Web Mercator 2D</strong>. O mapa é uma grade geográfica, ainda não é o globo MapLibre. Cores, regiões e participantes são 100% sintéticos. As células são recortadas por viewport e organizadas em páginas de até 256, preservando os totais globais.</p>
+<div class="controls" role="group" aria-label="Câmera de demonstração">
+<button data-camera="world" aria-pressed="true">Visão mundial</button>
+<button data-camera="porto" aria-pressed="false">Zoom Porto</button>
+<button data-camera="dateline" aria-pressed="false">Meridiano ±180°</button>
+<button data-camera="mass" aria-pressed="false">600 células</button>
+</div>
+<div class="dashboard">
+<section class="panel">
+<div class="map" aria-label="Projeção Mercator demonstrativa com células luminosas">
+<svg id="graticule" viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true"></svg>
+<canvas id="geo" width="1000" height="600" data-testid="geo-canvas" aria-label="Células luminosas projetadas por longitude e latitude"></canvas>
+</div>
+<div class="statgroup">
+<div class="stat"><b data-testid="global-people" id="global">—</b><span>Participantes sintéticos globais</span></div>
+<div class="stat"><b data-testid="visible-people" id="visible">—</b><span>Participantes nas células visíveis</span></div>
+<div class="stat"><b data-testid="visible-cells" id="cells">—</b><span>Células geográficas visíveis</span></div>
+<div class="stat"><b data-testid="draw-calls" id="draws">—</b><span>Draw calls neste frame</span></div>
+</div>
+</section>
+<aside class="panel">
+<div class="eyebrow">Câmera e seleção</div>
+<div class="controlrow"><label for="zoom">Zoom geográfico: <strong id="zoom-label">1</strong></label><input id="zoom" type="range" min="0" max="10" step=".5" value="1"/></div>
+<div class="controlrow"><span>Centro da câmera</span><strong id="center" data-testid="center">0°, 0°</strong></div>
+<div class="controlrow"><span>Páginas GPU</span><strong id="pages" data-testid="pages">—</strong></div>
+<div class="controlrow"><span>Células totais</span><strong id="total-cells" data-testid="total-cells">—</strong></div>
+<h2 id="chosen" data-testid="chosen">Toque numa luz</h2>
+<p>Selecionar um setor não acrescenta segundos. Um toque fora do círculo também não seleciona uma hashtag.</p>
+<p id="status" role="status" data-testid="render-status">Inicializando WebGL2…</p>
+<small>Uma única GPU WebGL2 reutilizável, um draw instanciado por página visível, paletas determinísticas. Latitude limitada ao domínio Web Mercator; o antimeridiano usa a cópia longitudinal mais próxima.</small>
+<small>Este experimento é **somente DEV**, não carrega tiles externos, banco, IPs, sessões nem dados reais. A futura composição sobre o globo esférico ainda exige tratamento do horizonte, terreno, anti-meridiano e polígonos privados.</small>
+</aside>
+</div>
+<div class="footer">Experimento técnico — a interface pública em map.faysk.dev permanece inalterada.</div>
+</main>
+<script type="module">
+import {GeographicAtlasRenderer,planGeographicAtlas,pickGeographicAtlas,projectCoarsePoint} from '/src/geographicAtlas.ts';
+
+const W=1000,H=600;
+const canvas=document.querySelector('#geo'),graticule=document.querySelector('#graticule');
+const runner=new GeographicAtlasRenderer(canvas);
+const fmt=n=>n.toLocaleString('pt-BR');
+const colors=[['gta6','#ff6753'],['lofi','#5dc8ee'],['minecraft','#b67bff']];
+const cell=(key,lng,lat,i)=>({
+  cellKey:key,lng,lat,
+  participants:colors.map(([tag,color],k)=>({
+    tag,color,people:(i+1)*(k===0?11:k===1?4:2)
+  }))
+});
+const samples=[
+  [-8.5,41.2],[-9.4,38.7],[-7.8,40.4],[-8.6,42.4],
+  [2.3,48.8],[13.4,52.5],[28.9,41.0],[-74,40.7],
+  [-46.6,-23.5],[139.7,35.7],[151.2,-33.8],[103.8,1.3],
+  [179.5,0.8],[-179.4,1.4],[178.3,-1.1],[-178.7,-1.2],
+  [-60,-3],[31,-1],[19,-33],[72,19]
+];
+const all=[
+  ...samples.map(([lng,lat],i)=>cell('seed-'+String(i).padStart(4,'0'),lng,lat,i)),
+  ...Array.from({length:600},(_,i)=>cell(
+    'synthetic-'+String(i).padStart(4,'0'),
+    (i*137.508%360)-180,
+    (i*47.3%150)-75,
+    i%45
+  ))
+];
+const presets={
+  world:{lng:0,lat:5,zoom:1,cellZoom:5},
+  porto:{lng:-8.5,lat:41.2,zoom:7,cellZoom:10},
+  dateline:{lng:179.4,lat:0,zoom:6,cellZoom:9},
+  mass:{lng:0,lat:0,zoom:0,cellZoom:5}
+};
+let viewport={...presets.world,width:W,height:H};
+let plan=null;
+const ns='http://www.w3.org/2000/svg';
+function line(points){
+  let parts=[],path=[];
+  for(const [lng,lat] of points){
+    const p=projectCoarsePoint(lng,lat,viewport);
+    if(!Number.isFinite(p.x)||!Number.isFinite(p.y))continue;
+    if(path.length && Math.abs(p.x-path.at(-1).x)>viewport.width*.5) {
+      if(path.length>1)parts.push(path);
+      path=[];
+    }
+    path.push(p);
+  }
+  if(path.length>1)parts.push(path);
+  for(const piece of parts){
+    const node=document.createElementNS(ns,'path');
+    node.setAttribute('d',piece.map((p,i)=>(i?'L':'M')+p.x.toFixed(2)+' '+p.y.toFixed(2)).join(' '));
+    node.setAttribute('fill','none');
+    node.setAttribute('stroke','#376073');
+    node.setAttribute('stroke-width','.8');
+    node.setAttribute('opacity','.58');
+    graticule.append(node);
+  }
+}
+function drawGrid(){
+  graticule.replaceChildren();
+  for(let lng=-180;lng<180;lng+=30){
+    line(Array.from({length:65},(_,i)=>[lng,-80+i*2.5]));
+  }
+  for(let lat=-75;lat<=75;lat+=15){
+    line(Array.from({length:91},(_,i)=>[-180+i*4,lat]));
+  }
+}
+function draw(){
+  plan=planGeographicAtlas(all,viewport);
+  drawGrid();
+  const draws=runner.draw(plan);
+  document.querySelector('#global').textContent=fmt(plan.totalPeople);
+  document.querySelector('#visible').textContent=fmt(plan.visiblePeople);
+  document.querySelector('#cells').textContent=String(plan.visibleCells);
+  document.querySelector('#draws').textContent=String(draws);
+  document.querySelector('#pages').textContent=String(plan.pages.length);
+  document.querySelector('#total-cells').textContent=String(plan.totalCells);
+  document.querySelector('#zoom-label').textContent=String(viewport.zoom);
+  document.querySelector('#zoom').value=String(viewport.zoom);
+  document.querySelector('#center').textContent=viewport.lng.toFixed(1)+'°, '+viewport.lat.toFixed(1)+'°';
+  document.querySelector('#chosen').textContent='Toque numa luz';
+  document.querySelector('#status').textContent='WebGL2 · projeção Mercator ativa';
+  window.__geoAtlasLab={plan,viewport,runner,canvas};
+}
+for(const button of document.querySelectorAll('[data-camera]')){
+  button.addEventListener('click',()=>{
+    for(const other of document.querySelectorAll('[data-camera]'))
+      other.setAttribute('aria-pressed',String(other===button));
+    viewport={...presets[button.dataset.camera],width:W,height:H};
+    draw();
+  });
+}
+document.querySelector('#zoom').addEventListener('input',event=>{
+  viewport={...viewport,zoom:Number(event.target.value)};
+  draw();
+});
+canvas.addEventListener('click',e=>{
+  const box=canvas.getBoundingClientRect();
+  const x=(e.clientX-box.left)/box.width*W;
+  const y=(e.clientY-box.top)/box.height*H;
+  const picked=pickGeographicAtlas(plan,x,y);
+  document.querySelector('#chosen').textContent=picked?
+    '#'+picked.tag+' · '+picked.cellKey:'Nenhuma hashtag neste ponto';
+});
+window.addEventListener('beforeunload',()=>runner.dispose());
+draw();
+</script>
+</body>
+</html>

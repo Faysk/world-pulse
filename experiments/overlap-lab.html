@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>World Pulse · laboratório de sobreposição WebGL2 (não publicado)</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; background: #080e17; color: #d8e8f2; }
+    * { box-sizing: border-box; }
+    body { min-height: 100vh; margin: 0; padding: clamp(20px,5vw,58px); background: radial-gradient(circle at 55% 10%, #162e3c 0, transparent 60%),#080e17; }
+    main { max-width: 1180px; margin: auto; }
+    .eyebrow { color: #84c5d1; letter-spacing: .2em; font-size: 11px; font-weight: 740; text-transform: uppercase; }
+    h1 { font-size: clamp(30px,4vw,52px); letter-spacing: -.055em; margin: 12px 0; }
+    .intro { color: #94a8b5; max-width: 720px; line-height: 1.7; font-size: 14px; }
+    .tabs { display: flex; gap: 10px; flex-wrap: wrap; margin: 26px 0; }
+    button { border: 1px solid #35516a; background: #172837; color: #d8f0f5; border-radius: 9px; padding: 11px 14px; font-weight: 680; cursor: pointer; }
+    button[aria-pressed="true"] { border-color: #8dc4d4; background: #294758; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(270px,1fr)); gap: 20px; }
+    .panel { min-width: 0; background: #101b29ba; border: 1px solid #294052; border-radius: 20px; padding: 22px; }
+    canvas { display: block; width: min(100%,360px); height: auto; margin: 20px auto; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, #25374200 0%, #0b1322 72%); cursor: crosshair; }
+    .metrics { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; color: #9db2c5; font-size: 12px; }
+    .metrics strong { color: #ecf5fa; }
+    .legend { display: grid; gap: 10px; margin-top: 20px; }
+    .legend > div { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+    .legend b { margin-left: auto; font-variant-numeric: tabular-nums; }
+    .chip { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+    .note { color: #8096a8; font-size: 11px; line-height: 1.7; margin-top: 20px; }
+    .status { color: #d6ada1; font-size: 13px; min-height: 26px; }
+  </style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">World Pulse / Experimentos / Issue #32</div>
+  <h1>Uma região. Muitas cores.</h1>
+  <p class="intro">Spike visual isolado de composição num único passe WebGL2. Preserva cada cor, o número exato de participantes e permite tocar em cada setor. Não modifica o globo em produção e não representa localização de pessoas.</p>
+  <div class="tabs" role="group" aria-label="Cenário de concorrência">
+    <button data-scenario="mixed" aria-pressed="true">3 hashtags</button>
+    <button data-scenario="minority" aria-pressed="false">1 contra 999</button>
+    <button data-scenario="trillion" aria-pressed="false">1 trilhão sintético</button>
+    <button data-scenario="none" aria-pressed="false">Sem atividade</button>
+  </div>
+  <p role="status" id="status" class="status" data-testid="render-status">Preparando WebGL2…</p>
+  <div class="cards">
+    <section class="panel">
+      <div class="eyebrow">Célula regional A · 1 draw call</div>
+      <canvas width="360" height="360" id="field" data-testid="overlap-canvas" aria-label="Composição de cores de hashtags em uma célula regional"></canvas>
+      <div class="metrics"><span>Participantes distintos: <strong data-testid="total">—</strong></span><span>Tags: <strong data-testid="tags">—</strong></span></div>
+      <div class="metrics"><span>Um passe WebGL2</span><span id="renderMs" data-testid="render-ms">—</span></div>
+      <div class="legend" id="legend"></div>
+    </section>
+    <section class="panel">
+      <div class="eyebrow">Seleção do setor · demonstração</div>
+      <h2 data-testid="selected" id="selected">Toque em uma cor</h2>
+      <p class="intro">A seleção identifica uma hashtag pelo setor. Nenhum clique neste laboratório credita segundos nem aumenta participantes.</p>
+      <div class="note">Cada cor é um matiz original, sem mistura RGB. Setores minoritários têm largura visual mínima para continuarem identificáveis; a área angular <strong>não é um gráfico estatístico de proporção exata</strong>. A intensidade geral deriva só dos participantes sintéticos. A tecnologia de composição ainda não foi integrada ao MapLibre.</div>
+    </section>
+  </div>
+</main>
+<script type="module">
+import {buildCellPalette,renderCellPalette,samplePalette} from '/src/overlapCompositor.ts';
+
+const C = {
+  gta6: {tag:'gta6',color:'#ff6753'},
+  lofi: {tag:'lofi',color:'#5dc8ee'},
+  minecraft: {tag:'minecraft',color:'#b67bff'}
+};
+const scenarios = {
+  mixed: [[C.gta6,330],[C.lofi,180],[C.minecraft,45]],
+  minority: [[C.gta6,999],[C.lofi,1],[C.minecraft,0]],
+  trillion: [[C.gta6,600_000_000_000],[C.lofi,250_000_000_000],[C.minecraft,150_000_000_000]],
+  none: [[C.gta6,0],[C.lofi,0],[C.minecraft,0]]
+};
+const canvas = document.querySelector('#field');
+const status = document.querySelector('#status');
+const legend = document.querySelector('#legend');
+let palette = null;
+function draw(name) {
+  palette=buildCellPalette('demo/region/A',scenarios[name].map(([tag,people])=>({...tag,people})));
+  const start=performance.now();
+  try {
+    const gl=renderCellPalette(canvas,palette);
+    if(gl.getError() !== gl.NO_ERROR)throw new Error('WebGL driver reported a draw error');
+    document.querySelector('#renderMs').textContent=(performance.now()-start).toFixed(2)+' ms (CPU+draw)';
+    status.textContent='WebGL2 · compositor ativo (dados sintéticos)';
+    status.style.color='#91d9b6';
+    window.__overlapLab={palette,gl,canvas};
+  } catch(e) {
+    status.textContent='Não foi possível renderizar em WebGL2: '+e.message;
+    window.__overlapLab={error:e.message};
+  }
+  document.querySelector('[data-testid=total]').textContent=palette.totalPeople.toLocaleString('pt-BR');
+  document.querySelector('[data-testid=tags]').textContent=String(palette.sectors.length);
+  legend.replaceChildren(...palette.sectors.map(s=>{
+    const row=document.createElement('div');
+    const chip=document.createElement('i');chip.className='chip';chip.style.background=s.color;
+    const name=document.createElement('span');name.textContent='#'+s.tag;
+    const count=document.createElement('b');count.textContent=s.people.toLocaleString('pt-BR');
+    row.append(chip,name,count);return row;
+  }));
+  document.querySelector('#selected').textContent='Toque em uma cor';
+}
+canvas.addEventListener('click',e=>{
+  if(!palette)return;
+  const rect=canvas.getBoundingClientRect();
+  const u=(e.clientX-rect.left)/rect.width,v=1-(e.clientY-rect.top)/rect.height;
+  const sampled=samplePalette(palette,u,v);
+  document.querySelector('#selected').textContent=sampled.alpha > .04 && sampled.tag ? '#'+sampled.tag : 'Sem hashtag neste ponto';
+});
+for(const button of document.querySelectorAll('[data-scenario]')) {
+  button.addEventListener('click',()=>{
+    document.querySelectorAll('[data-scenario]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));
+    draw(button.dataset.scenario);
+  });
+}
+draw('mixed');
+</script>
+</body>
+</html>

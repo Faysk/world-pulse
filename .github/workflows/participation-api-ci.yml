@@ -10,6 +10,11 @@ on:
       - "tests/integration.test.mjs"
       - "tests/participation-browser/**"
       - "src/ParticipationLab.tsx"
+      - "src/LiveExperience.tsx"
+      - "src/liveExperience.css"
+      - "src/useParticipation.ts"
+      - "vite.config.ts"
+      - "build/preview-gate.mjs"
       - "src/participationLab.css"
       - "src/participationClient.ts"
       - "src/App.tsx"
@@ -29,6 +34,11 @@ on:
       - "tests/integration.test.mjs"
       - "tests/participation-browser/**"
       - "src/ParticipationLab.tsx"
+      - "src/LiveExperience.tsx"
+      - "src/liveExperience.css"
+      - "src/useParticipation.ts"
+      - "vite.config.ts"
+      - "build/preview-gate.mjs"
       - "src/participationLab.css"
       - "src/participationClient.ts"
       - "src/App.tsx"
@@ -112,4 +122,5 @@ jobs:
           path: |
             test-results/
             test-artifacts/participation-*.png
+            test-artifacts/experience-real-*.png
           retention-days: 7
