@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Map, setWorkerUrl, type GeoJSONSource, type ExpressionSpecification, type Map as MapInstance } from 'maplibre-gl';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { heatVisibility } from './domain';
+import { TapGestureGuard, type PointerInput } from './tapGesture';
 import {
   TAGS, createCombinedPopulation, neutralLightPoints, tagCenter,
   type TagId, type PulseCollection
@@ -259,6 +260,30 @@ export function WorldGlobe({
     }
 
     mapRef.current = map;
+    // Native pointer events are captured independently from MapLibre's click.
+    // This prevents rotation, pinch and scroll from becoming fake +1 seconds.
+    const gestureGuard = new TapGestureGuard();
+    const canvas = map.getCanvas();
+    const sample = (event: PointerEvent): PointerInput => ({
+      id: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      at: performance.now(),
+      pointerType: event.pointerType
+    });
+    const down = (event: PointerEvent) => {
+      if (event.isPrimary === false) gestureGuard.invalidate();
+      gestureGuard.pointerDown(sample(event));
+    };
+    const move = (event: PointerEvent) => gestureGuard.pointerMove(sample(event));
+    const up = (event: PointerEvent) => gestureGuard.pointerUp(sample(event));
+    const cancel = (event: PointerEvent) => gestureGuard.pointerCancel(event.pointerId);
+    const wheel = () => gestureGuard.invalidate();
+    canvas.addEventListener('pointerdown', down, { passive: true });
+    window.addEventListener('pointermove', move, { passive: true });
+    window.addEventListener('pointerup', up, { passive: true });
+    window.addEventListener('pointercancel', cancel, { passive: true });
+    canvas.addEventListener('wheel', wheel, { passive: true });
     let hasLoaded = false;
     let frames = 0;
     let periodStart = 0;
@@ -284,6 +309,7 @@ export function WorldGlobe({
     });
 
     map.on('movestart', () => {
+      gestureGuard.invalidate();
       frames = 0;
       periodStart = performance.now();
     });
@@ -308,6 +334,10 @@ export function WorldGlobe({
     // A second tap on the SAME tag, or a tap on empty terrain, credits +1.
     // Native MapLibre 'click' ignores map drag/pinch gestures.
     map.on('click', (event) => {
+      const original = event.originalEvent;
+      if (!original || !gestureGuard.consumeClick(
+        original.clientX, original.clientY, performance.now()
+      )) return;
       if (!map.getLayer('pulse-hit')) return;
       const hits = map.queryRenderedFeatures(event.point, {
         layers: ['pulse-hit']
@@ -344,6 +374,12 @@ export function WorldGlobe({
     return () => {
       window.clearTimeout(watchdog);
       if (hoverFrame !== null) window.cancelAnimationFrame(hoverFrame);
+      canvas.removeEventListener('pointerdown', down);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', cancel);
+      canvas.removeEventListener('wheel', wheel);
+      gestureGuard.pointerCancel();
       map.remove();
       mapRef.current = null;
     };
