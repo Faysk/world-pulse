@@ -29,6 +29,7 @@ export class ParticipationClient {
   private selectedTag: LiveTag | null = null;
   private quarantined = false;
   private pending: PendingTapBatch[] = [];
+  private queueBinding: string | null = null;
   private readonly sealed = new Set<string>();
   private latestBalances: TimeBalance[] = [];
   private readonly receivedAt = new Map<string, number>();
@@ -49,6 +50,7 @@ export class ParticipationClient {
     this.clock = clock;
     this.pending = this.readPending();
     try { this.quarantined = this.storage?.getItem(QUARANTINE_KEY) === '1'; } catch { this.quarantined = false; }
+    if (this.pending.length && !this.queueBinding) this.quarantinePending();
     // A restored request may have reached the server before its response was
     // lost. Its ID and fingerprint must never receive new taps.
     for (const batch of this.pending) this.sealed.add(batch.batchId);
@@ -57,9 +59,18 @@ export class ParticipationClient {
   private readPending(): PendingTapBatch[] {
     try {
       const raw = this.storage?.getItem(STORAGE_KEY);
-      const value: unknown = raw ? JSON.parse(raw) : [];
-      if (!Array.isArray(value)) return [];
-      return value.filter((v): v is PendingTapBatch =>
+      const value: unknown = raw ? JSON.parse(raw) : null;
+      // A legacy array is deliberately unbound: keep it for the user to
+      // explicitly discard rather than ever credit it to an unknown cookie.
+      const envelope = value && typeof value === 'object' && !Array.isArray(value)
+        ? value as { version?: number; binding?: unknown; batches?: unknown }
+        : { version: 0, binding: null, batches: value };
+      if (envelope.version === 2 && typeof envelope.binding === 'string' &&
+        /^[0-9a-f]{64}$/.test(envelope.binding)) {
+        this.queueBinding = envelope.binding;
+      }
+      if (!Array.isArray(envelope.batches)) return [];
+      return envelope.batches.filter((v): v is PendingTapBatch =>
         Boolean(v && typeof v === 'object' &&
           typeof v.batchId === 'string' && /^[0-9a-f-]{36}$/i.test(v.batchId) &&
           typeof v.tagId === 'string' && /^[0-9a-f-]{36}$/i.test(v.tagId) &&
@@ -71,8 +82,11 @@ export class ParticipationClient {
   }
 
   private persist() {
-    try { this.storage?.setItem(STORAGE_KEY, JSON.stringify(this.pending)); }
-    catch { /* Storage may be unavailable in private mode. In-memory queue remains. */ }
+    try {
+      this.storage?.setItem(STORAGE_KEY, JSON.stringify({
+        version: 2, binding: this.queueBinding, batches: this.pending
+      }));
+    } catch { /* Storage may be unavailable in private mode. In-memory queue remains. */ }
   }
 
   private quarantinePending(): void {
@@ -89,6 +103,7 @@ export class ParticipationClient {
   discardOrphanedPending(): void {
     if (!this.quarantined) return;
     this.pending = [];
+    this.queueBinding = null;
     this.sealed.clear();
     this.persist();
     this.quarantined = false;
@@ -126,15 +141,23 @@ export class ParticipationClient {
   private async loadSession(): Promise<void> {
     if (this.quarantined) throw new Error('session_rotated_pending');
     const session = await this.request<{
-      anonymous: true; sessionFresh: boolean; activeTagId: string | null;
-      activeTag: LiveTag | null; credits: TimeBalance[];
+      anonymous: true; sessionFresh: boolean; sessionBinding: string;
+      activeTagId: string | null; activeTag: LiveTag | null; credits: TimeBalance[];
     }>('/api/session', {});
-    if (session.sessionFresh && this.pending.length > 0) {
-      // An old cookie expired, was deleted or rotated. Never credit its
-      // previously queued events to a new pseudonymous session.
+    if (typeof session.sessionBinding !== 'string' ||
+      !/^[0-9a-f]{64}$/.test(session.sessionBinding)) {
+      throw new Error('invalid_session_binding');
+    }
+    // The binding is attached to the pending queue itself. A different tab
+    // may have quietly created a new cookie, causing sessionFresh=false
+    // here despite a queue still belonging to an older session.
+    if (this.pending.length && (session.sessionFresh ||
+      this.queueBinding !== session.sessionBinding)) {
       this.quarantinePending();
       throw new Error('session_rotated_pending');
     }
+    this.queueBinding = session.sessionBinding;
+    if (!this.pending.length) this.persist();
     this.selectedTagId = session.activeTagId;
     this.selectedTag = session.activeTag;
     this.latestBalances = session.credits;
