@@ -17,10 +17,11 @@ async function cleanup(){
       try{
         await beginLimitedTransaction(client);
         // Only synthetic identities created by THIS process, never broad cleanup.
-        await client.query('DELETE FROM world_pulse.visitors WHERE id=ANY($1::uuid[])',[[...createdVisitors]]);
+        const removed=await client.query('DELETE FROM world_pulse.visitors WHERE id=ANY($1::uuid[])',[[...createdVisitors]]);
+        if(removed.rowCount!==createdVisitors.size)throw new Error('synthetic_cleanup_count_mismatch');
         await client.query('DELETE FROM world_pulse.country_snapshot_cache');
         await client.query('COMMIT');
-        console.log(`Staging smoke synthetic sessions cleaned: ${createdVisitors.size}.`);
+        console.log(`Staging smoke synthetic sessions cleaned: ${removed.rowCount}.`);
       }catch{await client.query('ROLLBACK');console.error('Staging smoke cleanup failed; temporary branch expires automatically.');}
       finally{client.release();}
     }
