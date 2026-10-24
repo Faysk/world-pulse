@@ -64,3 +64,11 @@ retorno recente protegidos, limite por execução, dedupe removido junto da
 sessão, rollback injetado entre soma/delete, retry sem dupla contagem e sessão
 bloqueada sendo pulada por SKIP LOCKED. Testes HTTP verificam renovação da mesma
 credencial, flags protegidas e prazo de recuperação de saldo longo.
+
+## Evidência em 24/10/2026
+
+- [PostgreSQL e dois navegadores 40052986816](https://github.com/Faysk/world-pulse/actions/runs/40052986816): aprovados, incluindo consolidação/rollback/retry/locks e fluxos da participação.
+- [Build e UI desktop/mobile 40052986846](https://github.com/Faysk/world-pulse/actions/runs/40052986846): aprovados.
+- [Migração 0005 no Neon staging 40053116588](https://github.com/Faysk/world-pulse/actions/runs/40053116588): aprovada, sem produção.
+- [Checagem do staging 40053116037](https://github.com/Faysk/world-pulse/actions/runs/40053116037): aprovada após a migração.
+- [Manutenção manual 40053208610](https://github.com/Faysk/world-pulse/actions/runs/40053208610): aprovada, 0 sessões elegíveis; preservou os dados recentes.

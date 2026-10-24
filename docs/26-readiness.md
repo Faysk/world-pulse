@@ -25,26 +25,28 @@ objetos. O feed Steam permanece no código e oculto da experiência pública.
 | Tabela em `world_pulse` | Função |
 |---|---|
 | `tags` | Nome normalizado único e cor persistida uma vez |
-| `visitors` | Hash do cookie pseudônimo, seleção atual e validade de 30 dias |
+| `visitors` | Hash do cookie pseudônimo, seleção atual, último retorno e validade renovável |
 | `visitor_tags` | Par único sessão/hashtag, histórico de segundos e expiração do saldo |
 | `tap_batches` | ID/fingerprint e taps de cada lote para idempotência |
 | `operation_budgets` | Até cinco contadores compartilhados de capacidade, sem dados de localização |
+| `tag_history_totals` | Histórico consolidado por hashtag sem vínculo individual |
 
 Nenhuma dessas tabelas contém IP, GPS, cidade ou trajetória. O modelo ainda não
 implementa a geografia pública. Histórico começa na seleção; presença atual
-exige saldo positivo. Excluir `visitors` com CASCADE apagaria `visitor_tags`:
-não usar isso como rotina de retenção antes de decidir preservação/privacidade.
+exige saldo positivo. A política de retenção foi aprovada: após 30 dias sem
+retorno e todos os saldos zerados, soma-se no rollup e só então remove-se a
+sessão na mesma transação. DELETE/CASCADE isolado perderia histórico e é proibido.
 
 ## Ambientes
 
 | Ambiente | Estado |
 |---|---|
 | Produção Neon `main` | Baseline de acesso; domínio da API não migrado/ativado por este trabalho |
-| Neon `world-pulse-staging` | Separado, schema-only, credenciais próprias no GitHub; 0001–0004 e timeouts transacionais no pooler verificados. Expira 31/10 às 01:15 UTC |
-| CI PostgreSQL descartável | Migrações 0001–0004; testes HTTP/duas sessões/abas e concorrência, sem secrets reais |
+| Neon `world-pulse-staging` | Separado, schema-only, credenciais próprias no GitHub; 0001–0005 e timeouts transacionais no pooler verificados. Expira 31/10 às 01:15 UTC |
+| CI PostgreSQL descartável | Migrações 0001–0005; testes HTTP/duas sessões/abas e concorrência, sem secrets reais |
 | Local visual | Funciona sem secrets; teste SQL requer PostgreSQL descartável do CI ou instalação local explícita |
 
-0004 foi aplicada no staging pelo Actions; qualquer migração futura exige operação manual revisada;
+0004/0005 foram aplicadas no staging pelo Actions; qualquer migração futura exige operação manual revisada;
 deploy não aplica SQL. `check` não recebe proprietário; `migrate` recebe esse
 segredo apenas no passo deliberado. O script fixa endpoint, roles, banco, TLS
 e expiração, recusando atingir produção por engano.
@@ -69,8 +71,8 @@ e expiração, recusando atingir produção por engano.
    cookies protegidos, duas sessões e retries no ambiente remoto.
 2. Fonte geográfica confiável, SQL agregado e revisão de privacidade. O módulo
    puro country-only na main não equivale a origem geográfica funcionando.
-3. Política de retenção/eliminação dos registros pseudônimos e informação ao
-   usuário. A limpeza de IDs de lotes não resolve todo o ciclo dos dados.
+3. Validar a operação/agendamento monitorado da retenção já aprovada, backups/logs
+   do provedor e informação ao usuário. [Política e limites](27-retention-policy.md).
 4. Geografia/contagens reais integradas ao globo e UX definitiva sem mistura com
    demo sintética; composição multicolor em concentração extrema (#32).
 5. Medidas de tráfego/custo no provedor e benchmark em hardware físico. Contador
@@ -82,3 +84,6 @@ planejada, sem fingir benchmark. #12 conserva QA real/hardware. Não fechar #5,
 
 Referências: [fila](23-cross-tab-queue.md), [ranking](24-ranking-contract.md),
 [orçamentos](25-api-operation-budgets.md), [staging](18-remote-staging.md).
+
+
+[Benchmark CPU completo](28-population-benchmark.md): 180 combinações incluindo 8 bilhões; não é benchmark de usuários simultâneos ou GPU.

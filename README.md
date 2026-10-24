@@ -78,11 +78,11 @@ server/geoPrivacy.mjs       protótipo isolado de país aproximado e supressão
 docs/                        arquitetura, regras, evidências e pendências
 ```
 
-As pastas `api/` e `server/` contêm o backend Steam preservado, porém sem painel visível no site público. Os demais endpoints de participação, `server/store.mjs`, `server/handlers.mjs`, o cliente `participationClient.ts` e as migrações `0002`–`0004` estão **somente no PR #31** enquanto ele permanecer em draft. A correção de saldo e retries foi integrada nesse draft pelo [PR #43](https://github.com/Faysk/world-pulse/pull/43), com testes em PostgreSQL descartável; isso ainda não ativa participação em produção.
+As pastas `api/` e `server/` contêm o backend Steam preservado, porém sem painel visível no site público. Os demais endpoints de participação, `server/store.mjs`, `server/handlers.mjs`, o cliente `participationClient.ts` e as migrações `0002`–`0005` estão **somente no PR #31** enquanto ele permanecer em draft. A correção de saldo e retries foi integrada nesse draft pelo [PR #43](https://github.com/Faysk/world-pulse/pull/43), com testes em PostgreSQL descartável; isso ainda não ativa participação em produção.
 
 ## Documentação e próximos passos
 
-- [Prontidão e estrutura real da API](docs/26-readiness.md)
+- [Prontidão e estrutura real da API](docs/26-readiness.md) · [Retenção aprovada](docs/27-retention-policy.md) · [Benchmark CPU completo](docs/28-population-benchmark.md)
 - [Fila entre abas](docs/23-cross-tab-queue.md) · [Ranking atual/histórico](docs/24-ranking-contract.md) · [Orçamento de operações](docs/25-api-operation-budgets.md)
 
 - [Visão e escopo](docs/01-vision-and-scope.md) · [Interação](docs/02-interaction-rules.md)
