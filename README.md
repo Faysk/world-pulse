@@ -78,7 +78,7 @@ O app visual não exige secrets. Nunca colocar credenciais em `VITE_*` nem versi
 src/                         interface, globo, datasets sintéticos e contrato de saldo
 tests/                      testes de domínio e navegador
 infra/                       probes Neon/R2, sincronização e publicação staged
-infra/sql/0001-runtime-access.sql  baseline de acesso SQL; não é schema da aplicação
+infra/sql/                   migrações 0001–0006; domínio aplicado/verificado no staging
 scripts/                     benchmark dos cenários agregados
 api/steam.mjs                endpoint do feed externo Steam
 server/steam.mjs             consulta/validação do feed externo
@@ -87,9 +87,11 @@ server/geoPrivacy.mjs       país aproximado fechado por padrão; API draft agre
 docs/                        arquitetura, regras, evidências e pendências
 ```
 
-As pastas `api/` e `server/` contêm o backend Steam preservado, porém sem painel visível no site público. Os demais endpoints de participação, `server/store.mjs`, `server/handlers.mjs`, o cliente `participationClient.ts` e as migrações `0002`–`0006` estão **somente no PR #31** enquanto ele permanecer em draft. A correção de saldo e retries foi integrada nesse draft pelo [PR #43](https://github.com/Faysk/world-pulse/pull/43), com testes em PostgreSQL descartável; isso ainda não ativa participação em produção.
+As pastas `api/` e `server/` contêm a API de participação e o feed Steam preservado e oculto. O pacote do [PR #31](https://github.com/Faysk/world-pulse/pull/31) reúne sessões, filas, saldos, ranking e geografia por país; as migrações 0001–0006 foram aplicadas/verificadas no staging. Produção mantém a demonstração, sem migrações de domínio/ativação da API realizadas nesta etapa. Código na main não equivale a publicação: flags e fluxo de deploy continuam fechados.
 
 ## Documentação e próximos passos
+
+- **[Estado verificado antes da publicação](docs/36-prepublication-status.md)** · [HTTPS privado e Neon real](docs/35-staging-private-https-smoke.md)
 
 - [Prontidão e estrutura real da API](docs/26-readiness.md) · [Retenção aprovada](docs/27-retention-policy.md) · [Benchmark CPU completo](docs/28-population-benchmark.md)
 - [Fila entre abas](docs/23-cross-tab-queue.md) · [Ranking atual/histórico](docs/24-ranking-contract.md) · [Orçamento de operações](docs/25-api-operation-budgets.md)
@@ -108,7 +110,7 @@ As pastas `api/` e `server/` contêm o backend Steam preservado, porém sem pain
 
 O reconhecimento de gestos do globo foi reforçado no [PR #47](https://github.com/Faysk/world-pulse/pull/47), integrado em `main`. A agregação de células por zoom e seu benchmark entraram como módulo **não ligado ao renderer** no [PR #49](https://github.com/Faysk/world-pulse/pull/49); o compositor experimental por célula ([PR #63](https://github.com/Faysk/world-pulse/pull/63)) e o atlas WebGL2 para até 256 regiões em um draw ([PR #66](https://github.com/Faysk/world-pulse/pull/66)) estão na `main` como **pesquisa isolada**, sem ligação ao renderer público. O [PR #69](https://github.com/Faysk/world-pulse/pull/69) adicionou projeção **Mercator 2D com zoom/antimeridiano e paginação de viewport** (620 células sintéticas em 3 draws), ainda **sem integrar ao globo público**. Projeção esférica MapLibre, privacidade, visual orgânico, fallback e FPS físico continuam na [issue #32](https://github.com/Faysk/world-pulse/issues/32).
 
-O fluxo **interface → API → PostgreSQL descartável → dois navegadores** está validado em ambiente isolado ([issue #48 encerrada](https://github.com/Faysk/world-pulse/issues/48)), sem alterar a versão pública. O [PR #51](https://github.com/Faysk/world-pulse/pull/51) introduziu uma prévia de ranking por **saldo ativo** na branch experimental da API, com histórico e segundos separados. O [PR #52](https://github.com/Faysk/world-pulse/pull/52) acrescentou helpers de **país aproximado e supressão**, ainda sem conectar coordenadas/dados geográficos ao site. Próxima entrega: staging persistente, política RGPD/retention e validação segura de origem geográfica. O contrato de ranking atual por saldos positivos, com histórico separado, foi definido no draft da API; validação de staging, custos, RGPD e integração segura continuam pendentes antes da alpha. O laboratório suporta até 756 células sintéticas; isso não comprova capacidade de atender bilhões de usuários reais.
+O fluxo **interface → HTTPS privado no Actions → pooler Neon staging real → dois navegadores** passou em [40061344573](https://github.com/Faysk/world-pulse/actions/runs/40061344573), sem Vercel/deploy. Sessões independentes, cookies seguros, saldos, retorno, perda de resposta/retry e consentimento persistido foram conferidos; a borda pública ainda precisa de homologação. Países agregados da hashtag selecionada aparecem sem pontos individuais; a fonte geográfica está desligada até ser verificada. CPU/BigInt podem representar contagens enormes, mas não comprovam bilhões de conexões ou FPS físico.
 
 [Issues](https://github.com/Faysk/world-pulse/issues) · [Milestones](https://github.com/Faysk/world-pulse/milestones) · Licença [MIT](LICENSE).
 

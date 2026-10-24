@@ -47,3 +47,11 @@ da branch é a proteção final, sem prometer limpeza garantida após crash.
 
 O teste complementa PostgreSQL descartável, schema check e plano de preview.
 O aceite do preview HTTPS público continua separado em #53, e origem real em #6.
+
+## Evidência de execução
+
+[40061344573](https://github.com/Faysk/world-pulse/actions/runs/40061344573): 2 testes aprovados (desktop e celular emulado), 2,9 minutos; encerramento confirmou remoção das 4 sessões sintéticas criadas. Nenhuma credencial ou ID individual foi incluído nesse resumo.
+
+![UI mobile do teste HTTPS privado com Neon staging](assets/staging-https-mobile-2026-10-24.png)
+
+Captura do primeiro run aprovado [40060966430](https://github.com/Faysk/world-pulse/actions/runs/40060966430). O fundo usa cartografia mínima de teste. O contador já pode estar zerado após os segundos expirarem; os históricos 31/2 e a outra sessão com 15 foram conferidos pelo teste, não inferidos da imagem. Não é screenshot de produção nem medição de GPU física.

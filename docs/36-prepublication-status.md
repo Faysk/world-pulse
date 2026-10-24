@@ -1,0 +1,71 @@
+# Estado verificado antes da publicação — 24/10/2026
+
+**Publicação pausada.** O pacote de implementação/evidências é reunido no
+[PR #31](https://github.com/Faysk/world-pulse/pull/31), milestone v0.4.
+Integrá-lo à `main` não implanta nem ativa a alpha.
+`map.faysk.dev` continua com a demonstração anterior. Não foi feito deploy,
+promoção, migração de domínio ou habilitação de participação em produção.
+
+## O que está comprovado
+
+| Parte | Resultado e evidência |
+|---|---|
+| Infra existente | [40059556406](https://github.com/Faysk/world-pulse/actions/runs/40059556406): PostgreSQL TLS/runtime restrito e R2 privado write/read/delete aprovados |
+| Site existente | HTTPS, HTML e assets JS/CSS de `map.faysk.dev` conferidos sem publicar; é a demonstração anterior |
+| Neon staging | 0001–0006, grants, ausência de DDL e timeouts efetivos no pooler: [40058318799](https://github.com/Faysk/world-pulse/actions/runs/40058318799), [40058318548](https://github.com/Faysk/world-pulse/actions/runs/40058318548) |
+| Plano de preview | [40058932667](https://github.com/Faysk/world-pulse/actions/runs/40058932667), sem acesso à Vercel ou publicação |
+| App → banco remoto real | [40061344573](https://github.com/Faysk/world-pulse/actions/runs/40061344573): dois testes desktop/mobile via HTTPS privado, duas sessões, cookie seguro, saldos, recarga, retry e consentimento; quatro sessões sintéticas removidas no encerramento |
+| Banco descartável e regressões | [40060394467](https://github.com/Faysk/world-pulse/actions/runs/40060394467): transações e dois navegadores aprovados, incluindo 205 históricos, idempotência, filas/abas e retenção |
+| UI e três builds | [40060394468](https://github.com/Faysk/world-pulse/actions/runs/40060394468): produção fechada, preview por opt-in e alpha por flag separada; desktop/mobile aprovados |
+| Geografia | SQL agregado por saldo positivo, consentimento opcional, supressão e polígonos nativos; [contrato e provas](31-country-geography.md). Fonte real da borda permanece desativada |
+| Legibilidade | Tinta calculada e marcador preservando cor persistida, com provas de azul escuro em navegador; [limites](34-tag-label-readability.md) |
+
+Localmente, a suíte tem 125 testes: 124 aprovados e um SQL pulado por não haver
+PostgreSQL local. O SQL foi executado separadamente no Actions. Os 21 testes de
+infraestrutura e o build TypeScript/Vite passaram. Testes emulados não são
+medidas de FPS ou gestos em dispositivos físicos. O benchmark de 0 a 1 trilhão
+é de contagens/CPU agregadas, não de conexões concorrentes ou pessoas únicas.
+
+## Estrutura real e controles fechados
+
+- React/Vite/MapLibre; API server-side com PostgreSQL Neon. Sem Supabase no runtime.
+- Cloudflare DNS-only para `map.faysk.dev`; R2 privado não participa dos taps.
+  Geometria pública é asset estático versionado, sem objeto novo por clique.
+- Conexões e credenciais em GitHub Environments production/staging. Valores de
+  secrets não foram recuperados para a máquina. A inspeção de metadados da
+  Vercel confirmou apenas DATABASE_URL, R2 e APP_URL no target production;
+  proprietário de migração/token operacional não estão no runtime.
+- GitHub production: `WP_ALPHA_RELEASE`, `WP_API_ENABLED`, `WP_GEO_PUBLIC_ENABLED`,
+  `WP_GEO_COUNTRY_ENABLED` e `WP_GEO_DIRECT_EDGE` estão false. Staging sync está
+  false; retenção horária está false no repositório. Nenhuma dessas ativações
+  foi sincronizada/publicada nesta etapa.
+- Plano/sync preview só aceita a branch de staging e runtime restrito. Retenção
+  tem plano READ ONLY, execução limitada e resumo/backlog; continua desligada.
+  O host de produção para manutenção ainda precisa ser atestado/configurado.
+- Staging expira em **31/10/2026 01:15:25 UTC**. Recriar/renovar requer revisar
+  destino, conexões, scripts e documentação; o código recusa operar após expirar.
+
+## O que permanece como gate, sem marcar 100% por ficção
+
+1. **Vercel/HTTPS público:** token próprio do Environment staging, sync deliberado,
+   preview protegido e testes do runtime/cookies/headers no trajeto real. A última
+   tentativa foi limitada por quota; não houve nova tentativa de publicar aqui.
+2. **Geografia real:** verificar borda direta, proxy, VPN, IPv6, rede móvel e
+   desconhecido antes de habilitar fonte. O teste HTTPS privado usa certificado
+   self-signed e não comprova headers/certificado público da Vercel.
+3. **Operação antes do público:** conferir logs/backups/restore e métricas do
+   provedor, aplicar migrações de produção em operação própria, atestar host e
+   ativar/verificar retenção. Limites de banco não garantem custo zero ou DDoS.
+4. **Visual/hardware:** hoje o mapa mostra países da hashtag selecionada, sem
+   posição de pessoas. Composição orgânica multicolor simultânea é pesquisa
+   separada (#32), e QA de touchpad/iOS/Android e FPS físico continua em #3/#12.
+
+Isso distingue preparação técnica validada de aceite público completo. As
+issues #5, #6, #7, #8, #13 e #53 continuam abertas pelos gates correspondentes.
+Entregas de implementação #74, #76, #77, #79, #81, #83 e #85 foram concluídas em
+PRs vinculados a milestones, sem fechar gates que não foram testados.
+
+A sequência de liberação/interrupção/rollback está em
+[operações antes da publicação](32-prepublication-operations.md). O teste remoto
+sem Vercel e a captura de evidência estão em
+[HTTPS privado de staging](35-staging-private-https-smoke.md).
