@@ -118,8 +118,12 @@ test('Writes are rejected for unsupported methods', async () => {
 test('Tap endpoint attributes clicks to the originally supplied hashtag', async () => {
   const a=randomUUID(), batchId=randomUUID();let received;
   const res=response();
+  const token=newSession().token;
+  const req=request('POST',{tagId:a,batchId,clicks:2});
+  req.headers.cookie='wp_session='+token;
+  req.headers['x-wp-session-binding']=tokenHash('world-pulse-queue-binding-v1:'+token);
   await route('taps',stub({ creditBatch:async (_visitor, batch)=>{received=batch;return {acceptedClicks:batch.clicks};} }))(
-    request('POST',{tagId:a,batchId,clicks:2}),res
+    req,res
   );
   assert.equal(res.code,200);
   assert.deepEqual(received,{tagId:a,batchId,clicks:2});
@@ -182,4 +186,37 @@ test('Activity route never accepts writes and is disabled by default', async () 
   } finally {
     process.env.WP_API_ENABLED='true';
   }
+});
+
+test('Taps cannot cross anonymous cookie rotation even if tag ID was valid', async () => {
+  const token=newSession().token;
+  let called=false;
+  const req=request('POST',{tagId:randomUUID(),batchId:randomUUID(),clicks:1});
+  req.headers.cookie='wp_session='+token;
+  req.headers['x-wp-session-binding']='f'.repeat(64);
+  const res=response();
+  await route('taps',stub({creditBatch:async()=>{called=true;}}))(req,res);
+  assert.equal(res.code,409);
+  assert.equal(res.payload.error,'session_binding_mismatch');
+  assert.equal(called,false,'must reject BEFORE the database credit function');
+});
+
+test('New sessions return a non-authenticating queue binding and current hashtag metadata',async()=>{
+  const token=newSession().token;
+  const selected=randomUUID();
+  const res=response();
+  await route('session',stub({
+    findVisitor:async()=>({id:randomUUID(),active_tag_id:selected,
+      active_tag_name:'gta6',active_tag_color:'#ff8758'})
+  }))({...request('POST',{}),headers:{
+    ...request('POST',{}).headers,cookie:'wp_session='+token
+  }},res);
+  assert.equal(res.code,200);
+  assert.equal(res.payload.sessionFresh,false);
+  assert.equal(res.payload.activeTag.id,selected);
+  assert.equal(res.payload.activeTag.name,'#gta6');
+  assert.equal(res.payload.activeTag.color,'#ff8758');
+  assert.equal(res.payload.sessionBinding,tokenHash('world-pulse-queue-binding-v1:'+token));
+  assert.equal('visitorId' in res.payload,false);
+  assert.equal('sessionToken' in res.payload,false);
 });
