@@ -373,3 +373,13 @@ test('Selecting an older hashtag restores its authoritative balance immediately 
   assert.equal(client.remainingMilliseconds(ID_A),3600000);assert.equal(client.balancesLimited(),true);
   assert.equal(client.balances()[0].creditedSeconds,'3600');assert.equal(client.pendingClicks(),0);
 });
+
+test('Malformed country identities are rejected before reaching the renderer',async()=>{
+  const tag={id:ID_A,name:'#gta6',color:'#ff7755',activeParticipants:'5',countries:[{countryCode:'PT',activeParticipants:'5'}]};
+  let tags=[tag];
+  const client=new ParticipationClient(async()=>Response.json({type:'country_snapshot',asOfMs:0,validUntilMs:5000,granularity:'country',privacyThreshold:5,tags}),fakeStorage());
+  assert.equal((await client.countries()).tags.length,1);
+  tags=[tag,tag];await assert.rejects(client.countries(),/invalid_country_snapshot/);
+  tags=[{...tag,countries:[...tag.countries,...tag.countries]}];
+  await assert.rejects(client.countries(),/invalid_country_snapshot/);
+});

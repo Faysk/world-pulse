@@ -1,10 +1,11 @@
-import { useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import type { Map as MapInstance } from 'maplibre-gl';
 import { CountryLayer } from './CountryLayer';
 import { WorldGlobe } from './WorldGlobe';
 import type { PulseCollection } from './demoData';
 import { useParticipation } from './useParticipation';
 import {tagLabelStyle} from './tagLabel';
+import {composeCountries,countryTagPage} from './countryComposition';
 import './liveExperience.css';
 
 const EMPTY_GEOGRAPHY:PulseCollection={type:'FeatureCollection',features:[]};
@@ -18,6 +19,12 @@ export default function LiveExperience(){
   const [countriesOpen,setCountriesOpen]=useState(false);
   const [countryPick,setCountryPick]=useState<string|null>(null);
   const [countryDrawError,setCountryDrawError]=useState('');
+  const [focusSelected,setFocusSelected]=useState(false);
+  const [countrySearch,setCountrySearch]=useState('');
+  const [countryPage,setCountryPage]=useState(0);
+  const focusId=focusSelected&&live.selected?live.selected.id:null;
+  const composition=useMemo(()=>composeCountries(live.countrySnapshot,focusId),[live.countrySnapshot,focusId]);
+  const countryRows=useMemo(()=>countryTagPage(live.countrySnapshot,countryPick,countrySearch,countryPage),[live.countrySnapshot,countryPick,countrySearch,countryPage]);
   const countryTag=live.countrySnapshot?.tags.find(tag=>tag.id===live.selected?.id);
   const [name,setName]=useState('');
   const [rankingOpen,setRankingOpen]=useState(()=>window.innerWidth>760);
@@ -29,9 +36,9 @@ export default function LiveExperience(){
   return <main className="live-world" aria-label="World Pulse participação">
     <WorldGlobe key={mapVersion} ariaLabel="Globo interativo com países agregados" scale={0} population={EMPTY_GEOGRAPHY} selected={null} cityLights={false}
       onReady={instance=>{setMap(instance);setMapReady(true);setMapError('');}}
-      onCountryPick={code=>{setCountryPick(code);setCountriesOpen(true);setRankingOpen(false);setBalancesOpen(false);}} onZoom={()=>{}} onFps={()=>{}}
+      onCountryPick={code=>{setCountryPick(code);setCountrySearch('');setCountryPage(0);setCountriesOpen(true);setRankingOpen(false);setBalancesOpen(false);}} onZoom={()=>{}} onFps={()=>{}}
       onTap={()=>void live.tap()} onTagPick={()=>{}} onFailure={setMapError}/>
-    <CountryLayer map={map} snapshot={live.countrySnapshot} tagId={live.selected?.id??null} onError={setCountryDrawError}/>
+    <CountryLayer map={map} snapshot={live.countrySnapshot} tagId={live.selected?.id??null} mode={focusId?'selected':'all'} onError={setCountryDrawError}/>
     <div className="live-shade" aria-hidden="true"/>
     <header className="live-header">
       <div className="live-brand">WORLD<span>PULSE</span><small>PARTICIPAÇÃO EM TESTE</small></div>
@@ -69,20 +76,28 @@ export default function LiveExperience(){
       </li>)}</ul>}
     </aside>}
     {countriesOpen&&<aside id="live-countries-panel" className="live-panel live-ranking" aria-label="Participação por país">
-      <div className="live-panel-title"><h2>Países · {live.selected?.name??'selecione uma hashtag'}</h2><button aria-label="Fechar países" onClick={()=>setCountriesOpen(false)}>×</button></div>
-      <p>O mapa colore somente a hashtag selecionada. A área do país não representa quantidade ou posição de pessoas.</p>
+      <div className="live-panel-title"><h2>{countryPick?'País '+countryPick:'Origens e cores'}</h2><button aria-label="Fechar países" onClick={()=>setCountriesOpen(false)}>×</button></div>
+      <p>{focusId?`Foco em ${live.selected?.name}.`:'Visão geral com várias hashtags por país.'} A área não representa quantidade ou posição de pessoas.</p>
+      <button disabled={!live.selected} aria-pressed={Boolean(focusId)} onClick={()=>{setFocusSelected(v=>!v);setCountryPick(null);setCountryPage(0);}}>{focusId?'Ver todas as cores':'Focar hashtag selecionada'}</button>
+      <p>Faixas mostram até quatro cores principais; cinza reúne as demais hashtags. A quantização pode deixar minorias sem faixa: consulte os números e use o foco. Cores iguais podem pertencer a hashtags diferentes.</p>
+      {countryPick&&<button onClick={()=>{setCountryPick(null);setCountrySearch('');setCountryPage(0);}}>Ver todas as origens</button>}
       {!live.countryPreference.available?<p>Geografia ainda desativada neste ambiente.</p>:live.countryError?<p role="status">Leitura geográfica indisponível.</p>:!live.countrySnapshot?<p>Carregando países…</p>:<>
         <small>Leitura: {new Date(live.countrySnapshot.asOfMs).toLocaleTimeString('pt-BR')} · até 5s de intervalo</small>
-        {!countryTag?.countries.length?<p>Nenhuma participação ativa nesta hashtag.</p>:<ul>{countryTag.countries.map(country=><li key={country.countryCode}><span>{country.countryCode==='ZZ'?'Origem desconhecida / sem compartilhamento':country.countryCode==='OTHER'?'Outros países (grupos menores que 5)':country.countryCode}</span><strong>{count(country.activeParticipants)}</strong></li>)}</ul>}
+        {live.selected&&<p>Origens de {live.selected.name}:</p>}
+        {live.selected&&(!countryTag?.countries.length?<p>Nenhuma participação ativa nesta hashtag.</p>:<ul>{countryTag.countries.map(country=><li key={country.countryCode}><span>{country.countryCode==='ZZ'?'Origem desconhecida / sem compartilhamento':country.countryCode==='OTHER'?'Outros países (grupos menores que 5)':country.countryCode}</span><strong>{count(country.activeParticipants)}</strong></li>)}</ul>)}
         {countryPick&&<p>País inspecionado: {countryPick}. Este toque não adiciona segundos.</p>}
-        <p>Hashtags ativas nesta leitura (até 20, sem ordem de ranking):</p><ul>{live.countrySnapshot.tags.slice(0,20).map(tag=><li key={tag.id}><button disabled={!live.ready||live.selecting} style={tagLabelStyle(tag.color)} onClick={()=>void live.select(tag.name)}>{tag.name}</button><strong>{count(tag.activeParticipants)}</strong></li>)}</ul>
-        {live.countrySnapshot.tags.length>20&&<p>Exibindo 20 de {live.countrySnapshot.tags.length} hashtags. Digite outra hashtag para consultar seus países; o Top 10 é um painel separado.</p>}
+        <label htmlFor="country-search">Buscar hashtag {countryPick?'em '+countryPick:'nesta leitura'}</label>
+        <input id="country-search" value={countrySearch} maxLength={33} onChange={event=>{setCountrySearch(event.target.value);setCountryPage(0);}} placeholder="#hashtag"/>
+        <p>{countryRows.total} hashtags · participações por sessão/hashtag, não pessoas únicas.</p>
+        <ul>{countryRows.rows.map(tag=><li key={tag.id}><button disabled={!live.ready||live.selecting} style={tagLabelStyle(tag.color)} onClick={()=>void live.select(tag.name)}>{tag.name}</button><strong>{count(tag.participants)}</strong></li>)}</ul>
+        {countryRows.total===0&&<p>Nenhuma hashtag encontrada nesta origem.</p>}
+        <div className="live-country-pages"><button disabled={countryRows.page===0} onClick={()=>setCountryPage(countryRows.page-1)}>Anterior</button><span>Página {countryRows.page+1} de {countryRows.pages}</span><button disabled={countryRows.page+1>=countryRows.pages} onClick={()=>setCountryPage(countryRows.page+1)}>Próxima</button></div>
       </>}
       <p>País estimado pela conexão, sujeito a VPN e erros. Pequenos grupos são agrupados. Algumas ilhas e territórios não têm desenho nesta escala; seus totais continuam na lista.</p>
       {countryDrawError&&<p role="status">{countryDrawError}</p>}
     </aside>}
     <section className="live-controls" aria-label="Sua participação">
-      <p className="live-geography" data-testid="live-geography">{mapError?'Mapa indisponível. Seus saldos continuam acessíveis.':mapReady?(countryTag?.countries.some(c=>c.countryCode!=='ZZ'&&c.countryCode!=='OTHER')?'Países agregados da hashtag selecionada. Toque na área para inspecionar.':'Mapa aguardando geografia confiável. Nenhuma posição é inventada.'):'Carregando mapa…'}</p>
+      <p className="live-geography" data-testid="live-geography">{mapError?'Mapa indisponível. Seus saldos continuam acessíveis.':mapReady?(composition.length>0?(focusId?'Países agregados da hashtag selecionada. Toque na área para inspecionar.':'Países agregados com várias hashtags. Toque na área para inspecionar.'):'Mapa aguardando geografia confiável. Nenhuma posição é inventada.'):'Carregando mapa…'}</p>
       {mapError&&<button onClick={()=>{setMap(null);setMapReady(false);setMapError('');setMapVersion(v=>v+1);}}>Recarregar mapa</button>}
       <form onSubmit={select}>
         <label htmlFor="live-name">Sua hashtag</label>

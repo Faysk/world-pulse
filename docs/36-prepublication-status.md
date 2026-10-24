@@ -22,7 +22,7 @@ promoção, migração de domínio ou habilitação de participação em produç
 | Geografia | SQL agregado por saldo positivo, consentimento opcional, supressão e polígonos nativos; [contrato e provas](31-country-geography.md). Fonte real da borda permanece desativada |
 | Legibilidade | Tinta calculada e marcador preservando cor persistida, com provas de azul escuro em navegador; [limites](34-tag-label-readability.md) |
 
-Localmente, a suíte tem 125 testes: 124 aprovados e um SQL pulado por não haver
+Localmente, após a composição multicolor, a suíte tem 133 testes: 132 aprovados e um SQL pulado por não haver
 PostgreSQL local. O SQL foi executado separadamente no Actions. Os 25 testes de
 infraestrutura e o build TypeScript/Vite passaram. Testes emulados não são
 medidas de FPS ou gestos em dispositivos físicos. O benchmark de 0 a 1 trilhão
@@ -74,3 +74,9 @@ A sequência de liberação/interrupção/rollback está em
 [operações antes da publicação](32-prepublication-operations.md). O teste remoto
 sem Vercel e a captura de evidência estão em
 [HTTPS privado de staging](35-staging-private-https-smoke.md).
+
+## Avanço visual sem publicação
+
+[Países multicolor](38-multicolor-countries.md): visão geral, foco, busca e páginas
+de 20 hashtags. Faixas aproximadas preservam números exatos na lista. Composição
+orgânica e FPS físico continuam pendentes; os gates operacionais não mudaram.
