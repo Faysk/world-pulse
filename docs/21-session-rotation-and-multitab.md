@@ -6,9 +6,10 @@
 
 A identidade anônima vive num cookie `HttpOnly`. Uma aba pode perder conexão com taps locais pendentes e retornar após a expiração da sessão. Sem proteção, o endpoint `POST /api/session` pode emitir outro cookie, permitindo acidentalmente reencaminhar um lote do participante anterior como se pertencesse à identidade nova.
 
-Agora o servidor devolve `sessionFresh: true` sempre que foi necessário emitir uma sessão nova (sem expor UUID do visitante). O cliente, ao observar `sessionFresh` com lotes pendentes, bloqueia a sincronização e **quarentena** a fila. A quarentena é persistida separadamente do lote; permanece depois de recarregar a aba.
+Agora o servidor devolve `sessionFresh: true` quando emite uma sessão nova e um `sessionBinding` não autenticador derivado do token aleatório do cookie por SHA-256 com separação de domínio. O cliente guarda a fila num **envelope v2** contendo o binding original e os lotes; ao observar sessão nova **ou binding divergente**, bloqueia a sincronização e coloca a fila em **quarentena**. Isso cobre inclusive outra aba renovando o cookie antes de a aba com taps fazer uma requisição (nesse caso `sessionFresh` pode ser falso). A quarentena é persistida separadamente dos lotes e permanece depois de recarregar a aba. O binding não é aceito pelo servidor como autenticação nem devolve o ID do visitante; é um marcador pseudônimo local, que não deve aparecer em logs ou APIs públicas.
 
 - `flush()` e `creditClick()` param enquanto há quarentena.
+- Filas legadas não vinculadas a sessão não são migradas automaticamente: são conservadas apenas para descarte explícito, para impedir replay cruzado.
 - O batchId original, tagId e número de clicks não são adulterados.
 - O laboratório explica claramente a perda de vínculo entre as duas sessões.
 - A recuperação exige um **clique explícito** em “Descartar fila antiga e conectar nova sessão”; isso abandona os taps pendentes, mas nunca os atribui a outra pessoa.
