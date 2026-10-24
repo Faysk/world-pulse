@@ -9,6 +9,7 @@
  * this metadata in client JSON or honor incoming Cloudflare cf-* headers.
  */
 
+import { normalizeCountry } from './countryCodes.mjs';
 export const UNKNOWN_COUNTRY = 'ZZ';
 export const SUPPRESSED_COUNTRIES = 'OTHER';
 export const MIN_PUBLISHED_COUNTRY_GROUP = 5;
@@ -25,7 +26,7 @@ export function approximateCountryFromHeaders(headers, { trustedEdge = false, pr
     granularity: 'unknown'
   };
   const value = headers?.['x-vercel-ip-country'];
-  const country = typeof value === 'string' ? value.trim().toUpperCase() : '';
+  const country = normalizeCountry(value);
   if (!/^[A-Z]{2}$/.test(country) || country === UNKNOWN_COUNTRY) return {
     countryCode: UNKNOWN_COUNTRY,
     source: 'vercel-ip-estimate',
@@ -33,6 +34,14 @@ export function approximateCountryFromHeaders(headers, { trustedEdge = false, pr
   };
   // No city, exact lat/lon, region or postal code is returned, even if sent.
   return { countryCode: country, source: 'vercel-ip-estimate', granularity: 'country' };
+}
+
+export function countryEstimateForRequest(req, env=process.env) {
+  return approximateCountryFromHeaders(req.headers,{
+    trustedEdge:env.VERCEL==='1'&&env.WP_GEO_COUNTRY_ENABLED==='true',
+    // An operator must explicitly attest that no forwarding proxy changes the IP.
+    proxyInFront:env.WP_GEO_DIRECT_EDGE!=='true'
+  }).countryCode;
 }
 
 function validTag(tag) {

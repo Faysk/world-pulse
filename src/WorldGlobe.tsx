@@ -19,6 +19,7 @@ export type GlobeProps = {
   onZoom: (zoom: number) => void;
   onFps: (fps: number) => void;
   onTap: () => void;
+  onCountryPick?: (countryCode:string) => void;
   onTagPick: (tag: TagId) => void;
   onFailure: (message: string) => void;
 };
@@ -226,12 +227,12 @@ function installLights(map: MapInstance, scale: number, population?: PulseCollec
 }
 
 export function WorldGlobe({
-  scale, population, selected, cityLights, onReady, onZoom, onFps, onTap, onTagPick, onFailure
+  scale, population, selected, cityLights, onReady, onZoom, onFps, onTap, onCountryPick, onTagPick, onFailure
 }: GlobeProps) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapInstance | null>(null);
-  const callbacks = useRef({ onReady, onZoom, onFps, onTap, onTagPick, onFailure });
-  callbacks.current = { onReady, onZoom, onFps, onTap, onTagPick, onFailure };
+  const callbacks = useRef({ onReady, onZoom, onFps, onTap, onCountryPick, onTagPick, onFailure });
+  callbacks.current = { onReady, onZoom, onFps, onTap, onCountryPick, onTagPick, onFailure };
   const latestState = useRef({ scale, population, selected, cityLights });
   latestState.current = { scale, population, selected, cityLights };
 
@@ -338,6 +339,10 @@ export function WorldGlobe({
       if (!original || !gestureGuard.consumeClick(
         original.clientX, original.clientY, performance.now()
       )) return;
+      if(map.getLayer('live-country-fill')){
+        const country=map.queryRenderedFeatures(event.point,{layers:['live-country-fill']})[0]?.properties?.countryCode;
+        if(typeof country==='string'&&callbacks.current.onCountryPick){callbacks.current.onCountryPick(country);return;}
+      }
       if (!map.getLayer('pulse-hit')) return;
       const hits = map.queryRenderedFeatures(event.point, {
         layers: ['pulse-hit']
@@ -356,7 +361,11 @@ export function WorldGlobe({
       if (hoverFrame !== null) window.cancelAnimationFrame(hoverFrame);
       hoverFrame = window.requestAnimationFrame(() => {
         hoverFrame = null;
-        if (!map.getLayer('pulse-hit')) return;
+        if(map.getLayer('live-country-fill')){
+        const country=map.queryRenderedFeatures(event.point,{layers:['live-country-fill']})[0]?.properties?.countryCode;
+        if(typeof country==='string'&&callbacks.current.onCountryPick){callbacks.current.onCountryPick(country);return;}
+      }
+      if (!map.getLayer('pulse-hit')) return;
         if (map.isMoving()) {
           map.getCanvas().style.cursor = 'grabbing';
           return;

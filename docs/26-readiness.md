@@ -69,13 +69,13 @@ e expiração, recusando atingir produção por engano.
 
 1. Staging HTTPS integrado e sincronização GitHub → preview; teste do pooler,
    cookies protegidos, duas sessões e retries no ambiente remoto.
-2. Fonte geográfica confiável, SQL agregado e revisão de privacidade. O módulo
-   puro country-only na main não equivale a origem geográfica funcionando.
+2. Verificar a fonte geográfica na borda remota e revisar privacidade. A [implementação
+   country-only](31-country-geography.md) agrega no SQL com consentimento e fonte fechada
+   por padrão; testes locais não comprovam headers reais do provedor.
 3. Validar a operação/agendamento monitorado da retenção já aprovada, backups/logs
    do provedor e informação ao usuário. [Política e limites](27-retention-policy.md).
-4. Conectar geografia real ao globo da [experiência integrada](29-live-experience.md),
-   já disponível em homologação sem pontos fictícios; composição multicolor em
-   concentração extrema (#32) ainda é etapa própria.
+4. Verificar os polígonos por hashtag da [experiência integrada](29-live-experience.md)
+   em homologação remota. Composição multicolor orgânica (#32) ainda é etapa própria.
 5. Medidas de tráfego/custo no provedor e benchmark em hardware físico. Contador
    no banco não impede DDoS nem garante que o plano gratuito nunca esgote.
 

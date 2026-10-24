@@ -1,0 +1,75 @@
+# Geografia por país na experiência de homologação
+
+Implementação da issue #74 na branch da API. Não é ativação em produção.
+
+## Contrato real
+
+`POST /api/session` recebe somente `geoConsent: boolean` opcional. O padrão é
+false. País, latitude, longitude e headers enviados fora da borda confiável não
+são fontes de localização. O usuário pode continuar participando sem compartilhar
+o país; seus saldos e ranking não mudam. A retirada apaga o código da sessão,
+invalida o cache agregado e mantém apenas `ZZ`. A data registra a última escolha,
+sem manter histórico de países. A política de consolidação após 30 dias permanece.
+
+A fonte só é aceita com **todos**: `VERCEL=1`, `WP_GEO_COUNTRY_ENABLED=true` e
+`WP_GEO_DIRECT_EDGE=true`. A última variável exige atestar que a requisição chega
+diretamente à borda Vercel, sem proxy que faça seu próprio IP parecer o usuário.
+Por padrão a fonte é `ZZ`. VPNs, provedores e bases de IP podem errar. Ainda falta
+verificar headers e fluxo real no staging HTTPS; testes com headers controlados
+não comprovam esse comportamento remoto. O DNS-only atual é necessário, mas
+não substitui a verificação. Nunca usar cabeçalhos arbitrários de país como fallback.
+
+`GET /api/countries` requer `WP_API_ENABLED=true` **e**
+`WP_GEO_PUBLIC_ENABLED=true`. Ambos permanecem desligados em produção. Retorna
+somente contagens de sessões com saldo positivo por hashtag/país. Contagens são
+strings decimais e somas usam BigInt. Cinco sessões é o mínimo para nomear um país
+por hashtag; grupos menores vão para `OTHER`, sem país. Sem consentimento, código
+inválido ou fonte confiável, vão para `ZZ`. Isso não identifica pessoas únicas.
+
+Não há nomes de sessão, cookies, IP bruto, cidade ou coordenadas de pessoas no
+payload. A cache SQL tem uma única linha e janela de 5 segundos; responde
+`Cache-Control: no-store`. O cliente atualiza apenas em abas visíveis e remove o
+desenho quando a leitura falha. Retirar consentimento e atualizar o cache usam
+o mesmo advisory lock, impedindo uma atualização concorrente de republicar a
+fotografia anterior após a retirada. Leituras já entregues ou em trânsito não
+podem ser recuperadas. Comparações temporais podem revelar mudanças: limiar 5
+**não é garantia de anonimato**, nem proteção contra ataques de diferenciação.
+Máximo de 5.000 grupos SQL; ultrapassar falha explicitamente em vez de truncar.
+Orçamentos compartilhados e timeouts também se aplicam à leitura.
+
+## Visual e limites
+
+O globo usa polígonos nativos MapLibre, uma source e duas layers para a hashtag
+selecionada. Selecionar outra troca a cor e o conjunto de países; não mistura
+cores nem esconde uma hashtag atrás de outra. Sem país conhecido, o globo fica
+sem área de participação. `OTHER` e `ZZ` aparecem somente na lista. A área do
+país não codifica quantidade, intensidade ou posição de pessoas. Todas as
+contagens estão na lista. Tocar numa área inspeciona o país e não adiciona tempo;
+o botão +1 e taps elegíveis fora dessas áreas mantêm a interação documentada.
+
+Natural Earth 110m, 174 países/territórios com código disponível, é um desenho
+generalizado. Algumas ilhas, microestados e territórios ficam sem geometria;
+suas contagens continuam na lista pelo código, sem posição inventada. Fronteiras
+são cartográficas, não uma declaração política. O arquivo é servido localmente,
+sem enviar identificação do participante ao fornecedor. Fonte, versão e licença
+estão em [COUNTRIES-SOURCE](../src/assets/COUNTRIES-SOURCE.md).
+
+Polígonos de uma hashtag por vez são um fallback funcional. Composição orgânica
+multicolor simultânea e FPS em aparelho físico continuam na issue #32, e não
+foram comprovados pelos laboratórios sintéticos. Bilhões de contagens podem ser
+representados aritmeticamente; isso não significa bilhões de conexões suportadas.
+
+## Verificação e liberação
+
+Migração `0006-country-geography.sql` é aditiva e idempotente. O teste PostgreSQL
+descartável valida consentimento, retirada, supressão, expiração e cache. Os
+testes de contrato validam origem fechada por padrão, códigos atribuídos e
+contagens acima de Number.MAX_SAFE_INTEGER. O navegador usa fixtures explícitas
+para a visualização de países; isso não comprova a estimativa pela borda.
+
+Antes de liberar: CI verde; aplicar 0006 **somente staging**; conferir privilégios;
+testar HTTPS com duas sessões, opt-in/opt-out, país desconhecido e proxy; revisar
+texto de privacidade; conferir hardware e custos. Não ativar flags de produção
+ou migrar o domínio de produção como consequência de um build bem-sucedido.
+
+O código XK do dataset é de uso excepcional e não pertence à lista ISO atribuída usada pela API; seu polígono foi omitido, sem inferir outro país.

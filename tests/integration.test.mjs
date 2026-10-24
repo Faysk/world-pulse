@@ -33,6 +33,7 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
   useTestPool(app);
   await owner.query(await readFile(new URL('../infra/sql/0004-operation-budgets.sql', import.meta.url), 'utf8'));
   await owner.query(await readFile(new URL('../infra/sql/0005-retention-rollups.sql', import.meta.url), 'utf8'));
+  await owner.query(await readFile(new URL('../infra/sql/0006-country-geography.sql', import.meta.url), 'utf8'));
 
   await t.test('Migration preserves history without inventing live balances and is repeatable', async () => {
     const [legacy] = await getCredits(legacyVisitor);
@@ -391,6 +392,37 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
     assert.deepEqual(await consolidateInactive(app),{consolidatedVisitors:1});
     assert.equal((await history()).historicalParticipants,'7');
     assert.equal((await history()).creditedSeconds,'36');
+  });
+
+  await t.test('Country consent, suppression, cache and withdrawal preserve current participation', async()=>{
+    const {setCountryConsent,getCountrySnapshot}=await import('../server/store.mjs');
+    const tag=await createOrGetTag('#aaa_geo');const visitors=[];
+    for(let i=0;i<8;i++){
+      const visitor=await createVisitor();visitors.push(visitor);
+      await selectTag(visitor.visitorId,tag.id);
+      await creditBatch(visitor.visitorId,{tagId:tag.id,batchId:randomUUID(),clicks:30});
+      if(i<7)await setCountryConsent(visitor.visitorId,true,i<5?'PT':'BR');
+    }
+    await owner.query('DELETE FROM world_pulse.country_snapshot_cache');
+    let snapshot=await getCountrySnapshot();let geo=snapshot.tags.find(t=>t.id===tag.id);
+    assert.equal(geo.activeParticipants,'8');
+    assert.deepEqual(geo.countries,[{countryCode:'OTHER',activeParticipants:'2'},{countryCode:'PT',activeParticipants:'5'},{countryCode:'ZZ',activeParticipants:'1'}]);
+    for(const v of visitors)assert.ok(!JSON.stringify(snapshot).includes(v.visitorId));
+    assert.equal(snapshot.asOfMs%5000,0);assert.equal(snapshot.validUntilMs,snapshot.asOfMs+5000);
+    assert.equal((await owner.query('SELECT count(*)::int AS n FROM world_pulse.country_snapshot_cache')).rows[0].n,1);
+    await setCountryConsent(visitors[0].visitorId,false,'PT');
+    assert.equal((await owner.query('SELECT count(*)::int AS n FROM world_pulse.country_snapshot_cache')).rows[0].n,0);
+    const stored=await owner.query('SELECT country_code,country_consent,country_consent_at FROM world_pulse.visitors WHERE id=$1',[visitors[0].visitorId]);
+    assert.equal(stored.rows[0].country_code,'ZZ');assert.equal(stored.rows[0].country_consent,false);assert.ok(stored.rows[0].country_consent_at);
+    snapshot=await getCountrySnapshot();geo=snapshot.tags.find(t=>t.id===tag.id);
+    assert.equal(geo.activeParticipants,'8','withdrawing country never removes a positive balance');
+    assert.deepEqual(geo.countries,[{countryCode:'OTHER',activeParticipants:'6'},{countryCode:'ZZ',activeParticipants:'2'}]);
+    await owner.query("UPDATE world_pulse.visitor_tags SET expires_at=now()-interval '1 minute' WHERE visitor_id=$1 AND tag_id=$2",[visitors[1].visitorId,tag.id]);
+    await owner.query('DELETE FROM world_pulse.country_snapshot_cache');
+    geo=(await getCountrySnapshot()).tags.find(t=>t.id===tag.id);
+    assert.equal(geo.activeParticipants,'7');
+    await findVisitor(visitors[2].token,'XX');
+    assert.equal((await owner.query('SELECT country_code FROM world_pulse.visitors WHERE id=$1',[visitors[2].visitorId])).rows[0].country_code,'ZZ');
   });
 
 });

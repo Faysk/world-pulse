@@ -4,6 +4,8 @@ import { ApiError, batchFingerprint, newSession, randomColor, tokenHash } from '
 import { chargeBudget } from './costPolicy.mjs';
 import { beginLimitedTransaction } from './databaseLimits.mjs';
 import { consolidateInactive } from './retention.mjs';
+import { normalizeCountry } from './countryCodes.mjs';
+import { countrySnapshot } from './countrySnapshot.mjs';
 
 let pool;
 
@@ -64,20 +66,21 @@ function query(text, values) {
   return transaction(client => client.query(text, values));
 }
 
-export async function findVisitor(token) {
+export async function findVisitor(token, country='ZZ') {
   if (!token) return null;
   const { rows } = await query(
     `WITH renewed AS (
       UPDATE world_pulse.visitors AS current SET last_seen_at=statement_timestamp(),
+        country_code=CASE WHEN country_consent THEN $2 ELSE 'ZZ' END,
         expires_at=GREATEST(current.expires_at,statement_timestamp()+interval '30 days',
           COALESCE((SELECT max(vt.expires_at)+interval '1 day' FROM world_pulse.visitor_tags vt WHERE vt.visitor_id=current.id),statement_timestamp()))
-      WHERE session_hash=$1 AND current.expires_at>statement_timestamp() RETURNING id,active_tag_id,expires_at
-    ) SELECT v.id, v.active_tag_id,v.expires_at,
+      WHERE session_hash=$1 AND current.expires_at>statement_timestamp() RETURNING id,active_tag_id,expires_at,country_consent,country_code
+    ) SELECT v.id, v.active_tag_id,v.expires_at,v.country_consent,v.country_code,
       t.normalized AS active_tag_name, t.color AS active_tag_color
     FROM renewed v
     LEFT JOIN world_pulse.tags t ON t.id = v.active_tag_id
     `,
-    [tokenHash(token)]
+    [tokenHash(token),normalizeCountry(country)]
   );
   return rows[0] ?? null;
 }
@@ -92,10 +95,47 @@ export async function createVisitor() {
   return session;
 }
 
-export async function requireVisitor(token) {
-  const visitor = await findVisitor(token);
+export async function requireVisitor(token,country='ZZ') {
+  const visitor = await findVisitor(token,country);
   if (!visitor) throw new ApiError(401, 'session_expired', 'Sessão expirada. Recarregue a página.');
   return visitor;
+}
+
+export async function setCountryConsent(visitorId,allowed,country='ZZ') {
+  if(typeof allowed!=='boolean')throw new ApiError(400,'invalid_geo_consent','Escolha de país inválida.');
+  return transaction(async client=>{
+    await client.query('SELECT pg_advisory_xact_lock(1867401)');
+    const {rows:[old]}=await client.query('SELECT country_consent FROM world_pulse.visitors WHERE id=$1 FOR UPDATE',[visitorId]);
+    if(!old)throw new ApiError(401,'session_expired','Sessão expirada.');
+    await client.query('UPDATE world_pulse.visitors SET country_consent=$2,country_code=$3,country_consent_at=statement_timestamp() WHERE id=$1',
+      [visitorId,allowed,allowed?normalizeCountry(country):'ZZ']);
+    // An explicit withdrawal stops publication without waiting for cache expiry.
+    if(!allowed&&old.country_consent)await client.query('DELETE FROM world_pulse.country_snapshot_cache');
+  });
+}
+
+export async function getCountrySnapshot() {
+  return transaction(async client=>{
+    const {rows:[clock]}=await client.query("SELECT floor(extract(epoch FROM statement_timestamp())/5)*5000 AS ms");
+    const asOfMs=Number(clock.ms);
+    const cached=await client.query('SELECT payload FROM world_pulse.country_snapshot_cache WHERE key=true AND window_start=to_timestamp($1/1000.0)',[asOfMs]);
+    if(cached.rows.length)return cached.rows[0].payload;
+    const {rows:[lock]}=await client.query('SELECT pg_try_advisory_xact_lock(1867401) AS acquired');
+    if(!lock.acquired)throw new ApiError(503,'geography_refreshing','Origem geográfica sendo atualizada.');
+    const {rows}=await client.query(`SELECT t.id AS tag_id,t.normalized,t.color,
+      CASE WHEN v.country_consent THEN v.country_code ELSE 'ZZ' END AS country_code,
+      count(*)::text AS participants
+      FROM world_pulse.visitor_tags vt JOIN world_pulse.visitors v ON v.id=vt.visitor_id
+      JOIN world_pulse.tags t ON t.id=vt.tag_id
+      WHERE vt.expires_at>statement_timestamp()
+      GROUP BY t.id,t.normalized,t.color,CASE WHEN v.country_consent THEN v.country_code ELSE 'ZZ' END
+      ORDER BY t.id,country_code LIMIT 5001`);
+    if(rows.length>5000)throw new ApiError(503,'geography_capacity','Origem temporariamente indisponível.');
+    const payload=countrySnapshot(rows,asOfMs);
+    await client.query(`INSERT INTO world_pulse.country_snapshot_cache(key,window_start,payload)
+      VALUES(true,to_timestamp($1/1000.0),$2::jsonb) ON CONFLICT(key) DO UPDATE SET window_start=EXCLUDED.window_start,payload=EXCLUDED.payload`,[asOfMs,JSON.stringify(payload)]);
+    return payload;
+  });
 }
 
 export async function createOrGetTag(rawName) {

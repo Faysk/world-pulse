@@ -3,6 +3,7 @@ import {
   requireSameOrigin, json, fail, normalizeHashtag, validateTagId, validateTapBatch, tokenHash
 } from './protocol.mjs';
 import * as store from './store.mjs';
+import { countryEstimateForRequest } from './geoPrivacy.mjs';
 
 function setSessionCookie(res, token, expiresAt) {
   const base=2592000;
@@ -15,7 +16,7 @@ function setSessionCookie(res, token, expiresAt) {
 export function route(kind, operations = store) {
   const {
     findVisitor, createVisitor, requireVisitor, createOrGetTag,
-    selectTag, creditBatch, getCredits, getRanking, getActiveBalanceSnapshot, consumeApiBudget
+    selectTag, creditBatch, getCredits, getRanking, getActiveBalanceSnapshot, consumeApiBudget,setCountryConsent,getCountrySnapshot
   } = operations;
   return async function handler(req, res) {
     try {
@@ -31,6 +32,12 @@ export function route(kind, operations = store) {
         const ranking = await getRanking();
         return json(res, 200, { type: 'historical', ranking });
       }
+      if(kind==='countries'){
+        onlyMethod(req,'GET');
+        if(process.env.WP_GEO_PUBLIC_ENABLED!=='true')throw new ApiError(503,'geography_disabled','Origem geográfica ainda não liberada.');
+        await consumeApiBudget();await consumeApiBudget('reads');
+        return json(res,200,await getCountrySnapshot());
+      }
       if (kind === 'activity' || kind === 'ranking') {
         onlyMethod(req, 'GET');
         await consumeApiBudget();
@@ -45,15 +52,21 @@ export function route(kind, operations = store) {
       const body = parseBody(req);
       await consumeApiBudget();
       const token = readSessionCookie(req);
+      const country=countryEstimateForRequest(req);
 
       if (kind === 'session') {
-        const existing = await findVisitor(token);
+        if('geoConsent'in body&&typeof body.geoConsent!=='boolean')throw new ApiError(400,'invalid_geo_consent','Escolha de país inválida.');
+        const existing = await findVisitor(token,country);
         let newToken = null;
         if (!existing) {
           const created = await createVisitor();
           newToken = created.token;
         }
-        const visitor = existing ?? await requireVisitor(newToken);
+        let visitor = existing ?? await requireVisitor(newToken,country);
+        if(typeof body.geoConsent==='boolean'){
+          await setCountryConsent(visitor.id,body.geoConsent,country);
+          visitor=await requireVisitor(newToken??token,country);
+        }
         const sessionToken = newToken ?? token;
         if (sessionToken) {
           setSessionCookie(res,sessionToken,visitor.expires_at);
@@ -61,6 +74,9 @@ export function route(kind, operations = store) {
         return json(res, 200, {
           anonymous: true,
           sessionFresh: !existing,
+          geoConsent:visitor.country_consent===true,
+          geoCountry:visitor.country_consent===true?visitor.country_code:'ZZ',
+          geographyAvailable:process.env.WP_GEO_PUBLIC_ENABLED==='true',
           // Stable non-authenticating queue marker derived from a 256-bit random
           // HttpOnly cookie. It is only returned to the same-origin client;
           // the backend NEVER accepts it as proof of identity.
@@ -73,7 +89,7 @@ export function route(kind, operations = store) {
         });
       }
 
-      const visitor = await requireVisitor(token);
+      const visitor = await requireVisitor(token,country);
       if (kind === 'tags') {
         if (typeof body.name !== 'string') throw new ApiError(400,'invalid_hashtag','Nome obrigatório.');
         normalizeHashtag(body.name);
@@ -96,7 +112,7 @@ export function route(kind, operations = store) {
         const credit=await creditBatch(visitor.id, validateTapBatch(body));
         // Refresh the same credential after extending a long balance. Its
         // expiry must not silently cut off return before that balance ends.
-        if (token) setSessionCookie(res,token,(await requireVisitor(token)).expires_at);
+        if (token) setSessionCookie(res,token,(await requireVisitor(token,country)).expires_at);
         return json(res, 200, credit);
       }
       throw new ApiError(404,'not_found','Rota inexistente.');

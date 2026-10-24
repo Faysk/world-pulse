@@ -82,12 +82,12 @@ infra/sql/0001-runtime-access.sql  baseline de acesso SQL; não é schema da apl
 scripts/                     benchmark dos cenários agregados
 api/steam.mjs                endpoint do feed externo Steam
 server/steam.mjs             consulta/validação do feed externo
-server/geoPrivacy.mjs       protótipo isolado de país aproximado e supressão
+server/geoPrivacy.mjs       país aproximado fechado por padrão; API draft agrega com consentimento
 .github/workflows/           validação, produção manual e organização de milestones
 docs/                        arquitetura, regras, evidências e pendências
 ```
 
-As pastas `api/` e `server/` contêm o backend Steam preservado, porém sem painel visível no site público. Os demais endpoints de participação, `server/store.mjs`, `server/handlers.mjs`, o cliente `participationClient.ts` e as migrações `0002`–`0005` estão **somente no PR #31** enquanto ele permanecer em draft. A correção de saldo e retries foi integrada nesse draft pelo [PR #43](https://github.com/Faysk/world-pulse/pull/43), com testes em PostgreSQL descartável; isso ainda não ativa participação em produção.
+As pastas `api/` e `server/` contêm o backend Steam preservado, porém sem painel visível no site público. Os demais endpoints de participação, `server/store.mjs`, `server/handlers.mjs`, o cliente `participationClient.ts` e as migrações `0002`–`0006` estão **somente no PR #31** enquanto ele permanecer em draft. A correção de saldo e retries foi integrada nesse draft pelo [PR #43](https://github.com/Faysk/world-pulse/pull/43), com testes em PostgreSQL descartável; isso ainda não ativa participação em produção.
 
 ## Documentação e próximos passos
 
@@ -111,3 +111,5 @@ O reconhecimento de gestos do globo foi reforçado no [PR #47](https://github.co
 O fluxo **interface → API → PostgreSQL descartável → dois navegadores** está validado em ambiente isolado ([issue #48 encerrada](https://github.com/Faysk/world-pulse/issues/48)), sem alterar a versão pública. O [PR #51](https://github.com/Faysk/world-pulse/pull/51) introduziu uma prévia de ranking por **saldo ativo** na branch experimental da API, com histórico e segundos separados. O [PR #52](https://github.com/Faysk/world-pulse/pull/52) acrescentou helpers de **país aproximado e supressão**, ainda sem conectar coordenadas/dados geográficos ao site. Próxima entrega: staging persistente, política RGPD/retention e validação segura de origem geográfica. O contrato de ranking atual por saldos positivos, com histórico separado, foi definido no draft da API; validação de staging, custos, RGPD e integração segura continuam pendentes antes da alpha. O laboratório suporta até 756 células sintéticas; isso não comprova capacidade de atender bilhões de usuários reais.
 
 [Issues](https://github.com/Faysk/world-pulse/issues) · [Milestones](https://github.com/Faysk/world-pulse/milestones) · Licença [MIT](LICENSE).
+
+[Geografia por país com consentimento e limites reais](docs/31-country-geography.md): implementação na branch da API, sem ativação pública.
