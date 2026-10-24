@@ -338,8 +338,19 @@ export class ParticipationClient {
     return this.sending;
   }
 
-  ranking(): Promise<ActiveRanking> {
-    return this.request<ActiveRanking>('/api/ranking');
+  async ranking(): Promise<ActiveRanking> {
+    const snapshot=await this.request<ActiveRanking>('/api/ranking');
+    const decimal=(value:unknown)=>typeof value==='string'&&/^\d{1,64}$/.test(value);
+    if(!snapshot||snapshot.type!=='active'||snapshot.metric!=='distinct_anonymous_sessions_with_positive_balance'||
+      snapshot.geography!=='unavailable'||!Number.isFinite(snapshot.asOfMs)||snapshot.asOfMs<0||snapshot.asOfMs>8.64e15||
+      !Array.isArray(snapshot.ranking)||snapshot.ranking.length>10||snapshot.ranking.some(tag=>
+        !tag||typeof tag.id!=='string'||!/^[0-9a-f-]{36}$/i.test(tag.id)||
+        typeof tag.name!=='string'||!tag.name.startsWith('#')||tag.name.length>33||
+        typeof tag.color!=='string'||!/^#[0-9a-f]{6}$/i.test(tag.color)||
+        !decimal(tag.activeParticipants)||!decimal(tag.historicalParticipants)||!decimal(tag.creditedSeconds))) {
+      throw new Error('invalid_ranking_snapshot');
+    }
+    return snapshot;
   }
 
   historicalRanking(): Promise<ApiRanking> {

@@ -178,3 +178,34 @@ test('Web Locks coordinate simultaneous durable taps in two tabs against the rea
     expect(final.rows[0].seconds).toBe('62');
   } finally {await other.close();await db.end();}
 });
+
+test('Integrated product flow credits eligible globe taps, restores the server and keeps geography empty',async({page},info)=>{
+  const db=new pg.Pool({connectionString:'postgresql://postgres:local-only@127.0.0.1:5432/world_pulse_ci',ssl:false});
+  const name='product_'+randomUUID().slice(0,8);
+  try{
+    await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/,route=>route.fulfill({json:style}));
+    await page.goto('/?experiencePreview=1');
+    await expect(page.getByTestId('live-connection')).toHaveText('Sessão conectada');
+    await expect(page.getByTestId('live-geography')).toContainText('Nenhuma posição é inventada');
+    await page.getByLabel('Sua hashtag',{exact:true}).fill('#'+name);
+    await page.getByRole('button',{name:'Participar',exact:true}).click();
+    await expect(page.getByTestId('live-selected')).toHaveText('#'+name);
+    const canvas=page.locator('.maplibregl-canvas');const rect=await canvas.boundingBox();
+    expect(rect).not.toBeNull();if(!rect)return;
+    const x=rect.x+rect.width*.52,y=rect.y+rect.height*.35;
+    if(info.project.name==='mobile')await page.touchscreen.tap(x,y);else await page.mouse.click(x,y);
+    await expect(page.getByTestId('live-pending')).toHaveText('1');
+    await page.getByRole('button',{name:'Sincronizar',exact:true}).click();
+    await expect(page.getByTestId('live-pending')).toHaveText('0');
+    if(info.project.name==='desktop'){
+      await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+100,y+45,{steps:10});await page.mouse.up();
+      await expect(page.getByTestId('live-pending')).toHaveText('0');
+    }
+    await page.getByRole('button',{name:'Meus saldos',exact:true}).click();
+    await expect(page.locator(`[data-live-tag="#${name}"]`)).toContainText('Histórico: 1 segundo');
+    await page.screenshot({path:`test-artifacts/experience-real-${info.project.name}.png`});
+    await page.reload();await expect(page.getByTestId('live-selected')).toHaveText('#'+name);
+    const result=await db.query('SELECT vt.seconds::text FROM world_pulse.visitor_tags vt JOIN world_pulse.tags t ON t.id=vt.tag_id WHERE t.normalized=$1',[name]);
+    expect(result.rows.map((row:{seconds:string})=>row.seconds)).toEqual(['1']);
+  }finally{await db.end();}
+});

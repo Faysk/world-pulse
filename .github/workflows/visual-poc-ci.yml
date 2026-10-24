@@ -14,6 +14,9 @@ on:
       - "src/domain.ts"
       - "tsconfig.json"
       - "playwright.config.ts"
+      - "playwright.build.config.ts"
+      - "vite.config.ts"
+      - "build/**"
       - "tests/browser/**"
       - ".github/workflows/visual-poc-ci.yml"
   pull_request:
@@ -23,11 +26,29 @@ on:
       - "package.json"
       - "package-lock.json"
       - "tsconfig.json"
+      - "tests/**"
+      - "playwright*.config.ts"
+      - "vite.config.ts"
+      - "build/**"
 
 permissions:
   contents: read
 
 jobs:
+  preview-build-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm ci --no-fund
+      - run: npx playwright install chromium --with-deps
+      - name: Test compiled production denial and explicit preview opt-in
+        run: npx playwright test --config playwright.build.config.ts
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 10

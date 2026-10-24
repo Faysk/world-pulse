@@ -354,3 +354,11 @@ test('Storage write failures are explicit, never reported as a durable accepted 
   await assert.rejects(()=>client.creditClick(),/queue_storage_unavailable/);
   assert.equal(transport.credited.size,0);
 });
+
+test('Malformed ranking snapshots fail explicitly instead of crashing bigint/date rendering',async()=>{
+  const valid={type:'active',metric:'distinct_anonymous_sessions_with_positive_balance',geography:'unavailable',asOfMs:1000,ranking:[]};
+  for(const snapshot of [{...valid,asOfMs:null},{...valid,asOfMs:9e15},{...valid,ranking:[{id:ID_A,name:'#gta6',color:'#ffffff',activeParticipants:'invalid',historicalParticipants:'1',creditedSeconds:'1'}]},{...valid,ranking:null}]){
+    const client=new ParticipationClient(async()=>Response.json(snapshot),null);
+    await assert.rejects(()=>client.ranking(),/invalid_ranking_snapshot/);
+  }
+});
