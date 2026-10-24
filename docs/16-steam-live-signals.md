@@ -1,6 +1,8 @@
 # World Pulse — Steam LIVE (primeira fonte externa real)
 
-**Estado (24/10/2026):** funcionalidade publicada em [map.faysk.dev](https://map.faysk.dev), sem alterar participantes, geografia ou persistência do World Pulse. PR [#41](https://github.com/Faysk/world-pulse/pull/41) integrado à `main`.
+**Estado (24/10/2026):** integração com a Steam preservada no repositório, mas **painel oculto em produção por decisão de produto**. O World Pulse mantém o foco no globo e nas hashtags. PR [#41](https://github.com/Faysk/world-pulse/pull/41) introduziu a integração; ela não é utilizada pela interface pública.
+
+Para testes locais apenas, rode `npm run dev` e abra `/?steamPreview=1`. Em build de produção, `import.meta.env.DEV` é falso, portanto o painel permanece inacessível até nova decisão explícita. O componente `src/SteamPanel.tsx`, o endpoint `api/steam.mjs`, os testes e documentação continuam versionados. O frontend **não solicita `/api/steam`** quando o painel está oculto; a rota de API continua existente para eventuais testes técnicos.
 
 ## Por que esta integração existe
 
