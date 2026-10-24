@@ -38,6 +38,21 @@ Testes cobrem 0, 1, 10, 100, 1.000, 10.000, 100.000, 1 bilhão, 8 bilhões e 1 t
 
 O benchmark `scripts/spatial-benchmark.mjs` gera linhas CSV de **30 execuções por configuração**, contagem de células, bytes JSON e tempo p50/p95 de agregação em memória.
 
+### Primeira medição em GitHub Actions (24/10/2026)
+
+Evidência: [Spatial Aggregation CI #40046347836](https://github.com/Faysk/world-pulse/actions/runs/40046347836), artefato `world-pulse-spatial-benchmark` (CSV com 126 cenários).
+
+No runner Ubuntu/Node 22 do Actions, para zoom solicitado 10 e orçamento máximo **64 células**:
+
+| Distribuição sintética | Total representado | Células | Payload JSON | p95 CPU |
+| --- | ---: | ---: | ---: | ---: |
+| Espalhada | 100 mil | 756 → 45 | 135.102 → 9.440 bytes (**93,0% menor**) | 1,674 ms |
+| Espalhada | 1 trilhão | 756 → 45 | 140.394 → 9.755 bytes (**93,1% menor**) | 1,043 ms |
+| Concentrada | 100 mil | 756 → 24 | 160.467 → 5.210 bytes (**96,8% menor**) | 0,368 ms |
+| Concentrada | 1 trilhão | 756 → 24 | 165.759 → 5.378 bytes (**96,8% menor**) | 0,373 ms |
+
+Os tempos são **p95 medidos apenas na agregação em memória de 30 iterações por configuração**. O payload é apenas o JSON de GeoJSON, sem compressão HTTP. A resolução da grade pode diminuir quando ultrapassa o orçamento — por exemplo, zoom solicitado 10 → nível de célula 6 no cenário espalhado de 64 células. **Nenhum desses números prova 60 FPS, 1 trilhão de sessões reais ou segurança geográfica.**
+
 ### Limitações obrigatórias
 
 - Não mede shader, FPS, VRAM, tiles, transferência HTTP nem banco.
