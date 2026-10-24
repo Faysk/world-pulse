@@ -1,6 +1,6 @@
 # 11 — Infraestrutura e operações
 
-**Verificado em 23/10/2026.** Rastreio: #7, #15, #16, #17 e #18.
+**Atualizado em 24/10/2026.** Rastreio: #7, #15, #16, #17 e #18.
 
 ## Serviços e estado real
 
@@ -11,24 +11,23 @@
 | Banco | Neon Free, `world-pulse-production`, Londres | Provisionado pelo Vercel Marketplace; runtime configurado pelo GitHub; `SELECT 1` com TLS validado |
 | Objetos | R2 Standard, `world-pulse-production` | Privado; teste de escrita/leitura/remoção validado |
 | Credenciais | GitHub Environment `production` | Credenciais de banco e R2 armazenadas; deploy permitido somente na branch `main` |
-| App | PR #14, `feat/globe-poc` | Frontend em rascunho, separado desta infraestrutura; ainda ausente de `main` |
+| App | React/Vite/MapLibre em `main` | POC publicada com dados simulados; API real em draft no PR #31 |
 
-O domínio já responde por HTTPS, mas retornou **404** na verificação inicial: DNS/TLS funcionam, porém isso não representa um app publicado em produção. Não promover o rascunho visual como parte da configuração de infraestrutura. O workflow recusa deploy enquanto não existir `package.json` com script `build` em `main`.
+O domínio responde por HTTPS com a POC publicada. A [execução 40041911767](https://github.com/Faysk/world-pulse/actions/runs/40041911767)
+publicou o commit `91898e8`: candidata validada, acesso temporário revogado,
+promoção confirmada e smoke público aprovado. Isso comprova entrega do app e
+conectividade de infraestrutura, não persistência de participação real.
 
-## Escolha do banco
+## Banco e limites
 
-A organização Supabase disponível está no plano Free e já tem dois projetos ativos. Não pausamos, alteramos nem compartilhamos bancos de outros projetos. Neon foi escolhido para fornecer PostgreSQL separado sem exigir upgrade. Auth e Realtime do Neon ficaram desativados; o desenho atual usa API server-side e agregados.
+Neon Free fornece PostgreSQL separado em Londres. A aplicação acessará o banco por
+API server-side com role runtime restrita; a credencial de migração permanece
+separada. Não usamos serviços externos de Auth/Realtime. Tabelas de participação
+seguem em migração versionada no PR #31, ainda não aplicada em produção.
 
-Valores conferidos na documentação oficial nesta data:
-
-| Serviço | Gratuito relevante | Atenção |
-|---|---|---|
-| [Neon Free](https://neon.com/pricing) | 1 GB por projeto e 100 CU-h/mês por projeto | Escala a zero e pode ter latência ao acordar; não habilitar plano por consumo |
-| [Supabase Free](https://supabase.com/pricing) | 500 MB de banco, dois projetos ativos | Projetos podem pausar após uma semana sem atividade |
-| [R2 Standard](https://developers.cloudflare.com/r2/pricing/) | 10 GB-mês, 1 milhão de operações A e 10 milhões B por mês; egress sem cobrança | Franquia compartilhada na conta; excedentes são cobrados, não há teto financeiro garantido por este código |
-| [Vercel Hobby](https://vercel.com/docs/plans/hobby) | Plano para projetos pessoais e não comerciais | Respeitar quotas atuais; não há promessa de tráfego ilimitado |
-
-O R2 já estava habilitado na conta. Criar um bucket não cria uma franquia gratuita independente. Acompanhar consumo da conta e limitar tamanho/quantidade de objetos na futura API. Não hospedar tiles globais no bucket. Nenhum plano pago foi selecionado por esta implementação.
+Planos/quotas devem ser conferidos nos painéis e nas fontes oficiais: [Neon](https://neon.com/pricing),
+[R2](https://developers.cloudflare.com/r2/pricing/) e [Vercel Hobby](https://vercel.com/docs/plans/hobby).
+Provisionar em plano gratuito não garante custo zero em qualquer volume.
 
 ## GitHub como fonte operacional
 
@@ -55,7 +54,7 @@ O Marketplace injeta variáveis de conexão do banco na Vercel. A sincronizaçã
 
 ### Infrastructure CI
 
-Executa em PRs e mudanças de infraestrutura em `main`, sem secrets. Instala o lockfile de `infra/`, roda testes de configuração e auditoria de dependências. Actions estão fixadas por SHA; dependências por versão exata. Não substitui os testes do frontend do PR #14.
+Executa em PRs e mudanças de infraestrutura em `main`, sem secrets. Instala o lockfile de `infra/`, roda testes de configuração e auditoria de dependências. Actions estão fixadas por SHA; dependências por versão exata. Complementa o workflow Visual POC CI do frontend.
 
 ### Production infrastructure
 
@@ -67,9 +66,9 @@ Executar em **Actions → Production infrastructure → Run workflow**, branch `
 
 Antes de `deploy`, um job separado **sem production secrets** exige o app e `package-lock.json` versionados, executa `npm ci`, `npm test` e `npm run build`. Se falhar, o job de infraestrutura não inicia. Operações `check` e `sync` não dependem de haver frontend em `main`. O smoke da candidata valida entrega de HTML/JS/CSS, rejeita login, redirecionamento externo e assets quebrados; não substitui o smoke gráfico do CI nem benchmark em dispositivo físico.
 
-A candidata protegida usa uma shareable link restrita àquele deployment, com TTL de 600 segundos, criada e revogada pela API durante a operação. O token fica somente na memória do processo, nunca é impresso nem enviado para outros hosts. Mesmo se o runner for interrompido antes da revogação, o acesso expira pelo TTL. A proteção geral do projeto permanece habilitada. Se teste ou revogação falhar, a promoção não é solicitada. Falha depois da promoção é reportada, mas não faz rollback automático; usar o deployment anterior no painel Vercel para recuperação deliberada.
+A candidata protegida usa uma shareable link restrita àquele deployment, com TTL de 600 segundos, criada e revogada pela API durante a operação. O token fica somente na memória do processo, nunca é impresso nem enviado para outros hosts. Mesmo se o runner for interrompido antes da revogação, o acesso expira pelo TTL. A proteção geral do projeto permanece habilitada. O smoke completo da candidata permite no máximo quatro tentativas, com intervalo de dois segundos. Se teste ou revogação falhar, a promoção não é solicitada. Logs mostram etapas fixas, status HTTP e erros do próprio smoke; nunca respostas privadas do provedor. Falha depois da promoção é reportada, mas não faz rollback automático; usar o deployment anterior no painel Vercel para recuperação deliberada.
 
-Deploy de produção é manual para não publicar um frontend em rascunho. `vercel.json` desativa deploys automáticos em `main` e `infra/*`; produção passa pelo Actions. Branches de frontend podem continuar gerando previews sem secrets de produção. O pipeline usa a integração Git da Vercel para buscar o commit, portanto o GitHub App da Vercel precisa continuar autorizado no repositório. No merge do PR #14, preservar esse bloco `git` ao incorporar as opções de build Vite daquele PR.
+Deploy de produção é manual para não publicar um frontend em rascunho. `vercel.json` desativa deploys automáticos em `main` e `infra/*`; produção passa pelo Actions. Branches de frontend podem continuar gerando previews sem secrets de produção. O pipeline usa a integração Git da Vercel para buscar o commit, portanto o GitHub App da Vercel precisa continuar autorizado no repositório. Preservar esse bloco `git` ao alterar as opções de build Vite.
 
 Produção tem restrição de branch `main`, mas não foi configurada revisão humana obrigatória nem proteção da branch principal. Alterações em `main` continuam exigindo confiança nos mantenedores. Não usar `pull_request_target` nem rodar PRs com secrets.
 
@@ -96,6 +95,6 @@ Falha de configuração: comparar nomes com `.env.example`; não imprimir valore
 
 ## Próximas entregas de produto
 
-Esta configuração valida conectividade, não implementa hashtags, sessões, lotes idempotentes ou presença. Decisões de #9 e do modelo de dados continuam necessárias antes das migrations de domínio. Implementar API com credencial SQL restrita, validação e lotes; nunca conectar o navegador diretamente ao Postgres ou expor o bucket. A aprovação visual e merge do PR #14 continuam separados.
+Esta configuração valida conectividade, não implementa hashtags, sessões, lotes idempotentes ou presença. A API experimental do PR #31 ainda precisa cumprir o contrato de saldo e as decisões de privacidade/retenção antes de ativação. Implementar API com credencial SQL restrita, validação e lotes; nunca conectar o navegador diretamente ao Postgres ou expor o bucket. O contrato de saldo (#9) já está confirmado; falta implementá-lo no banco/API e integrar o cliente.
 
 

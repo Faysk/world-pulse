@@ -1,8 +1,10 @@
 # 06 — Modelo de dados preliminar (sem SQL final)
 
-**Status:** modelo de domínio proposto; migrations de domínio ainda não implementadas. Banco Neon e schema de acesso já provisionados.
+**Status:** modelo de domínio proposto; migration de domínio experimental no PR #31, ainda não aplicada em produção. Banco Neon e schema de acesso já provisionados.
 
-**Atualização confirmada em 24/10/2026:** usar [saldo/expiração por participante e hashtag](14-time-credit-contract.md). `contributions` precisa de `expires_at` além do histórico de segundos creditados. Agregados ativos vêm dos pares com saldo positivo, não apenas de `participants.selected_hashtag_id`. Vários pares do mesmo participante podem ter saldo simultâneo. A proposta original abaixo deve ser lida com essa correção; o provedor implantado é Neon, não Supabase.
+**Atualização confirmada em 24/10/2026:** usar [saldo/expiração por participante e hashtag](14-time-credit-contract.md). `contributions` precisa de `expires_at` além do histórico de segundos creditados. Agregados ativos vêm dos pares com saldo positivo, não apenas de `participants.selected_hashtag_id`. Vários pares do mesmo participante podem ter saldo simultâneo. A proposta original abaixo deve ser lida com essa correção; o provedor implantado é Neon PostgreSQL.
+
+Os nomes abaixo são do domínio proposto. O draft #31 usa `tags`, `visitors`, `visitor_tags` e `tap_batches`; revisar sua implementação de expiração antes de integrar.
 
 ## Entidades
 
@@ -30,6 +32,7 @@ A inserção deve ser atômica: duas pessoas criando o mesmo # simultaneamente c
 
 - `participant_id` + `hashtag_id` (par único)
 - `seconds_total` inteiro não negativo (incrementos em +1 por tap)
+- `expires_at` expiração do saldo cronológico; saldo = máximo de zero e expiração menos relógio do servidor
 - `updated_at`
 
 **Trocar # não limpa nem move os segundos passados.**
@@ -63,7 +66,7 @@ Agregação espacial ativa deve ser derivada dos pares participante/hashtag com 
 
 ## Queries/visões pretendidas
 
-- `top_hashtags` — Top 10 por **métrica ainda a definir** (pessoas distintas ou presença selecionada).
+- `top_hashtags` — Top 10 por **métrica ainda a definir** (participantes com saldo positivo, participantes históricos ou segundos).
 - `top_hashtags_counters` — `participants_ever`, `participants_present` (se houver regra de validade), `seconds_total`.
 - `hashtag_origin_by_country` — quantidade agregada por país para cada hashtag.
 - `globe_density_by_cell` — participantes distintos por # e célula geográfica/resolução.

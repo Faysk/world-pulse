@@ -1,13 +1,13 @@
 # Living Earth — Visual POC v0.1
 
-**Status:** experimento em desenvolvimento (branch `feat/globe-poc`). **Nenhum usuário real, banco de dados ou geolocalização automática está conectado.**
+**Status em 24/10/2026:** demonstração publicada em [map.faysk.dev](https://map.faysk.dev), integrada em `main`. **Nenhum usuário real, banco de dados ou geolocalização automática está conectado.**
 
 ## Como executar
 
-Requisitos: Node.js >=20.19 e npm. Com internet para dependências e mapas:
+Requisitos: Node compatível com `package.json` (^22.16 ou >=24) e npm. Com internet para dependências e mapas:
 
 ```bash
-npm install
+npm ci
 npm run dev
 # http://localhost:5173
 ```
@@ -40,7 +40,7 @@ npm run preview
 
 ## Não há ainda
 
-**Não há persistência do contador:** segundos do demo desaparecem ao recarregar, conforme esperado nesta prova visual. Não há Supabase, APIs, Cloudflare, ID de usuário, anti-bot sofisticado, cálculo real de localização ou ranking de verdade. A interface não pode ser confundida com participação real.
+**Não há persistência do contador:** segundos do demo desaparecem ao recarregar, conforme esperado nesta prova visual. A POC não usa API de participação, ID de usuário, geolocalização real ou ranking real. Cloudflare DNS/R2 e Neon já estão provisionados, mas o frontend ainda não grava participação nesses serviços. A API experimental está em draft no PR #31. A interface não pode ser confundida com participação real.
 
 ## Como testar
 
@@ -53,7 +53,7 @@ npm run preview
 7. Desative luzes urbanas de fundo e compare legibilidade e atmosfera.
 8. Abra DevTools: medir WebGL, tiles, memória, erros e performance.
 
-## Arquitetura temporária
+## Estrutura do frontend publicado
 
 ```
 src/
@@ -70,18 +70,24 @@ src/
 - A seleção por região luminosa usa uma camada invisível de círculos sobre os pontos espaciais simulados. Nem toda parte do gradiente visual possui uma área interativa nesta POC; ampliar para campo clicável completo pode exigir hit-testing espacial específico.
 - Múltiplos heatmaps nativos, um por hashtag, são aceitáveis **apenas para poucas hashtags**. POC posterior deve comparar shader único/texturas agregadas para volume elevado.
 - A cor fixa por hashtag neste experimento é seed de teste; no produto real será **sorteada na primeira criação e persistida**.
-- A expansão simulada acrescenta **participantes/pontos espaciais**, nunca taps.
+- A simulação altera contagens de **participantes agregados**, nunca taps. Cenários exatos usam no máximo 756 células, inclusive com 8 bilhões ou 1 trilhão sintéticos.
 - Um perfil de GPU/dispositivo pode exibir FPS inferior ao alvo; o indicador `FPS*` é apenas taxa de frames renderizados, não instrumento formal de benchmark.
 - Não há garantia de bairro em IP geolocation. Dados de teste usam cidades conhecidas, **sem representar pessoas individuais**.
 - Os nomes e dados simulados estão marcados permanentemente como DEMO.
 - O visual atual **não comprova** ainda qualidade final de noite realista / shader ou competição de mil hashtags.
 
-## Validação automatizada
+## Validação e limites
 
-- **Vercel preview:** build `tsc --noEmit && vite build` aprovado em 23/10/2026; a versão final deve ser verificada no último commit da branch.
-- **GitHub Actions:** testes com Node e build aprovados no commit `845e1d6`, cobrindo +1 segundo/tap, troca de hashtags, dados determinísticos, densidade independente dos cliques e desaparecimento do heatmap com zoom.
-- **Ainda NÃO validado com inspeção visual:** qualidade do mapa em PC/celular reais, fluidez, interação de pointer sobre heatmaps e uso de GPU. Build verde não significa aprovação estética.
-- **Desempenho:** a primeira entrega ainda traz MapLibre em bundle grande e três heatmaps separados. Benchmark e shader agregador seguem necessários.
+O [CI dos cenários](https://github.com/Faysk/world-pulse/actions/runs/40040810994)
+passou em desktop e celular emulado. O WebGL é real, mas o estilo cartográfico do
+CI é mínimo/local. Também houve inspeção no Chrome com OpenFreeMap real; as
+capturas estão na [análise de população](docs/15-population-scenarios.md).
+
+A [publicação pelo Actions](https://github.com/Faysk/world-pulse/actions/runs/40041911767)
+validou HTML/JS/CSS antes de promover o deployment e confirmou o domínio público.
+Teste em celular físico, benchmark gráfico e composição de muitas hashtags
+continuam pendentes (#12/#32). Bundle MapLibre ainda é grande; o indicador FPS
+não constitui benchmark. [Arquitetura operacional atual](docs/05-free-tier-architecture.md).
 
 ## Próximos testes
 
