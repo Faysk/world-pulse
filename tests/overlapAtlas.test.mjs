@@ -23,7 +23,7 @@ test('Many coarse cells are sorted and packed into a single compact RGBA8 atlas'
   assert.equal(atlas.totalPeople,3*125*126/2);
   assert.equal(atlas.rgba.length,125*ATLAS_TEXTURE_WIDTH*4);
   assert.equal(atlas.cells.at(-1).cellKey,'tile/0124');
-  assert.deepEqual(atlas.rgba.slice(0,3),[255,103,83]);
+  assert.deepEqual([...atlas.rgba.slice(0,3)],[255,103,83]);
   assert.equal(atlas.rgba[(ATLAS_TEXTURE_WIDTH-1)*4+2],2);
 });
 
