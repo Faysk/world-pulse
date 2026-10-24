@@ -1,10 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Map as MapInstance } from 'maplibre-gl';
 import { TAGS, createCombinedPopulation, createScenarioPopulation, POPULATION_SCENARIOS,
   scenarioDescription, type ScenarioDistribution, type TagId } from './demoData';
 import { WorldGlobe, flyToTag, resetGlobe } from './WorldGlobe';
 import { EMPTY_SECONDS, creditTap, creditedTotal } from './domain';
 import { SteamPanel } from './SteamPanel';
+const ParticipationLab = lazy(() => import('./ParticipationLab'));
+const PARTICIPATION_LAB_ENABLED = import.meta.env.DEV &&
+  new URLSearchParams(window.location.search).get('participationPreview') === '1';
 
 // Steam remains in the repository but is deliberately NOT part of the
 // public World Pulse experience. The development-only preview is opt-in.
@@ -109,6 +112,7 @@ export default function App() {
 
   return (
     <div className="world-pulse">
+      {PARTICIPATION_LAB_ENABLED && <Suspense fallback={<div role="status">Abrindo laboratório…</div>}><ParticipationLab /></Suspense>}
       <WorldGlobe
         scale={scale}
         population={population}

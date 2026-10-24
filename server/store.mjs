@@ -157,7 +157,9 @@ export async function creditBatch(visitorId, { tagId, batchId, clicks }) {
     // Newly accepted taps extend this tag's balance, including after selection
     // changes. A duplicate never updates history OR expiry, and never changes selection.
     const total = await client.query(
-      'SELECT tag_id,seconds::text AS seconds,expires_at,statement_timestamp() AS server_now FROM world_pulse.visitor_tags WHERE visitor_id=$1 AND tag_id=$2',
+      `SELECT vt.tag_id,vt.seconds::text AS seconds,vt.expires_at,statement_timestamp() AS server_now,t.normalized,t.color
+       FROM world_pulse.visitor_tags vt JOIN world_pulse.tags t ON t.id=vt.tag_id
+       WHERE vt.visitor_id=$1 AND vt.tag_id=$2`,
       [visitorId, tagId]
     );
     return {
@@ -171,14 +173,15 @@ function serializeBalance(row) {
   const expiresAtMs = row.expires_at.getTime();
   const serverNowMs = row.server_now.getTime();
   return { tagId: row.tag_id, creditedSeconds: row.seconds,
-    expiresAtMs, serverNowMs, remainingMs: Math.max(0, expiresAtMs - serverNowMs) };
+    expiresAtMs, serverNowMs, remainingMs: Math.max(0, expiresAtMs - serverNowMs),
+    name: '#' + row.normalized, color: row.color };
 }
 
 export async function getCredits(visitorId) {
   const rows = await getPool().query(`
-    SELECT tag_id, seconds::text AS seconds, expires_at, statement_timestamp() AS server_now
-    FROM world_pulse.visitor_tags
-    WHERE visitor_id=$1 AND seconds > 0 ORDER BY tag_id LIMIT 200
+    SELECT vt.tag_id, vt.seconds::text AS seconds, vt.expires_at, statement_timestamp() AS server_now,t.normalized,t.color
+    FROM world_pulse.visitor_tags vt JOIN world_pulse.tags t ON t.id=vt.tag_id
+    WHERE vt.visitor_id=$1 AND vt.seconds > 0 ORDER BY vt.tag_id LIMIT 200
   `, [visitorId]);
   return rows.rows.map(serializeBalance);
 }
