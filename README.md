@@ -73,6 +73,7 @@ infra/sql/0001-runtime-access.sql  baseline de acesso SQL; não é schema da apl
 scripts/                     benchmark dos cenários agregados
 api/steam.mjs                endpoint do feed externo Steam
 server/steam.mjs             consulta/validação do feed externo
+server/geoPrivacy.mjs       protótipo isolado de país aproximado e supressão
 .github/workflows/           validação, produção manual e organização de milestones
 docs/                        arquitetura, regras, evidências e pendências
 ```
@@ -89,9 +90,10 @@ As pastas `api/` e `server/` contêm o backend Steam preservado, porém sem pain
 - [Saldo cronológico](docs/14-time-credit-contract.md) · [Cenários de 0 a 8 bilhões e 1 trilhão](docs/15-population-scenarios.md)
 - [Steam LIVE — integração oculta](docs/16-steam-live-signals.md) · [Issue #40](https://github.com/Faysk/world-pulse/issues/40)
 - [Gestos e +1 segundo sem falsos cliques](docs/17-gesture-safety.md) · [Agregação espacial por zoom e benchmarks](docs/18-spatial-aggregation-spike.md)
+- [Privacidade geográfica (protótipo isolado)](docs/20-geo-privacy-country-poc.md) · [Prévia de ranking ativo (branch da API)](https://github.com/Faysk/world-pulse/blob/feat/real-participation-api/docs/19-active-balance-ranking.md)
 
 O reconhecimento de gestos do globo foi reforçado no [PR #47](https://github.com/Faysk/world-pulse/pull/47), integrado em `main`. A agregação de células por zoom e seu benchmark entraram como módulo **não ligado ao renderer** no [PR #49](https://github.com/Faysk/world-pulse/pull/49); a composição GPU multicolor continua na [issue #32](https://github.com/Faysk/world-pulse/issues/32).
 
-Próxima entrega: validar a API em staging, integrar interface/saldo e testar dois navegadores. O draft já tem saldo e retries validados em banco descartável. Geografia pública, retenção, abuso e ranking exigem trabalho próprio antes da alpha. O laboratório suporta até 756 células sintéticas; isso não comprova capacidade de atender bilhões de usuários reais.
+O fluxo **interface → API → PostgreSQL descartável → dois navegadores** está validado em ambiente isolado ([issue #48 encerrada](https://github.com/Faysk/world-pulse/issues/48)), sem alterar a versão pública. O [PR #51](https://github.com/Faysk/world-pulse/pull/51) introduziu uma prévia de ranking por **saldo ativo** na branch experimental da API, com histórico e segundos separados. O [PR #52](https://github.com/Faysk/world-pulse/pull/52) acrescentou helpers de **país aproximado e supressão**, ainda sem conectar coordenadas/dados geográficos ao site. Próxima entrega: staging persistente, política RGPD/retention e validação segura de origem geográfica. Controles de custo/abuso e ordenação final do Top 10 seguem pendentes antes da alpha. O laboratório suporta até 756 células sintéticas; isso não comprova capacidade de atender bilhões de usuários reais.
 
 [Issues](https://github.com/Faysk/world-pulse/issues) · [Milestones](https://github.com/Faysk/world-pulse/milestones) · Licença [MIT](LICENSE).
