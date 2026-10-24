@@ -1,17 +1,19 @@
 # 26 — Estrutura real e prontidão da participação
 
-Atualizado em 24/10/2026. O código de participação está na cadeia do draft #31;
-os controles abaixo não significam ativação no domínio público.
+Atualizado em 24/10/2026. A presença do código de participação no repositório
+não habilita a API, a UI da alpha ou publicação no domínio público.
 
 ## Caminhos reais
 
 ```mermaid
 flowchart LR
   P[Site público: demo sintética] --> T[OpenFreeMap]
-  L[Laboratório DEV-only] --> H[Handlers HTTP: cookie e origem]
+  U[Experiência com gate de build] --> H[Handlers HTTP: cookie e origem]
+  L[Laboratório DEV-only] --> H
   H --> B[Orçamento compartilhado]
   B --> D[(PostgreSQL)]
-  C[Actions: PostgreSQL descartável] --> L
+  C[Actions: PostgreSQL descartável] --> U
+  Q[Actions: HTTPS privado] --> S
   G[GitHub Environment staging] --> S[(Branch Neon staging)]
   R[GitHub Environment production] --> V[Publicação manual Vercel]
 ```
@@ -25,14 +27,15 @@ objetos. O feed Steam permanece no código e oculto da experiência pública.
 | Tabela em `world_pulse` | Função |
 |---|---|
 | `tags` | Nome normalizado único e cor persistida uma vez |
-| `visitors` | Hash do cookie pseudônimo, seleção atual, último retorno e validade renovável |
+| `visitors` | Hash do cookie, seleção, retorno/validade e escolha opcional de país |
 | `visitor_tags` | Par único sessão/hashtag, histórico de segundos e expiração do saldo |
 | `tap_batches` | ID/fingerprint e taps de cada lote para idempotência |
 | `operation_budgets` | Até cinco contadores compartilhados de capacidade, sem dados de localização |
 | `tag_history_totals` | Histórico consolidado por hashtag sem vínculo individual |
+| `country_snapshot_cache` | Uma linha de agregado público por janela de 5s, sem IDs individuais |
 
-Nenhuma dessas tabelas contém IP, GPS, cidade ou trajetória. O modelo ainda não
-implementa a geografia pública. Histórico começa na seleção; presença atual
+Nenhuma dessas tabelas contém IP bruto, GPS, cidade ou trajetória. País é opcional
+e a fonte/publicação têm gates próprios, fechados por padrão. Histórico começa na seleção; presença atual
 exige saldo positivo. A política de retenção foi aprovada: após 30 dias sem
 retorno e todos os saldos zerados, soma-se no rollup e só então remove-se a
 sessão na mesma transação. DELETE/CASCADE isolado perderia histórico e é proibido.
@@ -42,11 +45,11 @@ sessão na mesma transação. DELETE/CASCADE isolado perderia histórico e é pr
 | Ambiente | Estado |
 |---|---|
 | Produção Neon `main` | Baseline de acesso; domínio da API não migrado/ativado por este trabalho |
-| Neon `world-pulse-staging` | Separado, schema-only, credenciais próprias no GitHub; 0001–0006 e timeouts transacionais no pooler verificados. Expira 31/10 às 01:15 UTC |
+| Neon `world-pulse-staging` | Criado schema-only, sem copiar produção; fixtures de QA próprias e credenciais separadas no GitHub; 0001–0006 e timeouts transacionais no pooler verificados. Expira 31/10 às 01:15 UTC |
 | CI PostgreSQL descartável | Migrações 0001–0006; testes HTTP/duas sessões/abas e concorrência, sem secrets reais |
 | Local visual | Funciona sem secrets; teste SQL requer PostgreSQL descartável do CI ou instalação local explícita |
 
-0004/0005 foram aplicadas no staging pelo Actions; qualquer migração futura exige operação manual revisada;
+0004–0006 foram aplicadas no staging pelo Actions; qualquer migração futura exige operação manual revisada;
 deploy não aplica SQL. `check` não recebe proprietário; `migrate` recebe esse
 segredo apenas no passo deliberado. O script fixa endpoint, roles, banco, TLS
 e expiração, recusando atingir produção por engano.
@@ -90,3 +93,5 @@ Referências: [fila](23-cross-tab-queue.md), [ranking](24-ranking-contract.md),
 [Benchmark CPU completo](28-population-benchmark.md): 180 combinações incluindo 8 bilhões; não é benchmark de usuários simultâneos ou GPU.
 
 [Operações preparadas e sequência de liberação](32-prepublication-operations.md). Nada disso ativa publicação, flags ou manutenção de produção por si só.
+
+Estado final, evidências e gates sem falsa promessa de 100%: [pré-publicação](36-prepublication-status.md). O HTTPS privado contra Neon real foi aprovado em dois navegadores; a borda pública continua em #53.

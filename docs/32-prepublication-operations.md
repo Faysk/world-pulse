@@ -1,7 +1,7 @@
 # Operações preparadas antes da publicação
 
 Este documento descreve código pronto para revisão e execução deliberada, não
-afirma ativação de produção. Publicação está pausada. PR #31 continua draft.
+afirma ativação de produção. Publicação está pausada. Integrar o código do PR #31 não publica nem ativa a API.
 
 ## Preview separado
 

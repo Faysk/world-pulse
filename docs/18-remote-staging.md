@@ -18,7 +18,8 @@ O script recusa operações após essa data; renovar/recriar exige atualizar o
 destino fixado, as credenciais e a documentação. Não houve upgrade de plano.
 
 Aplicadas somente no staging: `0001-runtime-access.sql`,
-`0002-participation-core.sql`, `0003-time-balances.sql`, `0004-operation-budgets.sql` e `0005-retention-rollups.sql`.
+`0002-participation-core.sql`, `0003-time-balances.sql`, `0004-operation-budgets.sql`,
+`0005-retention-rollups.sql` e `0006-country-geography.sql`.
 
 O runtime usa `world_pulse_app`, sem SUPERUSER, CREATEDB, CREATEROLE, INHERIT,
 BYPASSRLS ou memberships. Conexão pooled com `sslmode=verify-full`.
@@ -81,3 +82,5 @@ Staging HTTPS pela Vercel continua sendo uma validação distinta pendente.
 Migração 0005 aplicada no staging via [run 40053116588](https://github.com/Faysk/world-pulse/actions/runs/40053116588), incluindo checagem de schema e timeouts. `maintain` é operação manual limitada, somente runtime, para a política de [retenção](27-retention-policy.md). Produção não foi migrada nem agendada.
 
 Migração 0006 (consentimento de país e cache agregado) aplicada somente no staging: [40058318799](https://github.com/Faysk/world-pulse/actions/runs/40058318799). Check após migração: [40058318548](https://github.com/Faysk/world-pulse/actions/runs/40058318548). Os gates de origem geográfica continuam desligados. Fluxo preparado de [plano/sync de preview](32-prepublication-operations.md) não publica.
+
+Homologação HTTPS privada contra o Neon staging real aprovada em [40061344573](https://github.com/Faysk/world-pulse/actions/runs/40061344573): desktop/mobile, duas sessões, cookies seguros, retorno, múltiplos saldos, perda de resposta/retry e consentimento desconhecido; quatro sessões sintéticas removidas no encerramento. Tags vazias/contadores de teste podem permanecer, sem dados copiados da produção. Não comprova certificado/headers/runtime Vercel. [Método e limites](35-staging-private-https-smoke.md).

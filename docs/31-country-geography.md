@@ -1,6 +1,6 @@
 # Geografia por país na experiência de homologação
 
-Implementação da issue #74 na branch da API. Não é ativação em produção.
+Implementação da issue #74, integrada pelo PR #75 ao pacote da API. Código versionado não significa ativação em produção.
 
 ## Contrato real
 
