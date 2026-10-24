@@ -48,7 +48,11 @@ async function transaction(fn) {
 export async function findVisitor(token) {
   if (!token) return null;
   const { rows } = await getPool().query(
-    'SELECT id, active_tag_id FROM world_pulse.visitors WHERE session_hash = $1 AND expires_at > now()',
+    `SELECT v.id, v.active_tag_id,
+      t.normalized AS active_tag_name, t.color AS active_tag_color
+    FROM world_pulse.visitors v
+    LEFT JOIN world_pulse.tags t ON t.id = v.active_tag_id
+    WHERE v.session_hash = $1 AND v.expires_at > now()`,
     [tokenHash(token)]
   );
   return rows[0] ?? null;
