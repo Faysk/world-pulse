@@ -24,7 +24,7 @@ test('Mercator geographic lab keeps global totals while paging 620 coarse region
   });
   expect(context).toEqual({pages:[256,256,108],error:0,visible:620,cells:620});
   await page.screenshot({path:'test-artifacts/geo-mercator-'+info.project.name+'-620.png',fullPage:true});
-  await page.getByRole('slider',{name:/Zoom geográfico/}).fill('8');
+  await page.locator('#zoom').evaluate((el: HTMLInputElement)=>{el.value='8';el.dispatchEvent(new Event('input',{bubbles:true}));});
   await expect(page.getByTestId('global-people')).toHaveText(global);
   const after=await page.evaluate(()=>{
     const {plan}= (window as typeof window & {__geoAtlasLab:any}).__geoAtlasLab;
