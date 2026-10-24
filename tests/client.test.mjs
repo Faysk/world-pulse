@@ -5,6 +5,8 @@ import { ParticipationClient } from '../src/participationClient.ts';
 
 const ID_A = randomUUID();
 const ID_B = randomUUID();
+const SESSION_BINDING = 'a'.repeat(64);
+const OLD_BINDING = 'b'.repeat(64);
 
 function fakeStorage() {
   const map = new Map();
@@ -21,7 +23,7 @@ function mockTransport({ failOnce = false, loseResponseOnce = false } = {}) {
   const handle = async (path, init) => {
     const body = init.body ? JSON.parse(init.body) : null;
     calls.push({ path, body });
-    if (path === '/api/session') return Response.json({ anonymous: true, activeTagId: null, credits: [] });
+    if (path === '/api/session') return Response.json({ anonymous: true, sessionFresh: false, sessionBinding: SESSION_BINDING, activeTagId: null, activeTag: null, credits: [] });
     if (path === '/api/tags') {
       const a = body.name.toLowerCase().includes('gta');
       return Response.json({ tag: { id: a ? ID_A : ID_B, color: a ? '#ffffff' : '#123456', name: a ? '#gta6' : '#lofi' } });
@@ -66,7 +68,7 @@ test('Network failure does not mutate retry batch ID or tap count', async () => 
   await client.selectTag('#GTA6');
   for (let i=0; i<4; i++) client.creditClick();
   await assert.rejects(() => client.flush(), /network-failure/);
-  const pending = JSON.parse(storage.getItem('world-pulse-pending-v1'));
+  const pending = JSON.parse(storage.getItem('world-pulse-pending-v1')).batches;
   assert.equal(pending.length, 1);
   const original = pending[0];
   assert.equal(original.clicks, 4);
@@ -146,7 +148,7 @@ test('Returning browser restores selected tag and independent server balance sna
     {tagId:ID_A,creditedSeconds:'28800',serverNowMs:1000,expiresAtMs:9000,remainingMs:8000},
     {tagId:ID_B,creditedSeconds:'30',serverNowMs:1000,expiresAtMs:500,remainingMs:0}
   ];
-  const client = new ParticipationClient(async () => Response.json({anonymous:true,activeTagId:ID_A,credits}),fakeStorage(),randomUUID);
+  const client = new ParticipationClient(async () => Response.json({anonymous:true,sessionFresh:false,sessionBinding:SESSION_BINDING,activeTagId:ID_A,activeTag:null,credits}),fakeStorage(),randomUUID);
   await client.connect();
   assert.deepEqual(client.balances(),credits);
   assert.equal(client.creditClick(),true);
@@ -173,12 +175,12 @@ test('Each balance counts down on its own monotonic clock, including while toppi
 test('New anonymous session quarantines pending clicks instead of replaying as another visitor', async () => {
   const storage=fakeStorage();
   const oldBatch={batchId:randomUUID(),tagId:ID_A,clicks:3};
-  storage.setItem('world-pulse-pending-v1',JSON.stringify([oldBatch]));
+  storage.setItem('world-pulse-pending-v1',JSON.stringify({version:2,binding:OLD_BINDING,batches:[oldBatch]}));
   const calls=[];
   const fetcher=async(path,init)=>{
     calls.push({path,body:init.body && JSON.parse(init.body)});
     if(path==='/api/session') return Response.json({
-      anonymous:true,sessionFresh:true,activeTagId:null,activeTag:null,credits:[]
+      anonymous:true,sessionFresh:true,sessionBinding:SESSION_BINDING,activeTagId:null,activeTag:null,credits:[]
     });
     throw new Error('orphaned batch was incorrectly replayed to a new session');
   };
@@ -187,7 +189,7 @@ test('New anonymous session quarantines pending clicks instead of replaying as a
   assert.equal(client.isQuarantined(),true);
   assert.equal(client.creditClick(),false);
   await assert.rejects(client.flush(),/session_rotated_pending/);
-  assert.deepEqual(JSON.parse(storage.getItem('world-pulse-pending-v1')),[oldBatch]);
+  assert.deepEqual(JSON.parse(storage.getItem('world-pulse-pending-v1')).batches,[oldBatch]);
   assert.equal(calls.some(x=>x.path==='/api/taps'),false);
 
   // Reloading the page must not silently retry an already quarantined queue.
@@ -205,7 +207,7 @@ test('An expired session during flush blocks old pending batches and does not re
   let expired=false;
   const transport=async(path,init)=>{
     if(path==='/api/session') return Response.json({
-      anonymous:true,sessionFresh:false,activeTagId:ID_A,
+      anonymous:true,sessionFresh:false,sessionBinding:SESSION_BINDING,activeTagId:ID_A,
       activeTag:{id:ID_A,name:'#gta6',color:'#ff8758'},credits:[]
     });
     if(path==='/api/taps'){
@@ -229,7 +231,7 @@ test('Tabs converge on authoritative server selection after notification, not gu
   const server=async(path,init)=>{
     const body=init.body?JSON.parse(init.body):null;
     if(path==='/api/session')return Response.json({
-      anonymous:true,sessionFresh:false,activeTagId:current,
+      anonymous:true,sessionFresh:false,sessionBinding:SESSION_BINDING,activeTagId:current,
       activeTag:current?{id:current,name:current===ID_A?'#gta6':'#lofi',color:'#aabbcc'}:null,
       credits:[]
     });
@@ -256,4 +258,27 @@ test('Tabs converge on authoritative server selection after notification, not gu
   assert.equal(b.selection(),null);
   assert.equal(b.creditClick(),false);
   assert.ok(storage.getItem('world-pulse-selection-changed-v1'));
+});
+
+test('A different tab may rotate the cookie before our request, but queue binding still prevents replay',async()=>{
+  const storage=fakeStorage();
+  const original={batchId:randomUUID(),tagId:ID_A,clicks:2};
+  storage.setItem('world-pulse-pending-v1',JSON.stringify({
+    version:2,binding:OLD_BINDING,batches:[original]
+  }));
+  const calls=[];
+  const fetcher=async(path)=>{
+    calls.push(path);
+    if(path==='/api/session') return Response.json({
+      anonymous:true,sessionFresh:false,sessionBinding:SESSION_BINDING,
+      activeTagId:ID_A,activeTag:{id:ID_A,name:'#gta6',color:'#ff8758'},credits:[]
+    });
+    throw new Error('Old queue must not be submitted under a new cookie');
+  };
+  const client=new ParticipationClient(fetcher,storage,randomUUID);
+  await assert.rejects(client.flush(),/session_rotated_pending/);
+  assert.equal(client.isQuarantined(),true);
+  assert.equal(client.pendingClicks(),2);
+  assert.deepEqual(calls,['/api/session']);
+  assert.deepEqual(JSON.parse(storage.getItem('world-pulse-pending-v1')).batches,[original]);
 });
