@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "check": "npm run test && npm run build",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "benchmark:spatial": "node --experimental-strip-types scripts/spatial-benchmark.mjs"
   },
   "dependencies": {
     "maplibre-gl": "6.15.0",
