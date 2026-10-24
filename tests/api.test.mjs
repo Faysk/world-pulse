@@ -32,6 +32,7 @@ function stub(overrides = {}) {
     creditBatch: async (_visitorId, batch) => ({ batchId: batch.batchId, tagId: batch.tagId, creditedSeconds: String(batch.clicks), duplicate: false }),
     getCredits: async () => [],
     getRanking: async () => [],
+    getActiveBalanceSnapshot: async () => ({ type: 'active_balance_preview', asOfMs: 1000, geography: 'unavailable', metric: 'distinct_anonymous_sessions_with_positive_balance', ranking: [] }),
     ...overrides
   };
 }
@@ -145,5 +146,40 @@ test('Real participation endpoints default to disabled even with valid requests'
     assert.equal(ranking.code,503);
   } finally {
     process.env.WP_API_ENABLED = 'true';
+  }
+});
+
+test('Experimental activity route labels active pseudonymous balances, not historical seconds', async () => {
+  const res = response();
+  await route('activity', stub({ getActiveBalanceSnapshot: async () => ({
+    type: 'active_balance_preview',
+    asOfMs: 1000,
+    metric: 'distinct_anonymous_sessions_with_positive_balance',
+    geography: 'unavailable',
+    ranking: [{ id: randomUUID(), name: '#gta6', color: '#aabbcc',
+      activeParticipants: '1', historicalParticipants: '3', creditedSeconds: '999' }]
+  }) }))({method:'GET',headers:{}},res);
+  assert.equal(res.code,200);
+  assert.equal(res.payload.ranking[0].activeParticipants,'1');
+  assert.equal(res.payload.ranking[0].historicalParticipants,'3');
+  assert.equal(res.payload.ranking[0].creditedSeconds,'999');
+  assert.equal(res.payload.geography,'unavailable');
+  assert.equal(res.headers['Cache-Control'],'no-store');
+  assert.equal('visitorId' in res.payload.ranking[0],false);
+  assert.equal('latitude' in res.payload.ranking[0],false);
+});
+
+test('Activity route never accepts writes and is disabled by default', async () => {
+  const wrongMethod = response();
+  await route('activity', stub())(request('POST',{}),wrongMethod);
+  assert.equal(wrongMethod.code,405);
+  process.env.WP_API_ENABLED='false';
+  try {
+    const blocked = response();
+    await route('activity', stub())({method:'GET',headers:{}},blocked);
+    assert.equal(blocked.code,503);
+    assert.equal(blocked.payload.error,'participation_disabled');
+  } finally {
+    process.env.WP_API_ENABLED='true';
   }
 });
