@@ -2,10 +2,12 @@ import pg from 'pg';
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { randomUUID } from 'node:crypto';
 import { validateRuntime } from './config.mjs';
+import {runtimeHostMetadata} from './production-target.mjs';
 
 let stage = 'configuration';
 try {
   validateRuntime();
+  const verifiedHost=runtimeHostMetadata(process.env.DATABASE_URL);
   stage = 'PostgreSQL TLS connection and read-only query';
   const client = new pg.Client({ connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 15_000, query_timeout: 15_000 });
   try {
@@ -22,6 +24,7 @@ try {
     await client.query('ROLLBACK');
   } finally { await client.end(); }
   console.log('PostgreSQL: TLS connection, read-only query and restricted runtime role OK');
+  console.log(`Verified production runtime host: ${verifiedHost}`); // Non-secret metadata, after TLS/role verification only.
 
   stage = 'R2 write/read/delete probe';
   const s3 = new S3Client({

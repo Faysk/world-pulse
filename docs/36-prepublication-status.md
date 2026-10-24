@@ -21,7 +21,7 @@ promoção, migração de domínio ou habilitação de participação em produç
 | Legibilidade | Tinta calculada e marcador preservando cor persistida, com provas de azul escuro em navegador; [limites](34-tag-label-readability.md) |
 
 Localmente, a suíte tem 125 testes: 124 aprovados e um SQL pulado por não haver
-PostgreSQL local. O SQL foi executado separadamente no Actions. Os 21 testes de
+PostgreSQL local. O SQL foi executado separadamente no Actions. Os 25 testes de
 infraestrutura e o build TypeScript/Vite passaram. Testes emulados não são
 medidas de FPS ou gestos em dispositivos físicos. O benchmark de 0 a 1 trilhão
 é de contagens/CPU agregadas, não de conexões concorrentes ou pessoas únicas.
@@ -41,7 +41,9 @@ medidas de FPS ou gestos em dispositivos físicos. O benchmark de 0 a 1 trilhão
   foi sincronizada/publicada nesta etapa.
 - Plano/sync preview só aceita a branch de staging e runtime restrito. Retenção
   tem plano READ ONLY, execução limitada e resumo/backlog; continua desligada.
-  O host de produção para manutenção ainda precisa ser atestado/configurado.
+  O host atestado é centralizado em `WP_PRODUCTION_DB_HOST`. A futura migração
+  manual está preparada e bloqueada por uma flag própria, sem executar SQL de
+  domínio em produção; [guardas e limites](37-production-schema-preparation.md).
 - Staging expira em **31/10/2026 01:15:25 UTC**. Recriar/renovar requer revisar
   destino, conexões, scripts e documentação; o código recusa operar após expirar.
 
