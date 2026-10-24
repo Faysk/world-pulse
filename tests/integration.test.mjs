@@ -32,6 +32,7 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
   await owner.query(await readFile(new URL('../infra/sql/0003-time-balances.sql', import.meta.url), 'utf8'));
   useTestPool(app);
   await owner.query(await readFile(new URL('../infra/sql/0004-operation-budgets.sql', import.meta.url), 'utf8'));
+  await owner.query(await readFile(new URL('../infra/sql/0005-retention-rollups.sql', import.meta.url), 'utf8'));
 
   await t.test('Migration preserves history without inventing live balances and is repeatable', async () => {
     const [legacy] = await getCredits(legacyVisitor);
@@ -331,6 +332,65 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
       assert.equal(settings.rows[0].lock,'1s');
       await assert.rejects(()=>client.query('SELECT pg_sleep(7)'),error=>error.code==='57014');
     } finally {await client.query('ROLLBACK');client.release();}
+  });
+
+  await t.test('30-day retention preserves totals exactly, skips live/recent sessions, rolls back and retries safely', async () => {
+    const {consolidateInactive}=await import('../server/retention.mjs');
+    const tag=await createOrGetTag('#aaa_retention');
+    const a=await createVisitor(), b=await createVisitor(), c=await createVisitor(), d=await createVisitor();
+    for(const v of [a,b,c,d]) await selectTag(v.visitorId,tag.id);
+    await creditBatch(a.visitorId,{tagId:tag.id,batchId:randomUUID(),clicks:30});
+    await creditBatch(b.visitorId,{tagId:tag.id,batchId:randomUUID(),clicks:1});
+    await owner.query("UPDATE world_pulse.visitors SET last_seen_at=now()-interval '60 days',expires_at=now()-interval '1 day' WHERE id=ANY($1::uuid[])",[[a.visitorId,b.visitorId,d.visitorId]]);
+    await owner.query("UPDATE world_pulse.visitors SET last_seen_at=now()-interval '1 day' WHERE id=$1",[c.visitorId]);
+    await owner.query("UPDATE world_pulse.visitor_tags SET expires_at=now()-interval '1 day' WHERE visitor_id=$1",[a.visitorId]);
+    await owner.query("UPDATE world_pulse.visitor_tags SET expires_at=now()+interval '1 hour' WHERE visitor_id=$1",[b.visitorId]);
+    await owner.query("UPDATE world_pulse.visitors SET last_seen_at=now()-interval '45 days' WHERE id=$1",[d.visitorId]);
+    const history=async()=> (await getRanking()).find(row=>row.id===tag.id);
+    assert.equal((await history()).historicalParticipants,'4');
+    assert.equal((await history()).creditedSeconds,'31');
+    assert.deepEqual(await consolidateInactive(app,{limit:1}),{consolidatedVisitors:1});
+    assert.equal(await findVisitor(a.token),null);
+    assert.deepEqual(await consolidateInactive(app,{limit:100}),{consolidatedVisitors:1});
+    assert.deepEqual(await consolidateInactive(app),{consolidatedVisitors:0});
+    const survivors=await owner.query('SELECT id FROM world_pulse.visitors WHERE id=ANY($1::uuid[])',[[b.visitorId,c.visitorId]]);
+    assert.equal(survivors.rows.length,2);
+    assert.equal((await history()).historicalParticipants,'4');
+    assert.equal((await history()).creditedSeconds,'31');
+    assert.equal((await getActiveBalanceSnapshot()).ranking.find(row=>row.id===tag.id).activeParticipants,'1');
+    assert.equal((await owner.query('SELECT count(*)::int AS n FROM world_pulse.tap_batches WHERE visitor_id=$1',[a.visitorId])).rows[0].n,0);
+
+    const e=await createVisitor(); await selectTag(e.visitorId,tag.id);
+    await creditBatch(e.visitorId,{tagId:tag.id,batchId:randomUUID(),clicks:5});
+    await owner.query("UPDATE world_pulse.visitors SET last_seen_at=now()-interval '60 days',expires_at=now()-interval '1 day' WHERE id=$1",[e.visitorId]);
+    await owner.query("UPDATE world_pulse.visitor_tags SET expires_at=now()-interval '1 day' WHERE visitor_id=$1",[e.visitorId]);
+    const brokenPool={connect:async()=>{
+      const raw=await app.connect();
+      return {query:(text,values)=>{
+        if(text.startsWith('DELETE FROM world_pulse.visitors')) throw new Error('injected-delete-failure');
+        return raw.query(text,values);
+      },release:()=>raw.release()};
+    }};
+    await assert.rejects(()=>consolidateInactive(brokenPool),/injected-delete-failure/);
+    const totals=await owner.query('SELECT participants::text,credited_seconds::text FROM world_pulse.tag_history_totals WHERE tag_id=$1',[tag.id]);
+    assert.deepEqual(totals.rows[0],{participants:'2',credited_seconds:'30'});
+    assert.equal((await owner.query('SELECT id FROM world_pulse.visitors WHERE id=$1',[e.visitorId])).rows.length,1);
+    assert.deepEqual(await consolidateInactive(app),{consolidatedVisitors:1});
+    assert.equal((await history()).historicalParticipants,'5');
+    assert.equal((await history()).creditedSeconds,'36');
+    await assert.rejects(()=>consolidateInactive(app,{limit:0}),RangeError);
+
+    const f=await createVisitor(),g=await createVisitor();
+    for(const v of [f,g]) await selectTag(v.visitorId,tag.id);
+    await owner.query("UPDATE world_pulse.visitors SET last_seen_at=now()-interval '60 days',expires_at=now()-interval '1 day' WHERE id=ANY($1::uuid[])",[[f.visitorId,g.visitorId]]);
+    const blocker=await owner.connect();
+    try {
+      await blocker.query('BEGIN');await blocker.query('SELECT id FROM world_pulse.visitors WHERE id=$1 FOR UPDATE',[f.visitorId]);
+      assert.deepEqual(await consolidateInactive(app),{consolidatedVisitors:1},'locked visitor is skipped, not double-counted');
+    } finally {await blocker.query('ROLLBACK');blocker.release();}
+    assert.deepEqual(await consolidateInactive(app),{consolidatedVisitors:1});
+    assert.equal((await history()).historicalParticipants,'7');
+    assert.equal((await history()).creditedSeconds,'36');
   });
 
 });

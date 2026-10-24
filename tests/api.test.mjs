@@ -120,6 +120,19 @@ test('Session POST sets HttpOnly, SameSite and Secure cookie for new visitor', a
   assert.match(res.headers['Set-Cookie'], /Secure/);
   assert.equal('visitorId' in res.payload, false);
 });
+
+test('Return refreshes the same cookie and long positive balances retain a recovery window', async () => {
+  const session=newSession();
+  const req=request('POST');req.headers.cookie='wp_session='+session.token;
+  const res=response();
+  await route('session',stub({findVisitor:async()=>({id:session.visitorId,active_tag_id:null,
+    expires_at:new Date(Date.now()+60*86400000)})}))(req,res);
+  assert.equal(res.payload.sessionFresh,false);
+  assert.ok(res.headers['Set-Cookie'].startsWith('wp_session='+session.token+';'));
+  const seconds=Number(res.headers['Set-Cookie'].match(/Max-Age=(\d+)/)[1]);
+  assert.ok(seconds>59*86400 && seconds<=60*86400);
+  assert.match(res.headers['Set-Cookie'],/HttpOnly.*SameSite=Lax.*Secure/);
+});
 test('Cross-origin tag writes rejected before session resolution', async () => {
   let touched = false; const res=response();
   await route('tags', stub({ requireVisitor: async () => { touched=true; } }))(

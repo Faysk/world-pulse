@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import pg from 'pg';
 import { beginLimitedTransaction } from '../server/databaseLimits.mjs';
+import { consolidateInactive } from '../server/retention.mjs';
 
 // Deliberately pinned to the disposable branch, never an arbitrary DATABASE_URL.
 export const stagingEndpoint = 'ep-misty-glade-za9nxlhg';
@@ -32,6 +33,8 @@ export async function checkStaging(connectionString) {
     await db.query('SELECT id FROM world_pulse.tags LIMIT 0');
     await db.query('SELECT expires_at FROM world_pulse.visitor_tags LIMIT 0');
     await db.query('SELECT scope FROM world_pulse.operation_budgets LIMIT 0');
+    await db.query('SELECT last_seen_at FROM world_pulse.visitors LIMIT 0');
+    await db.query('SELECT participants FROM world_pulse.tag_history_totals LIMIT 0');
     const {rows:[timeouts]}=await db.query(`SELECT current_setting('statement_timeout') AS statement,
       current_setting('lock_timeout') AS lock`);
     if (timeouts.statement !== '5s' || timeouts.lock !== '1s') throw new Error('runtime_timeouts_not_applied');
@@ -56,7 +59,7 @@ export async function migrateStaging(ownerUrl, runtimeUrl) {
     const { rows } = await db.query(`SELECT m.rolname FROM pg_auth_members a
       JOIN pg_roles m ON m.oid=a.roleid JOIN pg_roles r ON r.oid=a.member WHERE r.rolname='world_pulse_app'`);
     if (rows.length) throw new Error('unexpected_runtime_membership');
-    for (const file of ['0001-runtime-access.sql', '0002-participation-core.sql', '0003-time-balances.sql', '0004-operation-budgets.sql']) {
+    for (const file of ['0001-runtime-access.sql', '0002-participation-core.sql', '0003-time-balances.sql', '0004-operation-budgets.sql', '0005-retention-rollups.sql']) {
       await db.query(await readFile(new URL(`sql/${file}`, import.meta.url), 'utf8'));
       console.log(`Staging migration applied: ${file}`);
     }
@@ -70,6 +73,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       await migrateStaging(process.env.DATABASE_MIGRATION_URL, process.env.DATABASE_URL);
     } else if (process.env.WP_STAGING_OPERATION === 'check') {
       await checkStaging(process.env.DATABASE_URL);
+    } else if (process.env.WP_STAGING_OPERATION === 'maintain') {
+      const pool=new pg.Pool({connectionString:validateStagingUrl(process.env.DATABASE_URL),max:1,query_timeout:6000,connectionTimeoutMillis:15000});
+      try { console.log(JSON.stringify(await consolidateInactive(pool,{limit:100}))); }
+      finally {await pool.end();}
     } else throw new Error('explicit_staging_operation_required');
   } catch (error) {
     // Drivers can embed credentials in errors. Never print private error objects.
