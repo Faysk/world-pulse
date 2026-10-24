@@ -7,7 +7,7 @@ import * as store from './store.mjs';
 export function route(kind, operations = store) {
   const {
     findVisitor, createVisitor, requireVisitor, createOrGetTag,
-    selectTag, creditBatch, getCredits, getRanking
+    selectTag, creditBatch, getCredits, getRanking, getActiveBalanceSnapshot
   } = operations;
   return async function handler(req, res) {
     try {
@@ -20,6 +20,12 @@ export function route(kind, operations = store) {
         onlyMethod(req, 'GET');
         const ranking = await getRanking();
         return json(res, 200, { type: 'historical', ranking });
+      }
+      if (kind === 'activity') {
+        onlyMethod(req, 'GET');
+        // Public aggregate contains no individual session identifiers or
+        // coordinates. Remains disabled by WP_API_ENABLED by default.
+        return json(res, 200, await getActiveBalanceSnapshot());
       }
 
       onlyMethod(req, 'POST');
