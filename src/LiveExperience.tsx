@@ -1,4 +1,6 @@
 import { useState, type FormEvent } from 'react';
+import type { Map as MapInstance } from 'maplibre-gl';
+import { CountryLayer } from './CountryLayer';
 import { WorldGlobe } from './WorldGlobe';
 import type { PulseCollection } from './demoData';
 import { useParticipation } from './useParticipation';
@@ -11,6 +13,11 @@ function duration(ms:number){const seconds=Math.ceil(ms/1000);return `${Math.flo
 
 export default function LiveExperience(){
   const live=useParticipation();
+  const [map,setMap]=useState<MapInstance|null>(null);
+  const [countriesOpen,setCountriesOpen]=useState(false);
+  const [countryPick,setCountryPick]=useState<string|null>(null);
+  const [countryDrawError,setCountryDrawError]=useState('');
+  const countryTag=live.countrySnapshot?.tags.find(tag=>tag.id===live.selected?.id);
   const [name,setName]=useState('');
   const [rankingOpen,setRankingOpen]=useState(()=>window.innerWidth>760);
   const [balancesOpen,setBalancesOpen]=useState(false);
@@ -19,17 +26,20 @@ export default function LiveExperience(){
   const [mapVersion,setMapVersion]=useState(0);
   async function select(event:FormEvent){event.preventDefault();await live.select(name);}
   return <main className="live-world" aria-label="World Pulse participação">
-    <WorldGlobe key={mapVersion} scale={0} population={EMPTY_GEOGRAPHY} selected={null} cityLights={false}
-      onReady={()=>{setMapReady(true);setMapError('');}} onZoom={()=>{}} onFps={()=>{}}
+    <WorldGlobe key={mapVersion} ariaLabel="Globo interativo com países agregados" scale={0} population={EMPTY_GEOGRAPHY} selected={null} cityLights={false}
+      onReady={instance=>{setMap(instance);setMapReady(true);setMapError('');}}
+      onCountryPick={code=>{setCountryPick(code);setCountriesOpen(true);setRankingOpen(false);setBalancesOpen(false);}} onZoom={()=>{}} onFps={()=>{}}
       onTap={()=>void live.tap()} onTagPick={()=>{}} onFailure={setMapError}/>
+    <CountryLayer map={map} snapshot={live.countrySnapshot} tagId={live.selected?.id??null} onError={setCountryDrawError}/>
     <div className="live-shade" aria-hidden="true"/>
     <header className="live-header">
       <div className="live-brand">WORLD<span>PULSE</span><small>PARTICIPAÇÃO EM TESTE</small></div>
       <span className="live-connection" role="status" data-testid="live-connection">{live.ready?'Sessão conectada':live.error?'Conexão indisponível':'Conectando…'}</span>
     </header>
     <nav className="live-navigation" aria-label="Painéis de participação">
-      <button aria-expanded={rankingOpen} aria-controls="live-ranking" onClick={()=>{setRankingOpen(v=>!v);setBalancesOpen(false);}}>Top 10</button>
-      <button aria-expanded={balancesOpen} aria-controls="live-balances" onClick={()=>{setBalancesOpen(v=>!v);setRankingOpen(false);}}>Meus saldos</button>
+      <button aria-expanded={rankingOpen} aria-controls="live-ranking" onClick={()=>{setRankingOpen(v=>!v);setBalancesOpen(false);setCountriesOpen(false);}}>Top 10</button>
+      <button aria-expanded={countriesOpen} aria-controls="live-countries-panel" onClick={()=>{setCountriesOpen(v=>!v);setRankingOpen(false);setBalancesOpen(false);}}>Países</button>
+      <button aria-expanded={balancesOpen} aria-controls="live-balances" onClick={()=>{setBalancesOpen(v=>!v);setRankingOpen(false);setCountriesOpen(false);}}>Meus saldos</button>
     </nav>
     {rankingOpen&&<aside id="live-ranking" className="live-panel live-ranking" aria-label="Ranking atual">
       <div className="live-panel-title"><h1>Top 10 agora</h1><button aria-label="Fechar ranking" onClick={()=>setRankingOpen(false)}>×</button></div>
@@ -56,9 +66,21 @@ export default function LiveExperience(){
         <small>Histórico: {count(balance.creditedSeconds)} {balance.creditedSeconds==='1'?'segundo':'segundos'}</small>
       </li>)}</ul>}
     </aside>}
+    {countriesOpen&&<aside id="live-countries-panel" className="live-panel live-ranking" aria-label="Participação por país">
+      <div className="live-panel-title"><h2>Países · {live.selected?.name??'selecione uma hashtag'}</h2><button aria-label="Fechar países" onClick={()=>setCountriesOpen(false)}>×</button></div>
+      <p>O mapa colore somente a hashtag selecionada. A área do país não representa quantidade ou posição de pessoas.</p>
+      {!live.countryPreference.available?<p>Geografia ainda desativada neste ambiente.</p>:live.countryError?<p role="status">Leitura geográfica indisponível.</p>:!live.countrySnapshot?<p>Carregando países…</p>:<>
+        <small>Leitura: {new Date(live.countrySnapshot.asOfMs).toLocaleTimeString('pt-BR')} · até 5s de intervalo</small>
+        {!countryTag?.countries.length?<p>Nenhuma participação ativa nesta hashtag.</p>:<ul>{countryTag.countries.map(country=><li key={country.countryCode}><span>{country.countryCode==='ZZ'?'Origem desconhecida / sem compartilhamento':country.countryCode==='OTHER'?'Outros países (grupos menores que 5)':country.countryCode}</span><strong>{count(country.activeParticipants)}</strong></li>)}</ul>}
+        {countryPick&&<p>País inspecionado: {countryPick}. Este toque não adiciona segundos.</p>}
+        <p>Outras hashtags ativas:</p><ul>{live.countrySnapshot.tags.map(tag=><li key={tag.id}><button disabled={!live.ready||live.selecting} style={{color:tag.color}} onClick={()=>void live.select(tag.name)}>{tag.name}</button><strong>{count(tag.activeParticipants)}</strong></li>)}</ul>
+      </>}
+      <p>País estimado pela conexão, sujeito a VPN e erros. Pequenos grupos são agrupados. Algumas ilhas e territórios não têm desenho nesta escala; seus totais continuam na lista.</p>
+      {countryDrawError&&<p role="status">{countryDrawError}</p>}
+    </aside>}
     <section className="live-controls" aria-label="Sua participação">
-      <p className="live-geography" data-testid="live-geography">{mapError?'Mapa indisponível. Seus saldos continuam acessíveis.':mapReady?'Mapa aguardando geografia confiável. Nenhuma posição é inventada.':'Carregando mapa…'}</p>
-      {mapError&&<button onClick={()=>{setMapReady(false);setMapError('');setMapVersion(v=>v+1);}}>Recarregar mapa</button>}
+      <p className="live-geography" data-testid="live-geography">{mapError?'Mapa indisponível. Seus saldos continuam acessíveis.':mapReady?(countryTag?.countries.some(c=>c.countryCode!=='ZZ'&&c.countryCode!=='OTHER')?'Países agregados da hashtag selecionada. Toque na área para inspecionar.':'Mapa aguardando geografia confiável. Nenhuma posição é inventada.'):'Carregando mapa…'}</p>
+      {mapError&&<button onClick={()=>{setMap(null);setMapReady(false);setMapError('');setMapVersion(v=>v+1);}}>Recarregar mapa</button>}
       <form onSubmit={select}>
         <label htmlFor="live-name">Sua hashtag</label>
         <div className="live-form-row"><input id="live-name" value={name} onChange={e=>setName(e.target.value)} maxLength={34} placeholder="#o_que_te_move" autoComplete="off" required/>
@@ -79,7 +101,9 @@ export default function LiveExperience(){
       <details><summary>Como funciona e privacidade</summary>
         <p>Selecione uma hashtag e toque no planeta ou em +1 segundo. Arrastar e aproximar só navegam. Segundos extras não multiplicam participações no ranking.</p>
         <p>Este navegador usa uma sessão pseudônima. Após 30 dias sem retorno e com todos os saldos zerados, o histórico individual é consolidado nos totais por hashtag. Limpar cookies pode impedir sua recuperação.</p>
-        <p>A origem geográfica ainda está indisponível. O mapa não contém participantes simulados nesta experiência.</p>
+        <label><input type="checkbox" checked={live.countryPreference.consent} disabled={!live.ready||live.consentBusy||!live.countryPreference.available} onChange={event=>void live.setGeoConsent(event.target.checked)}/> Compartilhar meu país estimado nas áreas agregadas</label>
+        <p>Opcional. Sua participação continua no ranking sem compartilhar. País atual: {live.countryPreference.country==='ZZ'?'desconhecido':live.countryPreference.country}. Retirar a opção remove seu país das próximas leituras; cópias já recebidas não podem ser apagadas.</p>
+        <p>Não coletamos cidade ou coordenadas nesta experiência. Agrupar cinco sessões não garante anonimato: comparações entre leituras podem revelar mudanças. O mapa não contém participantes simulados.</p>
       </details>
     </section>
   </main>;

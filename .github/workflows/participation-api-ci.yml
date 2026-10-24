@@ -9,10 +9,16 @@ on:
       - "tests/api.test.mjs"
       - "tests/integration.test.mjs"
       - "tests/participation-browser/**"
+      - "tests/fixtures/country-map*"
+      - "tests/browser/country-renderer.spec.ts"
       - "src/ParticipationLab.tsx"
       - "src/LiveExperience.tsx"
       - "src/liveExperience.css"
       - "src/useParticipation.ts"
+      - "src/CountryLayer.tsx"
+      - "src/countryTypes.ts"
+      - "src/assets/**"
+      - "tests/country-snapshot.test.mjs"
       - "vite.config.ts"
       - "build/preview-gate.mjs"
       - "src/participationLab.css"
@@ -33,10 +39,16 @@ on:
       - "tests/api.test.mjs"
       - "tests/integration.test.mjs"
       - "tests/participation-browser/**"
+      - "tests/fixtures/country-map*"
+      - "tests/browser/country-renderer.spec.ts"
       - "src/ParticipationLab.tsx"
       - "src/LiveExperience.tsx"
       - "src/liveExperience.css"
       - "src/useParticipation.ts"
+      - "src/CountryLayer.tsx"
+      - "src/countryTypes.ts"
+      - "src/assets/**"
+      - "tests/country-snapshot.test.mjs"
       - "vite.config.ts"
       - "build/preview-gate.mjs"
       - "src/participationLab.css"
@@ -79,7 +91,7 @@ jobs:
       - name: Install exact app dependencies
         run: npm ci --no-audit --no-fund
       - name: Validate contract and input boundaries
-        run: node --test tests/api.test.mjs
+        run: node --test tests/api.test.mjs tests/country-snapshot.test.mjs tests/country-geometry.test.mjs
       - name: Validate idempotency and session isolation in disposable PostgreSQL
         env:
           NODE_ENV: test

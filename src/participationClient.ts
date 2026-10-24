@@ -2,6 +2,7 @@
  * Future real-participation transport. Not mounted in the visual POC yet.
  * The browser never receives database credentials or direct visitor IDs.
  */
+import type { CountrySnapshot } from './countryTypes';
 export type LiveTag = { id: string; name: string; color: string };
 export type PendingTapBatch = { batchId: string; tagId: string; clicks: number };
 export type TimeBalance = { tagId: string; creditedSeconds: string;
@@ -51,6 +52,9 @@ export class ParticipationClient {
   private sending: Promise<void> | null = null;
   private selectionQueue: Promise<unknown> = Promise.resolve();
   private memoryWriter: Promise<unknown> = Promise.resolve();
+  private geoConsent=false;
+  private geoCountry='ZZ';
+  private geographyAvailable=false;
 
   constructor(
     fetcher: FetchLike = (input, init) => fetch(input, init),
@@ -189,12 +193,13 @@ export class ParticipationClient {
     return payload as T;
   }
 
-  private async loadSession(): Promise<void> {
+  private async loadSession(geoConsent?:boolean): Promise<void> {
     if (this.quarantined) throw new Error('session_rotated_pending');
     const session = await this.request<{
       anonymous: true; sessionFresh: boolean; sessionBinding: string;
       activeTagId: string | null; activeTag: LiveTag | null; credits: TimeBalance[];
-    }>('/api/session', {});
+      geoConsent?:boolean;geoCountry?:string;geographyAvailable?:boolean;
+    }>('/api/session', geoConsent===undefined?{}:{geoConsent});
     if (typeof session.sessionBinding !== 'string' ||
       !/^[0-9a-f]{64}$/.test(session.sessionBinding)) {
       throw new Error('invalid_session_binding');
@@ -208,6 +213,9 @@ export class ParticipationClient {
       throw new Error('session_rotated_pending');
     }
     this.queueBinding = session.sessionBinding;
+    this.geoConsent=session.geoConsent===true;
+    this.geoCountry=typeof session.geoCountry==='string'&&/^[A-Z]{2}$/.test(session.geoCountry)?session.geoCountry:'ZZ';
+    this.geographyAvailable=session.geographyAvailable===true;
     if (!this.pending.length) this.persist();
     this.selectedTagId = session.activeTagId;
     this.selectedTag = session.activeTag;
@@ -233,6 +241,25 @@ export class ParticipationClient {
       await this.loadSession();
       this.sessionPromise = Promise.resolve();
     }));
+  }
+
+  countryPreference(){return {consent:this.geoConsent,country:this.geoCountry,available:this.geographyAvailable};}
+  setGeoConsent(allowed:boolean):Promise<void>{
+    return this.enqueueSelection(()=>this.withWriter(async()=>{
+      await this.loadSession(allowed);this.sessionPromise=Promise.resolve();this.signalSelectionChange();
+    }));
+  }
+  async countries():Promise<CountrySnapshot>{
+    const snapshot=await this.request<CountrySnapshot>('/api/countries');
+    const decimal=(value:unknown)=>typeof value==='string'&&/^\d{1,64}$/.test(value);
+    if(!snapshot||snapshot.type!=='country_snapshot'||snapshot.granularity!=='country'||snapshot.privacyThreshold!==5||
+      !Number.isFinite(snapshot.asOfMs)||snapshot.asOfMs<0||snapshot.asOfMs>8.64e15||snapshot.validUntilMs!==snapshot.asOfMs+5000||
+      !Array.isArray(snapshot.tags)||snapshot.tags.length>5000||snapshot.tags.some(tag=>
+        !tag||typeof tag.id!=='string'||!/^[0-9a-f-]{36}$/i.test(tag.id)||typeof tag.name!=='string'||tag.name.length>33||!tag.name.startsWith('#')||
+        !/^#[0-9a-f]{6}$/i.test(tag.color)||!decimal(tag.activeParticipants)||!Array.isArray(tag.countries)||tag.countries.length>251||
+        tag.countries.some(row=>!row||!(/^[A-Z]{2}$/.test(row.countryCode)||row.countryCode==='OTHER')||!decimal(row.activeParticipants)||
+          (row.countryCode!=='ZZ'&&row.countryCode!=='OTHER'&&BigInt(row.activeParticipants)<5n))))throw new Error('invalid_country_snapshot');
+    return snapshot;
   }
 
   private enqueueSelection<T>(task: () => Promise<T>): Promise<T> {

@@ -25,6 +25,8 @@ function response() {
 function stub(overrides = {}) {
   return {
     consumeApiBudget: async () => undefined,
+    setCountryConsent:async()=>undefined,
+    getCountrySnapshot:async()=>({type:'country_snapshot',asOfMs:0,validUntilMs:5000,granularity:'country',privacyThreshold:5,tags:[]}),
     findVisitor: async () => ({ id: randomUUID(), active_tag_id: null }),
     createVisitor: async () => newSession(),
     requireVisitor: async () => ({ id: randomUUID(), active_tag_id: null }),
@@ -255,4 +257,29 @@ test('New sessions return a non-authenticating queue binding and current hashtag
   assert.equal(res.payload.sessionBinding,tokenHash('world-pulse-queue-binding-v1:'+token));
   assert.equal('visitorId' in res.payload,false);
   assert.equal('sessionToken' in res.payload,false);
+});
+
+test('country geography is separately gated and session rejects invalid consent before identity writes',async()=>{
+ const res=response();await route('countries',stub())({method:'GET',headers:{}},res);
+ assert.equal(res.code,503);assert.equal(res.payload.error,'geography_disabled');
+ let touched=false;const invalid=response();
+ await route('session',stub({findVisitor:async()=>{touched=true;}}))(request('POST',{geoConsent:'yes'}),invalid);
+ assert.equal(invalid.code,400);assert.equal(touched,false);
+});
+
+test('country consent uses attested edge metadata, never client JSON country/coordinates',async()=>{
+ const prior={...process.env};
+ Object.assign(process.env,{VERCEL:'1',WP_GEO_COUNTRY_ENABLED:'true',WP_GEO_DIRECT_EDGE:'true'});
+ let consent=false;
+ try{
+  const req=request('POST',{geoConsent:true,country:'BR',latitude:10,longitude:20});req.headers['x-vercel-ip-country']='PT';
+  const res=response();
+  await route('session',stub({
+   findVisitor:async()=>({id:'visitor',active_tag_id:null,country_consent:false}),
+   setCountryConsent:async(_id,allowed,country)=>{consent=allowed;assert.equal(country,'PT');},
+   requireVisitor:async()=>({id:'visitor',active_tag_id:null,country_consent:consent,country_code:'PT'})
+  }))(req,res);
+  assert.equal(res.code,200);assert.equal(res.payload.geoConsent,true);assert.equal(res.payload.geoCountry,'PT');
+  assert.equal('latitude'in res.payload,false);assert.equal('longitude'in res.payload,false);
+ }finally{for(const key of ['VERCEL','WP_GEO_COUNTRY_ENABLED','WP_GEO_DIRECT_EDGE']){if(prior[key]===undefined)delete process.env[key];else process.env[key]=prior[key];}}
 });

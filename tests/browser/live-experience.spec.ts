@@ -47,3 +47,35 @@ test('Connection failure has an explicit retry and no invented zero ranking',asy
   await expect(page.getByRole('button',{name:'+1 segundo',exact:true})).toBeDisabled();
   await expect(page.getByText('Nenhuma hashtag registrada ainda.')).toHaveCount(0);
 });
+
+
+test('Country sharing is optional, displays suppressed groups and survives withdrawal without changing the hashtag',async({page},info)=>{
+  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
+  let consent=false;
+  await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/,route=>route.fulfill({json:{version:8,sources:{},layers:[{id:'bg',type:'background',paint:{'background-color':'#14222e'}}]}}));
+  await page.route('**/api/**',route=>{
+    const path=new URL(route.request().url()).pathname;
+    if(path==='/api/session'){
+      const body=route.request().postDataJSON();if(typeof body.geoConsent==='boolean')consent=body.geoConsent;
+      return route.fulfill({json:{anonymous:true,sessionFresh:false,sessionBinding:'a'.repeat(64),activeTagId:id,activeTag:{id,name:'#gta6',color:'#ff9465'},credits:[],geoConsent:consent,geoCountry:consent?'PT':'ZZ',geographyAvailable:true}});
+    }
+    if(path==='/api/countries')return route.fulfill({json:{type:'country_snapshot',asOfMs:Math.floor(Date.now()/5000)*5000,validUntilMs:Math.floor(Date.now()/5000)*5000+5000,granularity:'country',privacyThreshold:5,tags:[{id,name:'#gta6',color:'#ff9465',activeParticipants:'12',countries:[{countryCode:'OTHER',activeParticipants:'2'},{countryCode:'PT',activeParticipants:'5'},{countryCode:'ZZ',activeParticipants:'5'}]}]}});
+    if(path==='/api/ranking')return route.fulfill({json:{type:'active',asOfMs:Date.now(),metric:'distinct_anonymous_sessions_with_positive_balance',geography:'unavailable',ranking:[]}});
+    return route.fulfill({status:404,json:{error:'not_found'}});
+  });
+  await page.goto('/?experiencePreview=1');
+  await expect(page.getByTestId('live-connection')).toHaveText('Sessão conectada');
+  await page.getByText('Como funciona e privacidade',{exact:true}).click();
+  const checkbox=page.getByRole('checkbox',{name:'Compartilhar meu país estimado nas áreas agregadas'});
+  await expect(checkbox).not.toBeChecked();await checkbox.click();await expect(checkbox).toBeChecked();
+  await expect(page.getByText(/País atual: PT/)).toBeVisible();
+  await checkbox.click();await expect(page.getByText(/País atual: desconhecido/)).toBeVisible();
+  await page.getByText('Como funciona e privacidade',{exact:true}).click();
+  await page.getByRole('button',{name:'Países',exact:true}).click();
+  await expect(page.getByText('Outros países (grupos menores que 5)',{exact:true})).toBeVisible();
+  await expect(page.getByTestId('live-selected')).toHaveText('#gta6');
+  await expect(page.getByTestId('live-pending')).toHaveText('0');
+  await expect(page.getByText('Não foi possível desenhar os países.',{exact:false})).toHaveCount(0);
+  await page.screenshot({path:`test-artifacts/countries-${info.project.name}.png`});
+  expect(errors).toEqual([]);
+});

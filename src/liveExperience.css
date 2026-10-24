@@ -16,3 +16,5 @@
 @media(max-width:760px){.live-header{left:18px;right:18px;top:18px}.live-brand{font-size:19px}.live-connection{font-size:10px;max-width:110px;text-align:right}.live-navigation{left:18px;top:82px}.live-panel{top:136px;left:18px;right:18px;width:auto;max-height:calc(100dvh - 480px);padding:12px 16px}.live-controls{width:calc(100% - 24px);bottom:12px;padding:14px 16px;border-radius:15px;max-height:55dvh}.live-controls .live-geography{font-size:10px}.live-contribution{margin-top:13px}.live-contribution strong{font-size:19px}.live-contribution span{font-size:13px}.live-queue{font-size:10px}.live-world input{font-size:16px}.live-controls details{margin-top:8px;padding-top:8px}.live-panel:has(+.live-controls){z-index:3}}
 @media(prefers-reduced-motion:reduce){.live-world *{scroll-behavior:auto!important}}
 .live-world .live-brand small{font-size:8px;line-height:1.4;font-weight:500;letter-spacing:.1em;white-space:nowrap}
+
+.live-controls input[type=checkbox]{width:auto;min-width:18px;min-height:18px;margin-right:8px;vertical-align:middle}.live-ranking li:has(>span){display:flex;justify-content:space-between;gap:12px}

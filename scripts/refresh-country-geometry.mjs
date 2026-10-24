@@ -1,0 +1,20 @@
+import {createHash} from 'node:crypto';
+import {writeFile} from 'node:fs/promises';
+import {normalizeCountry} from '../server/countryCodes.mjs';
+const source='https://raw.githubusercontent.com/nvkelso/natural-earth-vector/9380cca83db5f9aef52d5e762765100745f84b27/geojson/ne_110m_admin_0_countries.geojson';
+const expected='6866c877d39cba9c357620878839b336d569f8c662d3cfab4cb1dbe2d39c977f';
+const response=await fetch(source,{signal:AbortSignal.timeout(30000)});
+if(!response.ok)throw new Error('country_source_unavailable');
+const bytes=Buffer.from(await response.arrayBuffer());
+if(createHash('sha256').update(bytes).digest('hex')!==expected)throw new Error('country_source_integrity_failed');
+const seen=new Set();
+const features=JSON.parse(bytes.toString('utf8')).features.flatMap(feature=>{
+  const countryCode=normalizeCountry(feature.properties.ISO_A2_EH);
+  if(countryCode==='ZZ'||seen.has(countryCode))return [];
+  if(!['Polygon','MultiPolygon'].includes(feature.geometry.type))throw new Error('country_geometry_invalid');
+  seen.add(countryCode);
+  return [{type:'Feature',id:countryCode,properties:{countryCode,name:feature.properties.NAME_PT||feature.properties.NAME_EN},geometry:feature.geometry}];
+});
+if(features.length!==174)throw new Error('country_coverage_changed');
+await writeFile(new URL('../src/assets/countries-110m.geojson',import.meta.url),JSON.stringify({type:'FeatureCollection',features}));
+console.log('Pinned country polygons regenerated: 174. No population or individual locations.');

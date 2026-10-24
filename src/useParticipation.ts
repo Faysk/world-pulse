@@ -1,3 +1,4 @@
+import type { CountrySnapshot } from './countryTypes';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ParticipationClient, PENDING_NOTICE_KEY, SELECTION_NOTICE_KEY, type ActiveRanking, type LiveTag, type TimeBalance } from './participationClient';
 
@@ -31,12 +32,18 @@ export function useParticipation() {
   const [ranking,setRanking]=useState<ActiveRanking|null>(null);
   const [rankingError,setRankingError]=useState(false);
   const [tick,setTick]=useState(0);
+  const [countrySnapshot,setCountrySnapshot]=useState<CountrySnapshot|null>(null);
+  const [countryError,setCountryError]=useState(false);
+  const [countryPreference,setCountryPreference]=useState(client.countryPreference());
+  const [consentBusy,setConsentBusy]=useState(false);
+  const countryRequest=useRef<Promise<void>|null>(null);
   const sending=useRef(false);
   const rankingRequest=useRef<Promise<void>|null>(null);
   const mounted=useRef(false);
 
   const view=useCallback(()=>{
     if(!mounted.current)return;
+    setCountryPreference(client.countryPreference());
     setSelected(client.selectedTagDetails());setBalances(client.balances());
     setPending(client.pendingClicks());setQuarantined(client.isQuarantined());
   },[client]);
@@ -54,6 +61,28 @@ export function useParticipation() {
     rankingRequest.current=task;
     try{await task;}finally{if(rankingRequest.current===task)rankingRequest.current=null;}
   },[client]);
+  const refreshCountries=useCallback(async(afterMutation=false):Promise<void>=>{
+    if(countryRequest.current){await countryRequest.current;if(!afterMutation)return;}
+    if(!mounted.current||!client.countryPreference().available)return;
+    const task=client.countries().then(snapshot=>{
+      if(mounted.current){setCountrySnapshot(snapshot);setCountryError(false);}
+    }).catch(()=>{if(mounted.current){setCountryError(true);setCountrySnapshot(null);}});
+    countryRequest.current=task;
+    try{await task;}finally{if(countryRequest.current===task)countryRequest.current=null;}
+  },[client]);
+  const setGeoConsent=useCallback(async(allowed:boolean)=>{
+    if(consentBusy||!ready)return;
+    setConsentBusy(true);
+    try{await client.setGeoConsent(allowed);view();await refreshCountries(true);}
+    catch(reason){failure(reason);}
+    finally{if(mounted.current)setConsentBusy(false);}
+  },[client,consentBusy,ready,view,refreshCountries,failure]);
+  useEffect(()=>{
+    if(!ready||!countryPreference.available)return;
+    void refreshCountries();
+    const id=window.setInterval(()=>{if(!document.hidden)void refreshCountries();},5000);
+    return()=>window.clearInterval(id);
+  },[ready,countryPreference.available,refreshCountries]);
   const connect=useCallback(async()=>{
     try{await client.refreshSession();view();if(mounted.current){setReady(true);setError('');}}
     catch(reason){failure(reason);}
@@ -115,6 +144,6 @@ export function useParticipation() {
     try{await client.discardOrphanedPending();await connect();}
     catch(reason){failure(reason);}
   },[client,connect,failure]);
-  return {ready,selecting,syncing,error,selected,balances,pending,quarantined,ranking,rankingError,tick,persistent:client.persistsPending(),
+  return {countrySnapshot,countryError,countryPreference,consentBusy,setGeoConsent,ready,selecting,syncing,error,selected,balances,pending,quarantined,ranking,rankingError,tick,persistent:client.persistsPending(),
     remaining:(tagId:string)=>client.remainingMilliseconds(tagId),connect,select,tap,sync,discard};
 }
