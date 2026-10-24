@@ -32,19 +32,42 @@ Todas as rotas de escrita exigem `Origin` exatamente igual ao host da aplicaçã
 4. `/api/select` permite **uma seleção ativa por sessão**. Uma nova hashtag só pode receber segundos se já tiver sido selecionada ao menos uma vez.
 5. `/api/taps` aceita 1–30 toques declarados, exige `batchId` UUID e impõe limite básico de 120 créditos/minuto/sessão (não é defesa antifraude robusta).
 6. Idempotência em `(visitor_id,batch_id)`: enviar de novo conteúdo idêntico retorna `duplicate=true` e `acceptedClicks=0`; conteúdo diferente com mesmo ID recebe HTTP 409.
-7. Um lote de A pode chegar **depois** da troca para B se A já foi selecionada. Créditos vão para A, **sem** reativar A nem alterar `active_tag_id`.
-8. O total persistido conta toques; **não é tempo cronológico**. O número de participantes históricos é contagem de sessões distintas com algum toque.
+7. Um lote de A pode chegar **depois** da troca para B se A já foi selecionada. Ao aceitar um lote novo, o servidor estende o saldo de A, sem alterar `active_tag_id`. Retry duplicado não altera saldo nem histórico. A janela de aceitação de lotes atrasados ainda depende da política de retenção antes da ativação pública.
+8. `creditedSeconds` é histórico de taps. O saldo cronológico é separado: `expires_at = max(expires_at, statement_timestamp()) + clicks segundos`, atualizado uma única vez por lote. O relógio é consultado na instrução de crédito, depois do lock por visitante. Fechar a aba ou selecionar outra hashtag não pausa nem apaga o saldo.
 9. `/api/ranking` usa **métrica histórica declarada**, não presença ativa, não densidade geográfica e não a contagem mundial de pessoas físicas. Valores de segundos são strings decimais para evitar overflow de bigint no JavaScript.
 10. Nenhum dado de IP, localização GPS, user-agent ou coordenada vai para este modelo. A região aparece como `unknown` conceitualmente até a decisão de #6. **Não mostrar os agregados no globo ainda.**
+
+## Saldo cronológico e retorno à sessão — correção #39
+
+`/api/taps` e cada item de `credits[]` em `/api/session` retornam:
+
+- `tagId` e `creditedSeconds` (string decimal para histórico bigint);
+- `expiresAtMs`: timestamp de expiração em milissegundos;
+- `serverNowMs`: relógio do servidor usado para o snapshot;
+- `remainingMs`: máximo de zero e diferença entre os timestamps.
+
+Exemplo: saldo ainda válido de oito horas recebe três taps → a expiração aumenta
+três segundos; o mesmo lote repetido não aumenta novamente. Depois de expirar,
+dois taps novos criam dois segundos a partir do relógio do servidor, preservando
+o histórico. Vários pares podem ter saldo simultaneamente.
+
+O frontend futuro deve animar o saldo pelo tempo monotônico decorrido desde a
+recepção e reconciliar com snapshots, sem assumir relógios de browser/servidor
+iguais. O transporte guarda snapshots; ele ainda não desenha esse contador.
+
+A migração `0003-time-balances.sql` acrescenta a expiração com valor inicial já
+expirado, preservando créditos antigos sem inventar participação ativa. Executar
+manualmente depois de `0002`; o CI testa ambas em banco descartável. Nenhuma das
+duas foi aplicada no Neon de produção.
 
 ## Cliente experimental pronto, mas ainda não conectado ao globo
 
 O módulo [`src/participationClient.ts`](../src/participationClient.ts) implementa o transporte da próxima etapa de frontend:
 
-- `connect()`: sessão anônima e cookie HttpOnly configurado pelo servidor.
+- `connect()`: sessão anônima e cookie HttpOnly; restaura seleção e snapshots de saldo pelo servidor. `balances()` devolve cópias desses snapshots.
 - `selectTag(name)`: cria/resgata um # e seleciona-o em sequência; mudanças rápidas são serializadas.
 - `creditClick()`: **somente** quando um evento de usuário válido o chamar; acumula em memória e `localStorage` usando lotes de até 30.
-- `flush()`: transmite os lotes pendentes com `batchId` estável, não reatribui taps entre hashtags, mantém fila quando há falha e nunca a limpa até o servidor reconhecer o envio.
+- `flush()`: transmite lotes com `batchId` e conteúdo estáveis. Lotes enviados ou restaurados ficam congelados; taps novos recebem outro lote. Uma resposta perdida não permite alterar o payload do ID antigo. A fila só remove um lote depois de confirmação.
 - `clearSelection()`: desativa o #; `ranking()`: consulta exclusivamente participação histórica.
 - A fila local não armazena cookie, token ou coordenadas; **não é um armazenamento durável garantido** (limpeza de navegador, modo privado e expiração de sessão são riscos).
 
@@ -54,7 +77,7 @@ Os testes `tests/client.test.mjs` verificam agrupamento 30+30+5, falha de rede e
 
 ## Migration: operação deliberadamente manual
 
-O arquivo `infra/sql/0002-participation-core.sql` cria apenas as quatro tabelas de produto:
+O arquivo `infra/sql/0002-participation-core.sql` cria as quatro tabelas de produto; `0003-time-balances.sql` acrescenta expiração por par:
 
 - `world_pulse.tags`
 - `world_pulse.visitors`
@@ -81,19 +104,21 @@ Requer `0001-runtime-access.sql` já executado e role `world_pulse_app`. **Execu
 - Cookie expira após 30 dias; visitantes já expirados ficam no banco até decidirmos política de retenção e limpeza. Não alegar anonimização completa.
 - Proteção de taxa só por sessão é contornável criando várias sessões, motivo para testar WAF/limites globais antes de abertura ampla.
 - Um backend público escrito sem proteção de limpeza/retention pode acumular registros; liberar apenas após etapa de abuso/privacidade.
-- A geração de lotes pelo navegador e política de retry são o próximo trabalho do frontend, não presumir isso implementado.
+- O transporte e congelamento de lotes estão implementados/testados; integração da interface, reconciliação do contador e política de retenção ainda precisam ser concluídas.
 - O MVP atual estático e o seu aspecto noturno continuam funcionando caso API/banco fiquem indisponíveis, sem fallback que fabrique dados reais.
 
 ## CI com PostgreSQL descartável
 
-A action [`Participation API CI`](../.github/workflows/participation-api-ci.yml) usa PostgreSQL 16 exclusivo do job para aplicar `0001` e `0002` com conta de proprietário e conferir via role de runtime:
+A action [`Participation API CI`](../.github/workflows/participation-api-ci.yml) usa PostgreSQL 16 exclusivo do job para aplicar `0001`, `0002` e `0003` com conta de proprietário e conferir via role de runtime:
 
 - Sessões independentes, somente hash do cookie salvo, sessão expirada recusada.
 - Criação concorrente da mesma hashtag sem mudar ID/cor.
 - Duas requisições simultâneas com **mesmo batchId** não duplicam segundos.
 - Mesmo batchId de sessões diferentes não colide.
 - Reuso do ID com conteúdo diferente recebe 409.
-- A→B com lote atrasado de A credita A sem trocar a seleção ativa.
+- A→B com lote atrasado de A credita/estende A sem trocar a seleção ativa.
+- Saldo válido de oito horas recebe top-up exato; retry concorrente não estende novamente.
+- Retorno à sessão, histórico preservado após expiração, múltiplos saldos e migração sem inventar saldo ativo.
 - Rejeição de hashtag que nunca foi selecionada, limite de 120/min, ranking histórico e restrição de DDL.
 
 O CI não usa Neon de produção, `DATABASE_URL` real nem segredos dos seus serviços.

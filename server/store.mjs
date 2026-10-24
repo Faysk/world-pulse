@@ -147,31 +147,40 @@ export async function creditBatch(visitorId, { tagId, batchId, clicks }) {
       await client.query(`
         UPDATE world_pulse.visitor_tags
         SET seconds=seconds+$3,
+            expires_at=GREATEST(expires_at,statement_timestamp()) + $3 * interval '1 second',
             first_tap_at=COALESCE(first_tap_at,now()),
             last_tap_at=now()
         WHERE visitor_id=$1 AND tag_id=$2
       `, [visitorId, tagId, clicks]);
     }
 
-    // Delayed batch for old tag receives its correct seconds but does NOT
-    // revive its geographic presence or switch the visitor's active tag.
+    // Newly accepted taps extend this tag's balance, including after selection
+    // changes. A duplicate never updates history OR expiry, and never changes selection.
     const total = await client.query(
-      'SELECT seconds FROM world_pulse.visitor_tags WHERE visitor_id=$1 AND tag_id=$2',
+      'SELECT tag_id,seconds::text AS seconds,expires_at,statement_timestamp() AS server_now FROM world_pulse.visitor_tags WHERE visitor_id=$1 AND tag_id=$2',
       [visitorId, tagId]
     );
     return {
       batchId, tagId, acceptedClicks: duplicate ? 0 : clicks,
-      duplicate, creditedSeconds: String(total.rows[0].seconds)
+      duplicate, ...serializeBalance(total.rows[0])
     };
   });
 }
 
+function serializeBalance(row) {
+  const expiresAtMs = row.expires_at.getTime();
+  const serverNowMs = row.server_now.getTime();
+  return { tagId: row.tag_id, creditedSeconds: row.seconds,
+    expiresAtMs, serverNowMs, remainingMs: Math.max(0, expiresAtMs - serverNowMs) };
+}
+
 export async function getCredits(visitorId) {
   const rows = await getPool().query(`
-    SELECT tag_id, seconds::text AS seconds FROM world_pulse.visitor_tags
+    SELECT tag_id, seconds::text AS seconds, expires_at, statement_timestamp() AS server_now
+    FROM world_pulse.visitor_tags
     WHERE visitor_id=$1 AND seconds > 0 ORDER BY tag_id LIMIT 200
   `, [visitorId]);
-  return rows.rows.map(row => ({ tagId: row.tag_id, creditedSeconds: row.seconds }));
+  return rows.rows.map(serializeBalance);
 }
 
 export async function getRanking() {

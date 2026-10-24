@@ -13,7 +13,7 @@ function fakeStorage() {
     setItem: (name, value) => { map.set(name, value); }
   };
 }
-function mockTransport({ failOnce = false } = {}) {
+function mockTransport({ failOnce = false, loseResponseOnce = false } = {}) {
   const calls = [];
   const credited = new Map();
   const accepted = new Map();
@@ -37,7 +37,9 @@ function mockTransport({ failOnce = false } = {}) {
         accepted.set(body.batchId, body);
         credited.set(body.tagId, (credited.get(body.tagId) || 0) + body.clicks);
       }
-      return Response.json({ batchId: body.batchId, duplicate: Boolean(existing), creditedSeconds: String(credited.get(body.tagId)) });
+      if (loseResponseOnce) { loseResponseOnce = false; throw new Error('response-lost'); }
+      return Response.json({ batchId: body.batchId, tagId:body.tagId, duplicate: Boolean(existing),
+        creditedSeconds: String(credited.get(body.tagId)), serverNowMs:1000, expiresAtMs:5000, remainingMs:4000 });
     }
     throw new Error('unexpected API route ' + path);
   };
@@ -96,6 +98,35 @@ test('A -> B selection preserves the already queued original tag credits', async
   assert.equal(client.creditClick(), false);
 });
 
+test('New taps after a lost response never change the already accepted batch fingerprint', async () => {
+  const storage = fakeStorage(), transport = mockTransport({loseResponseOnce:true});
+  const client = new ParticipationClient(transport.handle,storage,randomUUID);
+  await client.selectTag('#GTA6');
+  for(let i=0;i<4;i++) client.creditClick();
+  await assert.rejects(client.flush(),/response-lost/);
+  for(let i=0;i<2;i++) client.creditClick();
+  await client.flush();
+  const attempts = transport.calls.filter(x=>x.path==='/api/taps');
+  assert.deepEqual(attempts[0].body,attempts[1].body);
+  assert.notEqual(attempts[1].body.batchId,attempts[2].body.batchId);
+  assert.equal(transport.credited.get(ID_A),6);
+  assert.equal(client.pendingClicks(),0);
+});
+
+test('Restored unacknowledged batches stay frozen even after new taps in the same hashtag', async () => {
+  const storage = fakeStorage(), transport = mockTransport({loseResponseOnce:true});
+  const original = new ParticipationClient(transport.handle,storage,randomUUID);
+  await original.selectTag('#GTA6');
+  original.creditClick();
+  await assert.rejects(original.flush(),/response-lost/);
+  const restored = new ParticipationClient(transport.handle,storage,randomUUID);
+  await restored.selectTag('#GTA6');
+  restored.creditClick();
+  await restored.flush();
+  assert.equal(transport.credited.get(ID_A),2);
+  assert.equal(restored.pendingClicks(),0);
+});
+
 test('Ranking is explicitly historical, never real-time presence', async () => {
   const transport = mockTransport(), client = new ParticipationClient(transport.handle, fakeStorage());
   const result = await client.ranking();
@@ -108,4 +139,18 @@ test('Malformed stored queue is ignored rather than replaying fabricated clicks'
   storage.setItem('world-pulse-pending-v1', JSON.stringify([{batchId:'nope',tagId:'x',clicks:100000}]));
   const client = new ParticipationClient(mockTransport().handle, storage);
   assert.equal(client.pendingClicks(),0);
+});
+
+test('Returning browser restores selected tag and independent server balance snapshots', async () => {
+  const credits = [
+    {tagId:ID_A,creditedSeconds:'28800',serverNowMs:1000,expiresAtMs:9000,remainingMs:8000},
+    {tagId:ID_B,creditedSeconds:'30',serverNowMs:1000,expiresAtMs:500,remainingMs:0}
+  ];
+  const client = new ParticipationClient(async () => Response.json({anonymous:true,activeTagId:ID_A,credits}),fakeStorage(),randomUUID);
+  await client.connect();
+  assert.deepEqual(client.balances(),credits);
+  assert.equal(client.creditClick(),true);
+  const copy = client.balances();
+  copy[0].remainingMs=0;
+  assert.equal(client.balances()[0].remainingMs,8000);
 });
