@@ -121,7 +121,10 @@ export class ParticipationClient {
   private async request<T>(path: string, body?: unknown): Promise<T> {
     const response = await this.fetcher(path, {
       method: body === undefined ? 'GET' : 'POST',
-      headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
+      headers: body === undefined ? {} : {
+        'Content-Type': 'application/json',
+        ...(path === '/api/taps' ? { 'X-WP-Session-Binding': this.queueBinding ?? '' } : {})
+      },
       credentials: 'same-origin',
       ...(body === undefined ? {} : { body: JSON.stringify(body) })
     });
@@ -129,7 +132,8 @@ export class ParticipationClient {
     if (!response.ok) {
       const code = (payload && typeof payload === 'object' && 'error' in payload) ?
         String(payload.error) : 'network_error';
-      if (response.status === 401 && code === 'session_expired') {
+      if ((response.status === 401 && code === 'session_expired') ||
+        (response.status === 409 && code === 'session_binding_mismatch')) {
         this.sessionPromise = null;
         if (this.pending.length) this.quarantinePending();
       }
@@ -257,6 +261,9 @@ export class ParticipationClient {
     if (this.sending) return this.sending;
     const task = async () => {
       await this.connect();
+      // Cached connect() alone is not safe across cookie rotations in other
+      // tabs. Refresh the binding BEFORE any queued batch is transmitted.
+      if (this.pending.length) await this.loadSession();
       while (this.pending.length) {
         const batch = { ...this.pending[0] };
         this.sealed.add(batch.batchId);
