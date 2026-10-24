@@ -169,3 +169,91 @@ test('Each balance counts down on its own monotonic clock, including while toppi
   assert.equal(client.remainingMilliseconds(ID_A),0);
   assert.equal(client.remainingMilliseconds(ID_B),1000);
 });
+
+test('New anonymous session quarantines pending clicks instead of replaying as another visitor', async () => {
+  const storage=fakeStorage();
+  const oldBatch={batchId:randomUUID(),tagId:ID_A,clicks:3};
+  storage.setItem('world-pulse-pending-v1',JSON.stringify([oldBatch]));
+  const calls=[];
+  const fetcher=async(path,init)=>{
+    calls.push({path,body:init.body && JSON.parse(init.body)});
+    if(path==='/api/session') return Response.json({
+      anonymous:true,sessionFresh:true,activeTagId:null,activeTag:null,credits:[]
+    });
+    throw new Error('orphaned batch was incorrectly replayed to a new session');
+  };
+  const client=new ParticipationClient(fetcher,storage,randomUUID);
+  await assert.rejects(client.connect(),/session_rotated_pending/);
+  assert.equal(client.isQuarantined(),true);
+  assert.equal(client.creditClick(),false);
+  await assert.rejects(client.flush(),/session_rotated_pending/);
+  assert.deepEqual(JSON.parse(storage.getItem('world-pulse-pending-v1')),[oldBatch]);
+  assert.equal(calls.some(x=>x.path==='/api/taps'),false);
+
+  // Reloading the page must not silently retry an already quarantined queue.
+  const refreshed=new ParticipationClient(fetcher,storage,randomUUID);
+  await assert.rejects(refreshed.connect(),/session_rotated_pending/);
+  assert.equal(refreshed.pendingClicks(),3);
+  refreshed.discardOrphanedPending();
+  assert.equal(refreshed.isQuarantined(),false);
+  assert.equal(refreshed.pendingClicks(),0);
+  await refreshed.connect();
+});
+
+test('An expired session during flush blocks old pending batches and does not rewrite them', async () => {
+  const storage=fakeStorage(),batchId=randomUUID();
+  let expired=false;
+  const transport=async(path,init)=>{
+    if(path==='/api/session') return Response.json({
+      anonymous:true,sessionFresh:false,activeTagId:ID_A,
+      activeTag:{id:ID_A,name:'#gta6',color:'#ff8758'},credits:[]
+    });
+    if(path==='/api/taps'){
+      if(!expired){expired=true;return Response.json({error:'session_expired'},{status:401});}
+      throw new Error('must never replay after expiry');
+    }
+    throw new Error('unexpected request '+path);
+  };
+  const client=new ParticipationClient(transport,storage,()=>batchId);
+  await client.connect();
+  client.creditClick();
+  await assert.rejects(client.flush(),/session_expired/);
+  assert.equal(client.isQuarantined(),true);
+  assert.equal(client.pendingClicks(),1);
+  await assert.rejects(client.flush(),/session_rotated_pending/);
+});
+
+test('Tabs converge on authoritative server selection after notification, not guessed local state', async () => {
+  const storage=fakeStorage();
+  let current=null;
+  const server=async(path,init)=>{
+    const body=init.body?JSON.parse(init.body):null;
+    if(path==='/api/session')return Response.json({
+      anonymous:true,sessionFresh:false,activeTagId:current,
+      activeTag:current?{id:current,name:current===ID_A?'#gta6':'#lofi',color:'#aabbcc'}:null,
+      credits:[]
+    });
+    if(path==='/api/tags')return Response.json({tag:{
+      id:body.name==='#GTA6'?ID_A:ID_B,name:body.name.toLowerCase(),color:'#aabbcc'
+    }});
+    if(path==='/api/select'){current=body.tagId;return Response.json({activeTagId:current});}
+    throw new Error('Unexpected request');
+  };
+  const a=new ParticipationClient(server,storage,randomUUID);
+  const b=new ParticipationClient(server,storage,randomUUID);
+  await Promise.all([a.connect(),b.connect()]);
+  await a.selectTag('#GTA6');
+  assert.equal(b.selection(),null);
+  await b.refreshSession();
+  assert.equal(b.selection(),ID_A);
+  assert.equal(b.selectedTagDetails()?.name,'#gta6');
+  await b.selectTag('#LoFi');
+  await a.refreshSession();
+  assert.equal(a.selection(),ID_B);
+  assert.equal(a.selectedTagDetails()?.name,'#lofi');
+  await a.clearSelection();
+  await b.refreshSession();
+  assert.equal(b.selection(),null);
+  assert.equal(b.creditClick(),false);
+  assert.ok(storage.getItem('world-pulse-selection-changed-v1'));
+});
