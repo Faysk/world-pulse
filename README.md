@@ -15,8 +15,8 @@ Um planeta cinza que ganha cores com a participação das pessoas.
 | DNS | Cloudflare, zona `faysk.dev` | `map` aponta à Vercel, DNS only |
 | Objetos | Cloudflare R2, bucket privado `world-pulse-production` | Provisionado; ainda sem função no fluxo de taps |
 | Configuração e entrega | GitHub Actions + Environment `production` | Origem das secrets/configurações e deploy manual de `main` |
+| Steam LIVE | `GET /api/steam` · Steam Web API oficial | **Publicado:** 16 jogos monitorados, contagens reais e cache de 5 min; independente do globo |
 | API de participação | [PR #31](https://github.com/Faysk/world-pulse/pull/31) | Draft, gate desligado, migração de domínio não aplicada |
-| Feed externo Steam | `api/steam.mjs` → API pública Steam | Integrado em `main` pelo PR #41; separado dos participantes/manchas |
 
 Não há serviço de autenticação externo, conexão direta do browser ao banco ou bucket público. Nenhum outro banco de outro projeto foi removido ou alterado.
 
@@ -33,7 +33,7 @@ flowchart LR
 
 Linhas pontilhadas representam trabalho ainda não ativado. Veja [arquitetura](docs/05-free-tier-architecture.md) e [operações](docs/11-infrastructure-operations.md).
 
-O feed Steam consulta uma amostra de jogos, sem banco ou chave de API, e não representa participantes do World Pulse nem localização. Seu código chegou a `main` depois do último deploy confirmado nesta revisão ([40041911767](https://github.com/Faysk/world-pulse/actions/runs/40041911767)); presença em `main` não é evidência de publicação. [Escopo do feed](docs/15-steam-live-signals.md).
+O feed Steam publicado consulta uma amostra de jogos, sem banco ou chave de API, e não representa participantes do World Pulse nem localização. A verificação pública desta revisão retornou `scope=curated_sample` e cobertura de 16/16 jogos. [Escopo e evidência do feed](docs/16-steam-live-signals.md).
 
 ## Regras do produto
 
@@ -77,7 +77,7 @@ server/steam.mjs             consulta/validação do feed externo
 docs/                        arquitetura, regras, evidências e pendências
 ```
 
-Os demais endpoints de participação, `server/store.mjs`, `server/handlers.mjs`, o cliente `participationClient.ts` e as migrações `0002`/`0003` estão **somente no PR #31** enquanto ele permanecer em draft. A correção de saldo e retries foi integrada nesse draft pelo [PR #43](https://github.com/Faysk/world-pulse/pull/43), com testes em PostgreSQL descartável; isso ainda não ativa participação em produção.
+As pastas `api/` e `server/` já contêm a fonte pública Steam LIVE. Os demais endpoints de participação, `server/store.mjs`, `server/handlers.mjs`, o cliente `participationClient.ts` e as migrações `0002`/`0003` estão **somente no PR #31** enquanto ele permanecer em draft. A correção de saldo e retries foi integrada nesse draft pelo [PR #43](https://github.com/Faysk/world-pulse/pull/43), com testes em PostgreSQL descartável; isso ainda não ativa participação em produção.
 
 ## Documentação e próximos passos
 
@@ -87,7 +87,8 @@ Os demais endpoints de participação, `server/store.mjs`, `server/handlers.mjs`
 - [Milestones e entregas](docs/10-milestones-and-progress.md) · [Runbook de produção](docs/11-infrastructure-operations.md)
 - [Revisão crítica atual](docs/12-project-review.md) · [Primeira publicação visual](docs/13-visual-release-v0.1.md)
 - [Saldo cronológico](docs/14-time-credit-contract.md) · [Cenários de 0 a 8 bilhões e 1 trilhão](docs/15-population-scenarios.md)
+- [Steam LIVE — jogos monitorados](docs/16-steam-live-signals.md) · [Painel público](https://map.faysk.dev) · [Issue #40](https://github.com/Faysk/world-pulse/issues/40)
 
-Próxima entrega: revisar a API, alinhar banco e respostas ao saldo cronológico, validar em banco descartável e integrar dois navegadores. Geografia pública, retenção, abuso e ranking exigem trabalho próprio antes da alpha. O laboratório suporta até 756 células sintéticas; isso não comprova capacidade de atender bilhões de usuários reais.
+Próxima entrega: validar a API em staging, integrar interface/saldo e testar dois navegadores. O draft já tem saldo e retries validados em banco descartável. Geografia pública, retenção, abuso e ranking exigem trabalho próprio antes da alpha. O laboratório suporta até 756 células sintéticas; isso não comprova capacidade de atender bilhões de usuários reais.
 
 [Issues](https://github.com/Faysk/world-pulse/issues) · [Milestones](https://github.com/Faysk/world-pulse/milestones) · Licença [MIT](LICENSE).

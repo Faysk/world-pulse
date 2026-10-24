@@ -13,7 +13,7 @@
 | Neon Free / PostgreSQL | Banco relacional com TLS e role runtime restrita | Conexão verificada; tabelas de participação ainda não migradas em produção |
 | Cloudflare R2 Standard | Armazenamento S3 privado | Apenas provisionamento/probes; não participa dos taps nem fornece os tiles |
 | GitHub Actions | Validar, sincronizar configuração e publicar | Environment `production`, branch `main`; sem secrets em PRs |
-| Feed Steam | Endpoint Vercel para dados externos de jogos | Código em `main` pelo PR #41; independente do banco e das manchas |
+| Feed Steam | Endpoint Vercel para dados externos de jogos | Publicado pelo PR #41; amostra externa independente do banco e das manchas |
 
 O navegador recebe HTML/JS/CSS da Vercel e tiles do OpenFreeMap. Não recebe credenciais PostgreSQL ou R2. O GitHub é a origem da configuração de produção; o workflow sincroniza somente a lista autorizada de variáveis server-side para a Vercel.
 
