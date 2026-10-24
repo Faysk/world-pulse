@@ -8,6 +8,13 @@ on:
       - "infra/sql/**"
       - "tests/api.test.mjs"
       - "tests/integration.test.mjs"
+      - "tests/participation-browser/**"
+      - "src/ParticipationLab.tsx"
+      - "src/participationLab.css"
+      - "src/participationClient.ts"
+      - "src/App.tsx"
+      - "scripts/isolated-participation.mjs"
+      - "playwright.participation.config.ts"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/participation-api-ci.yml"
@@ -20,6 +27,13 @@ on:
       - "infra/sql/**"
       - "tests/api.test.mjs"
       - "tests/integration.test.mjs"
+      - "tests/participation-browser/**"
+      - "src/ParticipationLab.tsx"
+      - "src/participationLab.css"
+      - "src/participationClient.ts"
+      - "src/App.tsx"
+      - "scripts/isolated-participation.mjs"
+      - "playwright.participation.config.ts"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/participation-api-ci.yml"
@@ -61,3 +75,41 @@ jobs:
           NODE_ENV: test
           RUN_DB_INTEGRATION: "1"
         run: node --test tests/integration.test.mjs
+
+  browser-integration:
+    name: Two-browser participation with disposable PostgreSQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: local-only
+          POSTGRES_DB: world_pulse_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d world_pulse_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm ci --no-fund
+      - run: npx playwright install chromium --with-deps
+      - name: Browser to HTTP to PostgreSQL to browser
+        env:
+          WP_ISOLATED_TEST: '1'
+        run: npm run test:participation
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: world-pulse-participation-isolated
+          path: |
+            test-results/
+            test-artifacts/participation-*.png
+          retention-days: 7

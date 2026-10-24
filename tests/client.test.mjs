@@ -154,3 +154,18 @@ test('Returning browser restores selected tag and independent server balance sna
   copy[0].remainingMs=0;
   assert.equal(client.balances()[0].remainingMs,8000);
 });
+
+test('Each balance counts down on its own monotonic clock, including while topping up another tag', async () => {
+  let elapsed=100000;
+  const transport=mockTransport();
+  const client=new ParticipationClient(transport.handle,fakeStorage(),randomUUID,()=>elapsed);
+  await client.selectTag('#GTA6');client.creditClick();await client.flush();
+  assert.equal(client.remainingMilliseconds(ID_A),4000);
+  elapsed+=1500;
+  await client.selectTag('#LoFi');client.creditClick();await client.flush();
+  assert.equal(client.remainingMilliseconds(ID_A),2500);
+  assert.equal(client.remainingMilliseconds(ID_B),4000);
+  elapsed+=3000;
+  assert.equal(client.remainingMilliseconds(ID_A),0);
+  assert.equal(client.remainingMilliseconds(ID_B),1000);
+});

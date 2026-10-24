@@ -60,7 +60,16 @@ expirado, preservando créditos antigos sem inventar participação ativa. Execu
 manualmente depois de `0002`; o CI testa ambas em banco descartável. Nenhuma das
 duas foi aplicada no Neon de produção.
 
-## Cliente experimental pronto, mas ainda não conectado ao globo
+## Laboratório de integração
+
+O [laboratório isolado](17-isolated-participation.md) conecta interface, cookie,
+handlers e PostgreSQL descartável no CI. Só abre em desenvolvimento com
+`participationPreview=1`; não altera participantes do globo nem ativa produção.
+O transporte usa o relógio monotônico de cada snapshot para não pausar saldos
+anteriores quando outra hashtag recebe taps. Os snapshots privados também
+retornam nome/cor da hashtag para restaurar a interface sem IDs visíveis.
+
+## Cliente experimental, separado do globo público
 
 O módulo [`src/participationClient.ts`](../src/participationClient.ts) implementa o transporte da próxima etapa de frontend:
 
