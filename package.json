@@ -11,12 +11,14 @@
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "check": "npm run test && npm run build",
     "test:browser": "playwright test",
+    "test:participation": "playwright test --config playwright.participation.config.ts",
     "benchmark:spatial": "node --experimental-strip-types scripts/spatial-benchmark.mjs"
   },
   "dependencies": {
     "maplibre-gl": "6.15.0",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "pg": "8.23.1"
   },
   "devDependencies": {
     "@types/react": "19.3.0",

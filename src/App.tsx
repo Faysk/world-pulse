@@ -1,10 +1,16 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Map as MapInstance } from 'maplibre-gl';
 import { TAGS, createCombinedPopulation, createScenarioPopulation, POPULATION_SCENARIOS,
   scenarioDescription, type ScenarioDistribution, type TagId } from './demoData';
 import { WorldGlobe, flyToTag, resetGlobe } from './WorldGlobe';
 import { EMPTY_SECONDS, creditTap, creditedTotal } from './domain';
 import { SteamPanel } from './SteamPanel';
+const ParticipationLab = lazy(() => import('./ParticipationLab'));
+const LiveExperience = lazy(() => import('./LiveExperience'));
+const EXPERIENCE_ENABLED = __WP_ALPHA_RELEASE__ || ((import.meta.env.DEV || __WP_PREVIEW_UI__) &&
+  new URLSearchParams(window.location.search).get('experiencePreview') === '1');
+const PARTICIPATION_LAB_ENABLED = import.meta.env.DEV &&
+  new URLSearchParams(window.location.search).get('participationPreview') === '1';
 
 // Steam remains in the repository but is deliberately NOT part of the
 // public World Pulse experience. The development-only preview is opt-in.
@@ -16,6 +22,11 @@ const format = (n: number) => Intl.NumberFormat('pt-BR').format(n);
 const compact = (n: number) => n >= 1_000_000 ? Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 2 }).format(n) : format(n);
 
 export default function App() {
+  if (EXPERIENCE_ENABLED) return <Suspense fallback={<div role="status">Abrindo World Pulse…</div>}><LiveExperience /></Suspense>;
+  return <DemoApp />;
+}
+
+function DemoApp() {
   const mapRef = useRef<MapInstance | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -109,6 +120,7 @@ export default function App() {
 
   return (
     <div className="world-pulse">
+      {PARTICIPATION_LAB_ENABLED && <Suspense fallback={<div role="status">Abrindo laboratório…</div>}><ParticipationLab /></Suspense>}
       <WorldGlobe
         scale={scale}
         population={population}

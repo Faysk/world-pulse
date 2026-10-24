@@ -11,6 +11,7 @@ import {
 setWorkerUrl(workerUrl);
 
 export type GlobeProps = {
+  ariaLabel?: string;
   population?: PulseCollection;
   scale: number;
   selected: TagId | null;
@@ -19,6 +20,7 @@ export type GlobeProps = {
   onZoom: (zoom: number) => void;
   onFps: (fps: number) => void;
   onTap: () => void;
+  onCountryPick?: (countryCode:string) => void;
   onTagPick: (tag: TagId) => void;
   onFailure: (message: string) => void;
 };
@@ -226,12 +228,12 @@ function installLights(map: MapInstance, scale: number, population?: PulseCollec
 }
 
 export function WorldGlobe({
-  scale, population, selected, cityLights, onReady, onZoom, onFps, onTap, onTagPick, onFailure
+  scale, population, selected, cityLights, onReady, onZoom, onFps, onTap, onCountryPick, onTagPick, onFailure, ariaLabel='Globo interativo de atividade simulada'
 }: GlobeProps) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapInstance | null>(null);
-  const callbacks = useRef({ onReady, onZoom, onFps, onTap, onTagPick, onFailure });
-  callbacks.current = { onReady, onZoom, onFps, onTap, onTagPick, onFailure };
+  const callbacks = useRef({ onReady, onZoom, onFps, onTap, onCountryPick, onTagPick, onFailure });
+  callbacks.current = { onReady, onZoom, onFps, onTap, onCountryPick, onTagPick, onFailure };
   const latestState = useRef({ scale, population, selected, cityLights });
   latestState.current = { scale, population, selected, cityLights };
 
@@ -264,6 +266,7 @@ export function WorldGlobe({
     // This prevents rotation, pinch and scroll from becoming fake +1 seconds.
     const gestureGuard = new TapGestureGuard();
     const canvas = map.getCanvas();
+    let countryAtPointerDown:string|null=null;
     const sample = (event: PointerEvent): PointerInput => ({
       id: event.pointerId,
       x: event.clientX,
@@ -272,8 +275,17 @@ export function WorldGlobe({
       pointerType: event.pointerType
     });
     const down = (event: PointerEvent) => {
+      const input=sample(event);
       if (event.isPrimary === false) gestureGuard.invalidate();
-      gestureGuard.pointerDown(sample(event));
+      else{
+        countryAtPointerDown=null;
+        if(callbacks.current.onCountryPick&&map.getLayer('live-country-fill')){
+          const box=canvas.getBoundingClientRect();
+          const country=map.queryRenderedFeatures([event.clientX-box.left,event.clientY-box.top],{layers:['live-country-fill']})[0]?.properties?.countryCode;
+          if(typeof country==='string')countryAtPointerDown=country;
+        }
+      }
+      gestureGuard.pointerDown(input);
     };
     const move = (event: PointerEvent) => gestureGuard.pointerMove(sample(event));
     const up = (event: PointerEvent) => gestureGuard.pointerUp(sample(event));
@@ -338,6 +350,12 @@ export function WorldGlobe({
       if (!original || !gestureGuard.consumeClick(
         original.clientX, original.clientY, performance.now()
       )) return;
+      const intendedCountry=countryAtPointerDown;countryAtPointerDown=null;
+      if(intendedCountry&&callbacks.current.onCountryPick){callbacks.current.onCountryPick(intendedCountry);return;}
+      if(map.getLayer('live-country-fill')){
+        const country=map.queryRenderedFeatures(event.point,{layers:['live-country-fill']})[0]?.properties?.countryCode;
+        if(typeof country==='string'&&callbacks.current.onCountryPick){callbacks.current.onCountryPick(country);return;}
+      }
       if (!map.getLayer('pulse-hit')) return;
       const hits = map.queryRenderedFeatures(event.point, {
         layers: ['pulse-hit']
@@ -356,7 +374,11 @@ export function WorldGlobe({
       if (hoverFrame !== null) window.cancelAnimationFrame(hoverFrame);
       hoverFrame = window.requestAnimationFrame(() => {
         hoverFrame = null;
-        if (!map.getLayer('pulse-hit')) return;
+        if(map.getLayer('live-country-fill')){
+        const country=map.queryRenderedFeatures(event.point,{layers:['live-country-fill']})[0]?.properties?.countryCode;
+        if(typeof country==='string'&&callbacks.current.onCountryPick){callbacks.current.onCountryPick(country);return;}
+      }
+      if (!map.getLayer('pulse-hit')) return;
         if (map.isMoving()) {
           map.getCanvas().style.cursor = 'grabbing';
           return;
@@ -408,7 +430,7 @@ export function WorldGlobe({
     if (map) applyNeutralLights(map, cityLights);
   }, [cityLights]);
 
-  return <div className="map-canvas" ref={container} aria-label="Globo interativo de atividade simulada" />;
+  return <div className="map-canvas" ref={container} aria-label={ariaLabel} />;
 }
 
 export function flyToTag(map: MapInstance | null, tag: TagId): void {

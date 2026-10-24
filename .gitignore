@@ -1,5 +1,8 @@
 node_modules/
 dist/
+dist-gate-production/
+dist-gate-preview/
+dist-gate-alpha/
 .vite/
 coverage/
 *.log
@@ -12,5 +15,6 @@ coverage/
 infra/.deploy-url
 infra-*.png
 test-results/
+test-results-build-gate/
 test-artifacts/
 playwright-report/

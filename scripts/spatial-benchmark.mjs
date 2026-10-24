@@ -1,9 +1,9 @@
 import { performance } from 'node:perf_hooks';
-import { createScenarioPopulation } from '../src/demoData.ts';
+import { createScenarioPopulation, POPULATION_SCENARIOS } from '../src/demoData.ts';
 import { aggregateForZoom } from '../src/spatialAggregation.ts';
 
 // CPU + JSON serialization only. This is NOT a WebGL FPS, bandwidth or DB test.
-const scenarios = [0, 1, 100, 10000, 100000, 1000000000, 1000000000000];
+const scenarios = POPULATION_SCENARIOS;
 const budgets = [64, 160, 300];
 const zooms = [1.5, 5, 10];
 const iterations = 30;

@@ -1,11 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateRuntime } from './config.mjs';
+import { validateRuntime,productionReleaseFlags } from './config.mjs';
 
 const valid = { DATABASE_URL: 'postgresql://test:test@example.com/world?sslmode=verify-full',
   R2_ACCESS_KEY_ID: 'test', R2_SECRET_ACCESS_KEY: 'test', R2_ACCOUNT_ID: 'a'.repeat(32),
   R2_BUCKET_NAME: 'world-pulse-production', APP_URL: 'https://map.faysk.dev' };
 test('accepts complete TLS configuration', () => assert.doesNotThrow(() => validateRuntime(valid)));
+test('release defaults closed and refuses inconsistent API, alpha and country flags',()=>{
+  assert.ok(Object.values(productionReleaseFlags({})).every(value=>value==='false'));
+  for(const env of [{WP_ALPHA_RELEASE:'true'},{WP_GEO_PUBLIC_ENABLED:'true'},
+    {WP_GEO_COUNTRY_ENABLED:'true',WP_API_ENABLED:'true'},{WP_API_ENABLED:'yes'}])assert.throws(()=>productionReleaseFlags(env));
+  assert.equal(productionReleaseFlags({WP_ALPHA_RELEASE:'true',WP_API_ENABLED:'true'}).WP_ALPHA_RELEASE,'true');
+});
 test('rejects missing keys without revealing values', () => {
   assert.throws(() => validateRuntime({ ...valid, DATABASE_URL: '' }), /Missing configuration: DATABASE_URL/);
 });
