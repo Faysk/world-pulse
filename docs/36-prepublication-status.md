@@ -61,7 +61,7 @@ medidas de FPS ou gestos em dispositivos físicos. O benchmark de 0 a 1 trilhão
 3. **Operação antes do público:** conferir logs/backups/restore e métricas do
    provedor, aplicar migrações de produção em operação própria, atestar host e
    ativar/verificar retenção. Limites de banco não garantem custo zero ou DDoS.
-4. **Visual/hardware:** hoje o mapa mostra países da hashtag selecionada, sem
+4. **Visual/hardware:** o mapa oferece países multicolor com foco opcional, sem
    posição de pessoas. Composição orgânica multicolor simultânea é pesquisa
    separada (#32), e QA de touchpad/iOS/Android e FPS físico continua em #3/#12.
 
