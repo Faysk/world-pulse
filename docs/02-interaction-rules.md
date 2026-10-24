@@ -1,61 +1,70 @@
 # 02 — Interação, hashtags, segundos e manchas
 
-**Status:** regras confirmadas + aspectos não decididos explicitamente separados.
+**Contrato atual, confirmado em 24/10/2026.** Implementação integrada na main;
+ativação pública pausada. [Estado verificado e gates](36-prepublication-status.md).
 
-## Regras confirmadas
+## Participação e seleção
 
-1. **Uma hashtag selecionada para receber novos taps por vez.** Várias hashtags podem manter participação simultânea enquanto têm saldo.
-2. **Saldo por hashtag em contagem regressiva:** ao trocar A→B, A continua consumindo tempo, inclusive offline; novos taps aumentam B. Histórico creditado e saldo restante são métricas distintas.
-3. **Cada clique/tap elegível acrescenta +1 segundo ao saldo** da hashtag selecionada. O saldo cai em tempo real até zerar. Veja o [contrato confirmado em 24/10/2026](14-time-credit-contract.md).
-4. **Manchas dependem de pessoas distintas**, e não da quantidade de cliques, segundos ou velocidade de toque.
-5. **Hashtags são livres:** não há lista fechada, limiar mínimo de votos nem filtros por enquanto.
-6. **Primeiro registro da hashtag sorteia a cor; registros seguintes reutilizam a cor**, inclusive em outros países.
-7. O usuário pode **selecionar hashtag existente visualmente** pela cor/mancha ou etiqueta.
-8. O visitante pode observar e navegar antes de contribuir.
-9. Geografia do usuário apenas aproximada, sem mostrar endereço ou ponto exato.
+- Uma hashtag selecionada recebe os novos taps. Várias podem manter saldo positivo
+  simultaneamente; trocar A→B não pausa nem remove o saldo de A.
+- Cada tap elegível acrescenta +1 segundo. O saldo diminui pelo relógio do servidor,
+  inclusive offline, até zerar. Retornar permite acrescentar ao saldo restante.
+- A primeira criação normalizada define ID/cor aleatória persistente global;
+  criações posteriores reutilizam ambos. Não existe catálogo temático fechado.
+- NFKC, caixa uniforme e validação Unicode de 2–32 caracteres são implementados
+  no servidor. [Contrato temporal](14-time-credit-contract.md).
 
-## Regras técnicas propostas (não ratificadas)
+## Gestos na experiência integrada
 
-- Normalização de hashtags: Unicode NFC; remover espaços extras; diferenciação de maiúsculas/minúsculas desativada para chave canônica, mas preservar grafia legível.
-- Limitar tamanho e caracteres aceitos, para evitar nomes quebrados, sem impor catálogo.
-- IDs persistentes de navegador (pseudônimos) para manter segundos por hashtag; risco: limpar storage/trocar aparelho perde vínculo.
-- Operação idempotente em lotes para evitar segundos duplicados se conexão falhar e o cliente repetir envio.
-- Salvar contribuição local imediata; sincronizar lotes com servidor para reduzir chamadas.
-- Tratar taps rápidos e cliques de mouse de modo equivalente.
+Tap curto em terreno sem área de participação ou botão +1 credita na selecionada.
+Arrastar, aproximar, wheel, pinch, long-press e cancelar só navegam. Sem seleção,
+não há crédito. Tocar um país colorido inspeciona a origem e não soma segundos;
+escolher uma hashtag na lista também não soma. O país é capturado no início do
+gesto: desaparecer antes da soltura não o transforma em contribuição.
 
-## Conflito: clique para somar versus toque para navegar
+A demonstração antiga usa hotspots sintéticos com comportamento próprio; ela não
+é a experiência integrada. [Segurança de gestos](17-gesture-safety.md) e
+[experiência real gated](29-live-experience.md) registram essa diferença.
 
-O requisito diz `cada clique ou tap soma +1 s`. Em paralelo a pessoa precisa arrastar, dar zoom, pinçar e selecionar hashtags.
+## Contagens distintas
 
-**Experimento de UX obrigatório:**
-- Tap/click curto com hashtag ativa credita +1.
-- Movimento acima de pequeno limiar = gesto de navegação; não soma.
-- Scroll, pinch, arrastar, rotação e movimento da câmera = não somam.
-- Tap sobre interface de seleção escolhe a hashtag, **não deve somar automaticamente** sem decisão explícita.
-- Sem hashtag selecionada, clique no globo pode explorar, mas não credita tempo.
+- Atual: pares sessão/hashtag com saldo positivo. Uma sessão conta uma vez por
+  hashtag, tenha 1 segundo ou 8h. Ao expirar, sai do atual e do mapa.
+- Histórico: par registrado desde criar/selecionar, mesmo antes de taps. Repetir
+  a seleção não duplica o par. Não equivale à máxima simultânea histórica.
+- Segundos creditados: soma histórica dos lotes confirmados e deduplicados.
+- Saldo: `max(0, expires_at - server_now)`, separado do histórico.
 
-Precisamos validar onde o tap será aceito: superfície inteira do globo, área separada de contribuição, ou ambos. Não tratar a proposta acima como decisão fechada.
+Top 10 ordena participações atuais desc, nome normalizado asc e ID asc. Segundos
+não pesam nem desempatam. Todas as hashtags podem disputar, sem mínimo de cinco
+no ranking. O limiar geográfico é outro controle. [Ranking](24-ranking-contract.md).
+Uma sessão pseudônima não comprova pessoa física única; várias sessões podem
+pertencer à mesma pessoa e uma sessão pode participar em várias hashtags.
 
-## Contadores distintos — não misturar
+## Persistência e privacidade
 
-- `contributors_ever`: pseudônimos distintos que já contribuíram para a hashtag; requer definição de escopo.
-- `participants_present`: pseudônimos com saldo positivo na hashtag no instante do snapshot; um pseudônimo pode estar em várias hashtags com saldo.
-- `seconds_total`: soma histórica dos +1s recebidos por hashtag.
-- `remaining_ms`: tempo restante derivado de `expires_at`, nunca confundido com `seconds_total`.
+Cookie HttpOnly/Secure, hash no banco, fila persistente coordenada entre abas,
+binding de sessão e lotes idempotentes impedem retries de duplicar crédito.
+Taps offline recebem crédito quando o servidor aceita o lote, na hashtag original;
+o browser não determina timestamps retroativos. Após mais de 30 dias sem retorno
+e todos os saldos zerados, o histórico é consolidado por hashtag e os vínculos
+individuais removidos. [Retenção](27-retention-policy.md).
 
-**Top 10:** confirmado que todas as hashtags elegíveis entram (se houver 10 ou 10 milhões); **ordenar por qual métrica ainda está em aberto**. O ranking deve explicar a métrica exibida.
+País é opcional, estimado pela conexão e só aceito de fonte de borda verificada.
+Não se coleta cidade ou coordenada individual. Grupos conhecidos menores que cinco
+são reunidos em OTHER; desconhecidos usam ZZ. Nenhum ganha posição inventada.
+O limiar não garante anonimato. [Geografia](31-country-geography.md).
 
-## Densidade espacial
+## Mapa atual e pesquisa
 
-- Para cada hashtag e região, contar **participantes distintos**; não contar clicks.
-- A cor deve ficar mais intensa conforme mais pessoas entram em áreas próximas.
-- Se os participantes se distribuem espacialmente, a mancha acompanha essa distribuição.
-- Hashtags rivais coexistem; evitar cores misturadas que se tornem ilegíveis.
-- Nunca deslocar pontos para sugerir precisão residencial.
+A experiência integrada oferece países multicolor, foco e busca/paginação de todas
+as hashtags da leitura. Faixas aproximadas não são pontos pessoais, intensidade
+por segundos ou medida da distribuição dentro do país. [Limites visuais](38-multicolor-countries.md).
+Manchas orgânicas, agregação mais fina e FPS físico continuam na pesquisa #32.
 
-## Critérios de aceite para testes
+## Aceite
 
-- 1 participante com 10.000 taps altera `seconds_total` em +10.000 e **não** altera a contagem de pessoas.
-- 100 participantes com 1 tap cada alteram contagem em +100 e `seconds_total` em +100.
-- Alternar A→B→A mantém separadamente os segundos registrados de A e B.
-- Dois navegadores diferentes podem ter IDs diferentes; chamar de **participantes identificados**, não garantia de seres humanos únicos.
+Transações, sessões/abas, retorno, expiração, retry e gestos têm provas em
+PostgreSQL descartável, Chromium emulado e HTTPS privado contra Neon staging real.
+Borda/preview público, hardware físico e operação de produção ainda precisam dos
+gates em docs/36. O site publicado continua sendo a demonstração anterior.

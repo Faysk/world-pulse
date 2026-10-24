@@ -80,3 +80,17 @@ sem Vercel e a captura de evidência estão em
 [Países multicolor](38-multicolor-countries.md): visão geral, foco, busca e páginas
 de 20 hashtags. Faixas aproximadas preservam números exatos na lista. Composição
 orgânica e FPS físico continuam pendentes; os gates operacionais não mudaram.
+
+## Evidência da rodada multicolor e revisão de contratos
+
+[PR #94](https://github.com/Faysk/world-pulse/pull/94) integrado com verificações
+aprovadas: [PostgreSQL/duas sessões 40083393645](https://github.com/Faysk/world-pulse/actions/runs/40083393645)
+e [UI, globo, build e gates 40083393632](https://github.com/Faysk/world-pulse/actions/runs/40083393632).
+A suíte visual terminou com 48 testes aprovados e um cenário antigo mobile aprovado
+no retry: a primeira execução excedeu 120s ao percorrer todos os cenários e capturas
+na mesma função. Essa instabilidade não é prova de FPS ou desempenho físico.
+Os contratos 02/10/14/24 foram alinhados à implementação. Sem deploy, migração de
+domínio, ativação ou alteração de secrets nesta rodada.
+
+A estabilização desse teste foi registrada na [issue #97](https://github.com/Faysk/world-pulse/issues/97),
+com evidência do timeout e aceite separado de medição física.

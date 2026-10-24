@@ -20,7 +20,10 @@ Manter separados:
 - `expires_at`: instante de expiração do saldo atual para o par participante/hashtag.
 - `remaining_ms = max(0, expires_at - server_now)`: saldo restante derivado, não um contador atualizado por segundo no banco.
 
-O histórico não é saldo disponível: ter creditado oito horas ontem não significa ter oito horas restantes hoje. Ao expirar, a participação sai dos agregados; o histórico pode permanecer conforme a futura política de retenção. A ordenação do Top 10 continua em #8; se exibir participantes ativos, usar a definição de saldo positivo acima, não visitante online.
+O histórico não é saldo disponível: ter creditado oito horas ontem não significa ter oito horas restantes hoje. Ao expirar, a participação sai dos agregados; o histórico individual é consolidado após mais de 30 dias sem retorno e todos os
+saldos zerados, preservando totais por hashtag ([retenção](27-retention-policy.md)).
+O Top 10 ordena participações atuais por saldo positivo, nunca visitantes online
+ou segundos; nome normalizado/ID desempatam ([ranking](24-ranking-contract.md)).
 
 ## Cálculo e concorrência
 
@@ -41,4 +44,13 @@ Não precisamos de heartbeat por visitante nem de writes por segundo para manter
 
 `src/timeCredit.ts` contém os cálculos puros de expiração, recarga e crédito somente para a seleção atual. Testes cobrem oito horas→32 minutos, recarga, expiração/reinício, múltiplas hashtags, ausência de seleção e entradas inválidas/overflow.
 
-Essa base **ainda não conecta o frontend ao banco**. A POC publicada continua exibindo contador local de demonstração. Sessão pseudônima, autorização, migrations, lotes idempotentes, transações concorrentes, retomada entre visitas e UI de saldo real continuam em #20/#5. O modelo temporal está definido; a persistência de produto não está concluída.
+A experiência integrada e a API estão na main pelo PR #31: sessão pseudônima,
+transações idempotentes, seleção, múltiplos saldos, retomada e fila entre abas
+foram testadas com PostgreSQL descartável e HTTPS privado contra Neon staging
+real. O crédito durável é aplicado no servidor; `timeCredit.ts` não substitui a
+transação do banco. A POC pública ainda usa demonstração sintética/local, pois
+alpha/API/geografia estão desligadas e a publicação segue pausada.
+
+[Experiência](29-live-experience.md), [prova HTTPS privada](35-staging-private-https-smoke.md)
+e [gates restantes](36-prepublication-status.md) distinguem implementação validada
+de aceite público. Não afirmar persistência pública já ativada.
