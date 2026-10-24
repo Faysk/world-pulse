@@ -48,7 +48,11 @@ export function route(kind, operations = store) {
         }
         return json(res, 200, {
           anonymous: true,
+          sessionFresh: !existing,
           activeTagId: visitor.active_tag_id ?? null,
+          activeTag: visitor.active_tag_id && visitor.active_tag_name
+            ? { id: visitor.active_tag_id, name: '#' + visitor.active_tag_name, color: visitor.active_tag_color }
+            : null,
           credits: await getCredits(visitor.id)
         });
       }
