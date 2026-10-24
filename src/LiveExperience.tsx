@@ -5,7 +5,8 @@ import { useParticipation } from './useParticipation';
 import './liveExperience.css';
 
 const EMPTY_GEOGRAPHY:PulseCollection={type:'FeatureCollection',features:[]};
-const count=(value:string)=>Intl.NumberFormat('pt-BR').format(BigInt(value));
+const numberFormat=Intl.NumberFormat('pt-BR');
+const count=(value:string)=>numberFormat.format(BigInt(value));
 function duration(ms:number){const seconds=Math.ceil(ms/1000);return `${Math.floor(seconds/3600)}h ${String(Math.floor(seconds/60)%60).padStart(2,'0')}m ${String(seconds%60).padStart(2,'0')}s`;}
 
 export default function LiveExperience(){
@@ -70,6 +71,7 @@ export default function LiveExperience(){
       </div>
       <div className="live-queue"><span><b data-testid="live-pending">{live.pending}</b> taps aguardando confirmação</span>
         <button disabled={!live.ready||live.syncing||live.pending===0} onClick={()=>void live.sync()}>{live.syncing?'Sincronizando…':'Sincronizar'}</button></div>
+      {!live.persistent&&<p role="status">O armazenamento está indisponível. Fechar esta aba pode perder os taps ainda não confirmados.</p>}
       {live.error&&<p role="alert">{live.error}</p>}
       {!live.ready&&!live.quarantined&&live.error&&<button onClick={()=>void live.connect()}>Tentar conectar</button>}
       {live.quarantined&&<div className="live-quarantine"><p>A fila anterior foi preservada. Descartá-la pode perder taps ainda não reconhecidos.</p>

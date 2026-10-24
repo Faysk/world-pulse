@@ -292,6 +292,8 @@ export class ParticipationClient {
     return this.pending.reduce((sum, b) => sum + b.clicks, 0);
   }
 
+  persistsPending(): boolean { return this.storage !== null; }
+
   /** Server snapshots, including expired history. Rendering a countdown must
    * use the elapsed time since receipt, not assume the browser clock is correct. */
   balances(): TimeBalance[] {

@@ -194,8 +194,12 @@ test('Integrated product flow credits eligible globe taps, restores the server a
     expect(rect).not.toBeNull();if(!rect)return;
     const x=rect.x+rect.width*.52,y=rect.y+rect.height*.35;
     if(info.project.name==='mobile')await page.touchscreen.tap(x,y);else await page.mouse.click(x,y);
-    await expect(page.getByTestId('live-pending')).toHaveText('1');
-    await page.getByRole('button',{name:'Sincronizar',exact:true}).click();
+    // Observe the durable result of automatic sync, not the transient queue
+    // count which may already be acknowledged by the next polling frame.
+    await expect.poll(async()=>{
+      const saved=await db.query('SELECT vt.seconds::text FROM world_pulse.visitor_tags vt JOIN world_pulse.tags t ON t.id=vt.tag_id WHERE t.normalized=$1',[name]);
+      return saved.rows[0]?.seconds;
+    }).toBe('1');
     await expect(page.getByTestId('live-pending')).toHaveText('0');
     if(info.project.name==='desktop'){
       await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+100,y+45,{steps:10});await page.mouse.up();

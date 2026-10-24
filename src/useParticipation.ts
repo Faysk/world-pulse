@@ -115,6 +115,6 @@ export function useParticipation() {
     try{await client.discardOrphanedPending();await connect();}
     catch(reason){failure(reason);}
   },[client,connect,failure]);
-  return {ready,selecting,syncing,error,selected,balances,pending,quarantined,ranking,rankingError,tick,
+  return {ready,selecting,syncing,error,selected,balances,pending,quarantined,ranking,rankingError,tick,persistent:client.persistsPending(),
     remaining:(tagId:string)=>client.remainingMilliseconds(tagId),connect,select,tap,sync,discard};
 }
