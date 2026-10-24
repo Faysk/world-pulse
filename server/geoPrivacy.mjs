@@ -36,7 +36,7 @@ export function approximateCountryFromHeaders(headers, { trustedEdge = false, pr
 }
 
 function validTag(tag) {
-  return typeof tag === 'string' && /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(tag) && tag.length <= 64;
+  return typeof tag === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(tag);
 }
 
 /**
