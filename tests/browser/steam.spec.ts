@@ -1,5 +1,22 @@
 import { test, expect } from '@playwright/test';
 
+// Steam UI tests do not need live map tiles: isolate third-party network
+// while exercising the actual React panel in desktop/mobile Chromium.
+test.beforeEach(async ({ page }) => {
+  await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark(?:\?.*)?$/, route =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        version: 8,
+        name: 'Steam panel test background',
+        sources: {},
+        layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#111923' } }]
+      })
+    })
+  );
+});
+
 const sample = {
   source: 'Steam Web API',
   scope: 'curated_sample',
