@@ -18,7 +18,7 @@ O script recusa operações após essa data; renovar/recriar exige atualizar o
 destino fixado, as credenciais e a documentação. Não houve upgrade de plano.
 
 Aplicadas somente no staging: `0001-runtime-access.sql`,
-`0002-participation-core.sql`, `0003-time-balances.sql` `0004-operation-budgets.sql` e `0005-retention-rollups.sql`.
+`0002-participation-core.sql`, `0003-time-balances.sql`, `0004-operation-budgets.sql` e `0005-retention-rollups.sql`.
 
 O runtime usa `world_pulse_app`, sem SUPERUSER, CREATEDB, CREATEROLE, INHERIT,
 BYPASSRLS ou memberships. Conexão pooled com `sslmode=verify-full`.
