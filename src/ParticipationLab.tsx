@@ -41,7 +41,15 @@ export default function ParticipationLab() {
       if (disposed) return;
       setActive(client.selectedTagDetails());
       refreshView(); setReady(true);
-    }).catch(reason => { if (!disposed) setError(errorMessage(reason)); });
+    }).catch(reason => {
+      if (!disposed) {
+        // A rotated session may be blocked with a preserved orphaned queue:
+        // show its true size instead of incorrectly displaying 0 pending.
+        refreshView();
+        setReady(false);
+        setError(errorMessage(reason));
+      }
+    });
     const timer = window.setInterval(() => tick(n => n + 1), 250);
     return () => { disposed = true; window.clearInterval(timer); };
   }, [client, refreshView]);
