@@ -3,7 +3,7 @@
  * one WebGL2 instanced draw; one image-space slot ≠ a geographic coordinate.
  * NOT integrated into the public MapLibre renderer.
  */
-import { buildCellPalette, type CellPalette, type ColorEntry, MAX_WEBGL_SECTORS } from './overlapCompositor';
+import { buildCellPalette, type CellPalette, type ColorEntry, MAX_WEBGL_SECTORS } from './overlapCompositor.ts';
 
 export const MAX_ATLAS_CELLS = 256;
 export const ATLAS_TEXTURE_WIDTH = MAX_WEBGL_SECTORS + 1;
