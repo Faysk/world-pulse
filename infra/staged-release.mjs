@@ -16,22 +16,37 @@ export async function stagedRelease({ api, smoke, sha, project, repo, pause, rec
   if (!ready) throw new Error('Candidate build timed out');
   progress('Candidate build READY; checking domain assignment and temporary access.');
   if (ready.autoAssignCustomDomains !== false) throw new Error('Candidate did not confirm disabled domain assignment');
+  progress('Candidate automatic domain assignment is disabled.');
   const host = ready.url || candidate.url;
   if (!/^[a-z0-9-]+\.vercel\.app$/.test(host || '')) throw new Error('Unexpected candidate hostname');
 
   let secret;
   try {
+    progress('Requesting temporary access for the isolated candidate.');
     const share = await api(`/aliases/${encodeURIComponent(candidate.id)}/protection-bypass`, {
       method: 'PATCH', body: JSON.stringify({ ttl: 600 }),
     });
     secret = Object.entries(share.protectionBypass || {}).find(([, value]) => value.scope === 'shareable-link')?.[0];
     if (!secret) throw new Error('Temporary candidate access unavailable');
-    await smoke(`https://${host}`, secret);
+    progress('Temporary candidate access granted; starting HTML and asset smoke.');
+    // Newly-created access can take a moment to reach the deployment edge.
+    // Never promote unless one complete page + asset pass succeeds.
+    for (let attempt = 0; ; attempt++) {
+      try { await smoke(`https://${host}`, secret); break; }
+      catch (error) {
+        if (attempt >= 3) throw error;
+        progress('Candidate smoke not ready; retrying after a bounded propagation delay.');
+        await pause(2_000);
+      }
+    }
     progress('Candidate HTML, JavaScript and CSS passed smoke checks.');
   } finally {
-    if (secret) await api(`/aliases/${encodeURIComponent(candidate.id)}/protection-bypass`, {
+    if (secret) {
+      progress('Revoking temporary candidate access.');
+      await api(`/aliases/${encodeURIComponent(candidate.id)}/protection-bypass`, {
       method: 'PATCH', body: JSON.stringify({ revoke: { secret, regenerate: false } }),
-    });
+      });
+    }
   }
   // The access token is revoked BEFORE assigning the production domain.
   progress('Temporary candidate access revoked; requesting promotion.');
@@ -49,12 +64,14 @@ export async function stagedRelease({ api, smoke, sha, project, repo, pause, rec
   return candidate.id;
 }
 
+export class SmokeCheckError extends Error {}
+
 export async function smokeStaticSite(origin, secret, fetcher = fetch) {
   const base = new URL(origin);
   const cookies = new Map();
   const request = async (path) => {
     let url = new URL(path, base);
-    if (url.origin !== base.origin) throw new Error('Cross-origin asset refused');
+    if (url.origin !== base.origin) throw new SmokeCheckError('Cross-origin asset refused');
     for (let redirects = 0; redirects < 4; redirects++) {
       if (secret && !cookies.size) url.searchParams.set('_vercel_share', secret);
       const response = await fetcher(url, { redirect: 'manual',
@@ -67,30 +84,30 @@ export async function smokeStaticSite(origin, secret, fetcher = fetch) {
       }
       if (response.status >= 300 && response.status < 400) {
         const location = response.headers.get('location');
-        if (!location) throw new Error('Redirect without location');
+        if (!location) throw new SmokeCheckError('Redirect without location');
         url = new URL(location, url);
-        if (url.origin !== base.origin) throw new Error('Cross-origin redirect refused');
+        if (url.origin !== base.origin) throw new SmokeCheckError('Cross-origin redirect refused');
         continue;
       }
-      if (response.status !== 200) throw new Error('Site or asset did not return HTTP 200');
+      if (response.status !== 200) throw new SmokeCheckError(`Site or asset HTTP status: ${response.status}`);
       return response;
     }
-    throw new Error('Too many redirects');
+    throw new SmokeCheckError('Too many redirects');
   };
   const page = await request('/');
-  if (!page.headers.get('content-type')?.includes('text/html')) throw new Error('Not an HTML page');
+  if (!page.headers.get('content-type')?.includes('text/html')) throw new SmokeCheckError('Not an HTML page');
   const html = await page.text();
-  if (!html.includes('World Pulse') || !html.includes('id="root"')) throw new Error('Unexpected application page');
+  if (!html.includes('World Pulse') || !html.includes('id="root"')) throw new SmokeCheckError('Unexpected application page');
   const assets = [...html.matchAll(/(?:src|href)="([^"?#]+\.(?:js|css))"/g)].map(match => match[1]);
   if (!assets.some(path => path.endsWith('.js')) || !assets.some(path => path.endsWith('.css'))) {
-    throw new Error('Application bundle references missing');
+    throw new SmokeCheckError('Application bundle references missing');
   }
   for (const path of new Set(assets)) {
     const asset = await request(path);
     const type = asset.headers.get('content-type') || '';
     if (path.endsWith('.js') ? !/(?:javascript|ecmascript)/.test(type) : !type.includes('text/css')) {
-      throw new Error('Unexpected asset content type');
+      throw new SmokeCheckError('Unexpected asset content type');
     }
-    if (!(await asset.text()).trim()) throw new Error('Empty application asset');
+    if (!(await asset.text()).trim()) throw new SmokeCheckError('Empty application asset');
   }
 }

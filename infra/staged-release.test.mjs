@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { stagedRelease, smokeStaticSite } from './staged-release.mjs';
 
-function fixture({ smokeFails = false, cleanupFails = false, state = 'READY' } = {}) {
+function fixture({ smokeFails = false, transientFailures = 0, cleanupFails = false, state = 'READY' } = {}) {
   const calls = [];
   const api = async (path, options = {}) => {
     const body = options.body && JSON.parse(options.body);
@@ -18,10 +18,18 @@ function fixture({ smokeFails = false, cleanupFails = false, state = 'READY' } =
   };
   const smoke = async (origin, secret) => {
     calls.push({ smoke: origin, secret });
-    if (smokeFails) throw new Error('smoke failed');
+    if (smokeFails || transientFailures-- > 0) throw new Error('smoke failed');
   };
-  return { calls, run: () => stagedRelease({ api, smoke, sha: 'commit', repo: 'repo', project: 'project', pause: async () => {} }) };
+  return { calls, run: () => stagedRelease({ api, smoke, sha: 'commit', repo: 'repo', project: 'project', pause: async ms => { calls.push({ pause: ms }); } }) };
 }
+
+test('temporary edge propagation can recover, with bounded retries before revocation and promotion', async () => {
+  const f = fixture({ transientFailures: 2 });
+  await f.run();
+  assert.equal(f.calls.filter(c => c.pause === 2000).length, 2);
+  assert.equal(f.calls.filter(c => c.smoke === 'https://candidate.vercel.app').length, 3);
+  assert.ok(f.calls.findIndex(c => c.body?.revoke) > f.calls.findLastIndex(c => c.smoke === 'https://candidate.vercel.app'));
+});
 
 test('candidate uses production config without automatic domains, then smoke, revoke, promote', async () => {
   const f = fixture();
@@ -37,6 +45,7 @@ test('candidate uses production config without automatic domains, then smoke, re
 test('failed candidate smoke revokes access and never promotes', async () => {
   const f = fixture({ smokeFails: true });
   await assert.rejects(f.run());
+  assert.equal(f.calls.filter(c => c.smoke === 'https://candidate.vercel.app').length, 4);
   assert.ok(f.calls.some(c => c.body?.revoke));
   assert.ok(!f.calls.some(c => c.path?.includes('/promote/')));
 });

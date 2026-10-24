@@ -2,19 +2,16 @@
 
 **Não transformar suposições em requisitos confirmados.**
 
+**Q1/Q2 resolvidas em 24/10/2026:** participação depende de saldo de tempo positivo por hashtag; diminui em tempo real, inclusive offline. Várias hashtags podem permanecer simultaneamente, mas novos taps aumentam somente a selecionada. O [contrato confirmado](14-time-credit-contract.md) substitui as alternativas antigas de Q1/Q2 abaixo. Q4 (ordenação do ranking) permanece aberta.
+
 ## Decisões de produto ainda abertas
 
-### Q1. O que conta como participante para a mancha?
+### Q1/Q2. Participação e duração — resolvidas
 
-- **Seleção atual** de uma hashtag?
-- Quem já **clicou pelo menos uma vez** nela?
-- **Todos que já contribuíram historicamente**?
-
-**Impacto:** persistência e tamanho das manchas. Consenso atual: **pessoas distintas, nunca número de cliques**. Critério de ativo/histórico ainda indefinido.
-
-### Q2. Quando a cor enfraquece ou desaparece?
-
-Pode haver expiração de presença visual após fechar site, mas a intenção expressa é **preservar os segundos pelo tempo que a pessoa conseguir clicar**, inclusive entre hashtags. Não inferir retenção temporária dos segundos a partir de eventual expiração da presença.
+Conta o participante por hashtag com saldo positivo. O saldo diminui em tempo real,
+inclusive offline; histórico creditado permanece separado. Várias hashtags podem
+ter saldo simultâneo; novos taps aumentam apenas a selecionada. Nenhuma presença
+online ou seleção única elimina os saldos anteriores. [Contrato](14-time-credit-contract.md).
 
 ### Q3. Como interagir com o globo e com o +1 segundo?
 
@@ -46,7 +43,7 @@ Confirmar quotas vigentes, terms of use, banco hibernado, acesso R2 e mapa base 
 
 ### Q10. Motor gráfico e transições
 
-MapLibre, Globe.gl, CesiumJS e shaders GPU são candidatos, não seleção definitiva. Criar benchmark e registrar decisão após evidências.
+MapLibre GL é o motor efetivamente usado na POC publicada. A comparação de alternativas (#1) e o aceite de desempenho em dispositivo físico (#12) continuam pendentes; não há motivo validado para uma migração agora.
 
 ## Critérios para decidir
 

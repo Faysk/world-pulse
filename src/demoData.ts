@@ -146,3 +146,49 @@ export function tagCenter(tagId: TagId): [number, number] {
   const point = clusters[tagId][0];
   return [point.lng, point.lat];
 }
+
+export const POPULATION_SCENARIOS = [0, 1, 10, 100, 1000, 10000, 100000, 1_000_000_000, 8_000_000_000, 1_000_000_000_000] as const;
+export type ScenarioDistribution = 'distributed' | 'concentrated';
+export const MAX_SCENARIO_CELLS = 21 * 36;
+
+/** Exact represented totals with bounded geometry. These are synthetic city
+ * regions, not a population census and never one rendered point per person. */
+export function createScenarioPopulation(total: number, distribution: ScenarioDistribution = 'distributed'): PulseCollection {
+  if (!Number.isSafeInteger(total) || total < 0 || total > 1_000_000_000_000) throw new RangeError('Unsupported scenario total');
+  if (!['distributed', 'concentrated'].includes(distribution)) throw new RangeError('Unknown distribution');
+  const regions = TAGS.flatMap(tag => clusters[tag.id].map(city => ({ tag, city })));
+  const weight = regions.reduce((sum, item) => sum + item.city.people, 0);
+  const allocation = regions.map((item, index) => ({ ...item, index,
+    count: Math.floor(total * item.city.people / weight), remainder: total * item.city.people % weight,
+  }));
+  const remaining = total - allocation.reduce((sum, item) => sum + item.count, 0);
+  [...allocation].sort((a, b) => b.remainder - a.remainder || a.index - b.index)
+    .slice(0, remaining).forEach(item => item.count++);
+  const features: PulseFeature[] = [];
+  for (const { tag, city, count, index } of allocation) {
+    if (!count) continue;
+    const cells = Math.min(36, Math.ceil(count / 12));
+    const base = Math.floor(count / cells), extra = count % cells;
+    const center = distribution === 'concentrated' ? clusters.gta6[0] : city;
+    const spread = distribution === 'concentrated' ? 0.35 : city.spread;
+    for (let cell = 0; cell < cells; cell++) {
+      const radius = spread * Math.sqrt((cell + 0.15) / 36);
+      const angle = cell * 2.399963229728653 + index * 1.5;
+      features.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [
+        center.lng + Math.cos(angle) * radius / Math.max(0.3, Math.cos(center.lat * Math.PI / 180)),
+        Math.max(-85, Math.min(85, center.lat + Math.sin(angle) * radius)),
+      ] }, properties: { people: base + (cell < extra ? 1 : 0), tag: tag.id,
+        city: distribution === 'concentrated' ? 'Concentração sintética — São Paulo' : city.name, color: tag.color } });
+    }
+  }
+  return { type: 'FeatureCollection', features };
+}
+
+export function scenarioDescription(total: number): string {
+  if (total === 0) return 'Sem atividade: nenhuma mancha de participantes.';
+  if (total === 1) return 'Um único sinal, pequeno e visível; nunca uma área inteira acesa.';
+  if (total <= 100) return 'Poucos participantes: sinais separados e núcleos pequenos.';
+  if (total <= 10000) return 'Concentrações regionais: observar união e separação das cores.';
+  if (total <= 8_000_000_000) return 'Alta densidade agregada: brilho limitado para preservar mapa e cores.';
+  return 'Estresse acima da escala humana: 1 trilhão representado por células, não pontos individuais.';
+}

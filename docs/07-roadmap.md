@@ -1,66 +1,47 @@
-# 07 — Roadmap, ordem de trabalho e aceites
+# 07 — Roadmap atual e aceites
 
-**Status:** proposta inicial de execução, sem datas/estimativas fechadas.
+**Atualizado em 24/10/2026.** O [painel de milestones](https://github.com/Faysk/world-pulse/milestones) é a fonte do progresso vivo. Sem estimativas ou deadlines inventados.
 
-## Fase 0 — Planejamento (em andamento)
+## Entregue
 
-- [x] Criar repositório e documentação do conceito.
-- [x] Registrar invariantes: cliques = segundos, pessoas = densidade.
-- [ ] Resolver decisões abertas críticas de toque/navegação, presença e Top 10.
-- [ ] Coletar e comparar referências práticas de motores gráficos.
+- POC React/TypeScript/Vite + MapLibre publicada em `map.faysk.dev`, com dados simulados explícitos.
+- Neon PostgreSQL, DNS Cloudflare e R2 privado provisionados; secrets centralizadas no GitHub.
+- Actions valida app sem production secrets; candidata é testada e acesso temporário revogado antes da promoção.
+- Testes de taps/navegação, saldo cronológico puro e cenários exatos de zero a 8 bilhões e 1 trilhão agregado.
+- Regra de participação confirmada: saldo positivo por hashtag, diminuindo offline; múltiplas manchas simultâneas, uma seleção para novos taps.
 
-## Fase 1 — Prova de conceito visual (primeira implementação)
+## Próximo corte: participação real pequena
 
-1. Página abre diretamente no globo **cinza**.
-2. Giro, zoom, pan e inércia (desktop e mobile).
-3. Simular datasets de 1, 10, 100, 10k, 100k e 1M pessoas equivalentes.
-4. Sortear e persistir **localmente apenas no demo** cores por hashtag.
-5. Desenhar densidade por #, com bordas suaves e mistura/competição visual legível.
-6. Aproximação progressiva com diferentes resoluções.
-7. Instrumentar FPS, memória, transferência e performance.
-8. Estudar tap curto +1 vs gesto de zoom/rotação.
+1. Revisar API em draft (#31/#20), sem confundir créditos históricos com saldo ativo.
+2. Persistir expiração e histórico por navegador/hashtag; lote repetido não pode estender a expiração novamente (#5).
+3. Validar migração, grants e concorrência no PostgreSQL descartável, depois ambiente isolado.
+4. Integrar cliente ao backend: hashtag/cor persistentes, seleção, lotes, confirmação e retorno à sessão (#3/#4).
+5. Definir retenção, tratamento de lotes atrasados e limites de escrita/custo antes de ativar a API publicamente.
+6. Validar dois navegadores e interrupções de rede; só depois planejar ativação controlada (#13).
 
-**Aceite:** a experiência visual é convincente e responsiva; nenhuma sessão de usuário nem Supabase necessária ainda.
+O globo público permanece identificado como simulação enquanto não houver agregados reais aprovados. A migração de domínio não roda automaticamente no deploy.
 
-## Fase 2 — Mecânica local dos segundos
+## Geografia e ranking
 
-1. Selecionar/criar #, inclusive através de uma hashtag existente.
-2. Cada toque elegível credita exatamente +1 s.
-3. Troca de hashtag preserva segundos anteriores.
-4. Nenhuma ação de zoom/arrastar soma segundos acidentalmente.
-5. UI mostra cor, hashtag selecionada e segundos acumulados.
-6. Automatizar testes das regras de contagem.
+- Região aproximada de fonte confiável; sem sinal válido, usar desconhecido (#6).
+- Definir proteção de regiões com poucos participantes antes de publicar manchas reais.
+- Definir ordenação e desempates do Top 10 (#8); manter saldo, histórico e pessoas distintos.
+- Agregar no servidor e retornar payload limitado; não expor participantes individuais.
 
-**Aceite:** 1.000 taps para uma única pessoa aumentam segundos, mas não a densidade.
+## Visual e qualidade
 
-## Fase 3 — Backend gratuito e localização aproximada
+- Agregação por zoom e composição de hashtags coincidentes (#32).
+- PC e celular físico: mapa real, zoom mundo/país/cidade, gestures e rede lenta (#12).
+- Medir frame times, memória, payload, camadas e frequência de atualizações. CI emulado não substitui GPU/dispositivo real.
+- Cenários agregados não comprovam capacidade para bilhões de usuários reais.
 
-1. Site Vercel, domínio Cloudflare DNS, banco Supabase.
-2. Hashtags únicas e cores atribuídas com transação/constraint.
-3. ID pseudônimo e contribuições duráveis.
-4. Geolocalização por IP e agregados de região sem coordenadas precisas.
-5. Sync em lote idempotente; não escrever em banco por tap.
-6. Top 10 global e origem agregada por país, conforme métrica escolhida.
-7. Sem filtros.
-8. Validar orçamento gratuito (request count, DB, egress).
+## Aceites do primeiro fluxo real
 
-**Aceite:** dois navegadores em locais distintos usam o mesmo # e cor; ambos somam uma pessoa cada na densidade, independente do número de taps.
-
-## Fase 4 — Dinamismo e qualidade
-
-- Animações de criação de mancha, adição de gente, dissolução conforme regra de presença.
-- Interpolação suave entre snapshots e desempenho mobile.
-- Acessibilidade, contraste, navegação teclado.
-- Privacy notice/RGPD, logs mínimos, monitoramento do uso de free tier.
-
-## Casos de teste obrigatórios
-
-- [ ] 1 participante, 100.000 taps → 1 pessoa e 100.000 s.
-- [ ] 100 participantes, 1 tap cada → 100 pessoas e 100 s.
-- [ ] A → B → A sem apagar tempos anteriores.
-- [ ] Mesmo # criado simultaneamente mantém uma única cor.
-- [ ] Gesto drag/pinch não credita +1.
-- [ ] Falha de rede + retry não duplica segundos.
-- [ ] Sem localização confiável não revela nem inventa bairro.
-- [ ] Concentrações distintas se unem visualmente só quando geograficamente próximas.
-- [ ] Mesmo banco suporta leitura de total independentemente de a hashtag ser popular.
+- Dois navegadores criam o mesmo # e recebem uma cor persistente única.
+- Muitos taps de um navegador continuam sendo um participante por hashtag com saldo positivo.
+- Trocar A → B preserva saldo/histórico de A; A continua diminuindo enquanto novos taps vão para B.
+- Fechar e retornar conserva apenas o saldo ainda não expirado, além do histórico.
+- Retry do mesmo lote não duplica histórico nem expiração; concorrência não perde crédito.
+- Drag/pinch não credita; seleção sozinha não cria saldo.
+- Expiração, sessão, limites e erros de rede têm estados claros na interface.
+- Nenhum dado individual ou segredo é enviado em agregados públicos.

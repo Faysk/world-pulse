@@ -4,9 +4,9 @@
 
 ## Regras confirmadas
 
-1. **Uma hashtag ativa por participante de cada vez.** Ao trocar de hashtag, a anterior deixa de ser a seleção ativa.
-2. **Segundos por hashtag persistentes:** tempo acumulado em #A é preservado ao passar para #B e vice-versa.
-3. **Cada clique/tap elegível equivale a +1 segundo de contribuição** da hashtag ativa. Não é um temporizador contínuo.
+1. **Uma hashtag selecionada para receber novos taps por vez.** Várias hashtags podem manter participação simultânea enquanto têm saldo.
+2. **Saldo por hashtag em contagem regressiva:** ao trocar A→B, A continua consumindo tempo, inclusive offline; novos taps aumentam B. Histórico creditado e saldo restante são métricas distintas.
+3. **Cada clique/tap elegível acrescenta +1 segundo ao saldo** da hashtag selecionada. O saldo cai em tempo real até zerar. Veja o [contrato confirmado em 24/10/2026](14-time-credit-contract.md).
 4. **Manchas dependem de pessoas distintas**, e não da quantidade de cliques, segundos ou velocidade de toque.
 5. **Hashtags são livres:** não há lista fechada, limiar mínimo de votos nem filtros por enquanto.
 6. **Primeiro registro da hashtag sorteia a cor; registros seguintes reutilizam a cor**, inclusive em outros países.
@@ -36,11 +36,12 @@ O requisito diz `cada clique ou tap soma +1 s`. Em paralelo a pessoa precisa arr
 
 Precisamos validar onde o tap será aceito: superfície inteira do globo, área separada de contribuição, ou ambos. Não tratar a proposta acima como decisão fechada.
 
-## Três contadores distintos — não misturar
+## Contadores distintos — não misturar
 
 - `contributors_ever`: pseudônimos distintos que já contribuíram para a hashtag; requer definição de escopo.
-- `participants_present`: pseudônimos associados à hashtag atualmente; requer política de saída/expiração.
+- `participants_present`: pseudônimos com saldo positivo na hashtag no instante do snapshot; um pseudônimo pode estar em várias hashtags com saldo.
 - `seconds_total`: soma histórica dos +1s recebidos por hashtag.
+- `remaining_ms`: tempo restante derivado de `expires_at`, nunca confundido com `seconds_total`.
 
 **Top 10:** confirmado que todas as hashtags elegíveis entram (se houver 10 ou 10 milhões); **ordenar por qual métrica ainda está em aberto**. O ranking deve explicar a métrica exibida.
 

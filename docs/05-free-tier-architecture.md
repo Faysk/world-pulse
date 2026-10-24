@@ -1,79 +1,42 @@
-# 05 — Arquitetura e limites gratuitos
+# 05 — Arquitetura real e orçamento gratuito
 
-**Status:** preferência de serviços definida; nenhum projeto de infraestrutura criado por esta documentação.
+**Atualizado em 24/10/2026.** Fonte operacional: [runbook](11-infrastructure-operations.md). Rastreio: #7, #20 e #37.
 
-**Atualização de implantação (23/10/2026):** Vercel + Cloudflare DNS/R2 + **Neon Free** provisionados. Neon substitui a preferência Supabase porque a conta Free já tem dois projetos ativos. Consulte o [runbook e estado verificado](11-infrastructure-operations.md); esta página preserva a proposta original abaixo.
+## Implantado
 
-## Componentes escolhidos como preferência
+| Componente | Responsabilidade | Limite de escopo atual |
+| --- | --- | --- |
+| React + TypeScript + Vite | Interface estática compilada | Contagens e taps da POC são locais/simulados |
+| MapLibre GL + OpenFreeMap | Globo vetorial e cartografia | As células de participantes são sintéticas |
+| Vercel Hobby | Entrega do app e HTTPS | API real ainda não integrada |
+| Cloudflare DNS | Resolver `map.faysk.dev` para a Vercel | DNS only; Cloudflare não hospeda o frontend |
+| Neon Free / PostgreSQL | Banco relacional com TLS e role runtime restrita | Conexão verificada; tabelas de participação ainda não migradas em produção |
+| Cloudflare R2 Standard | Armazenamento S3 privado | Apenas provisionamento/probes; não participa dos taps nem fornece os tiles |
+| GitHub Actions | Validar, sincronizar configuração e publicar | Environment `production`, branch `main`; sem secrets em PRs |
 
-| Serviço | Papel planejado | Notas |
-|---|---|---|
-| **Vercel Hobby** | Frontend React/Next.js e, se necessário, endpoints leves | Não jogar evento de cada toque na Function; separar build estático de API quando possível |
-| **Cloudflare DNS** | Domínio e DNS | Modo proxy on/off interfere no IP/geolocalização visto pela Vercel; testar |
-| **Cloudflare R2** | Capturas, assets próprios, snapshots agregados e arquivo histórico caso faça sentido | Não usar como banco de tempo/presença nem presumir que cabe hospedar todos os tiles do planeta |
-| **Supabase Free (Postgres)** | Hashtags, cores persistidas, identificadores pseudônimos, contribuições e agregados | Banco deve registrar cliques idempotentemente por lotes; RLS e acesso mínimo |
-| **Provedor de tiles a validar** | Dados cartográficos neutros para globo | Testar política de uso e disponibilidade (ex.: OpenFreeMap); sem planos pagos obrigatórios |
-| **H3 (biblioteca)** | Indexação e agregação espacial | Não é serviço cobrado, calcular célula no servidor e granularidade na visão |
+O navegador recebe HTML/JS/CSS da Vercel e tiles do OpenFreeMap. Não recebe credenciais PostgreSQL ou R2. O GitHub é a origem da configuração de produção; o workflow sincroniza somente a lista autorizada de variáveis server-side para a Vercel.
 
-## Limites — não codificar números fixos sem checagem
+## Em desenvolvimento, sem ativação pública
 
-Planos gratuitos mudam. Antes do deploy e periodicamente conferir:
-- [Vercel Limits](https://vercel.com/docs/limits) e [Pricing](https://vercel.com/pricing)
-- [Cloudflare R2 pricing](https://developers.cloudflare.com/r2/pricing/)
-- [Cloudflare DNS](https://developers.cloudflare.com/dns/)
-- [Supabase Pricing](https://supabase.com/pricing)
-- [Supabase Realtime Limits](https://supabase.com/docs/guides/realtime/limits)
-- [OpenFreeMap](https://openfreemap.org/)
+O [PR #31](https://github.com/Faysk/world-pulse/pull/31) contém endpoints Vercel para sessão anônima por cookie, criação/seleção de hashtags e lotes idempotentes de taps, além de cliente isolado e migração versionada. O gate `WP_API_ENABLED` é desligado por padrão. Não há aplicação automática dessa migração no deploy.
 
-Verificar especialmente **invocações, banda/egress, armazenamento, conexões simultâneas, chamadas e políticas de hibernação/pausa**. Este projeto não prevê monetização e deve evitar custos automáticos.
+Antes de integrar: alinhar histórico e `expires_at` ao [contrato de saldo](14-time-credit-contract.md), testar concorrência/retries no PostgreSQL descartável, definir retenção e limites de abuso. Antes de publicar manchas reais: resolver agregação geográfica/privacidade (#6) e testar dois navegadores (#13). O ranking do produto (#8) ainda não tem ordenação confirmada.
 
-## Principal risco de custos
+Não foi adotado serviço externo de Auth/Realtime nem WebSocket por visitante. Agregados por viewport/zoom e mecanismo de atualização permanecem em projeto; H3 é alternativa de implementação, não dependência instalada.
 
-Cada tap conta +1, **mas não deve necessariamente virar uma chamada HTTP**.
+## Custos e limites
 
-Solução proposta:
-- Incrementar contador no cliente imediatamente.
-- Acumular `pending_clicks` e enviar em **lotes periódicos** e no evento de saída quando possível.
-- Cada lote com ID único e número de taps; backend aplica uma única vez (idempotência).
-- Tratar falhas/reenvios; persistência local antes da confirmação do servidor.
-- Não prometer recuperação garantida se pessoa fechar sem sincronizar ou apagar o armazenamento.
-- Realtime: evitar 1 WebSocket público por visitante no plano gratuito; considerar polling de **agregados/cache** e atualizações de alguns segundos, ou broadcast eficiente para upgrade futuro.
-- Exibir dados agregados por células, não milhões de posições de participantes.
+Provisionamento em plano gratuito não garante operação gratuita com qualquer volume. Conferir quotas e uso nos painéis antes de ampliar o público:
 
-## Esboço de arquitetura
+- [Vercel Hobby](https://vercel.com/docs/plans/hobby): requests, Functions, transferência e restrições do plano.
+- [Neon](https://neon.com/pricing): armazenamento, compute, conexões e latência ao acordar.
+- [Cloudflare R2](https://developers.cloudflare.com/r2/pricing/): armazenamento e operações; excedentes podem ser cobrados.
+- [OpenFreeMap](https://openfreemap.org/): disponibilidade, atribuição e condições da cartografia.
 
-```text
-Navegador
-  ├─ React + motor 3D a escolher
-  ├─ Seleção de # e taps (+1 por tap local)
-  ├─ Buffer de contribuições + sync em lote
-  └─ Fetch/poll de agregados de manchas e Top 10
-        |
-        v
-Vercel (site e API leve)
-  ├─ Geolocalização aproximada da requisição
-  ├─ Validação de hashtag/cor
-  ├─ Idempotência de lotes (+N segundos)
-  └─ Consulta agregados
-        |
-        +----> Supabase/PostgreSQL
-        |
-        +----> Cloudflare R2 (somente se necessário)
-        
-Cloudflare DNS -> domínio
-Tiles cartográficos -> provedor separado, condicionado à licença
-```
+Enviar taps em lotes idempotentes, não escrever no banco a cada segundo do saldo. Calcular saldo por expiração, sem heartbeat obrigatório. Medir payload, consultas e frequência de atualização antes de escolher cache, Redis ou infraestrutura adicional. R2 só recebe novas funções quando houver benefício concreto de produto.
 
-## Segurança mínima (mesmo em protótipo)
+## Evidência e limites
 
-- Nunca enviar chave `service_role` do Supabase ao browser.
-- Preferir endpoints server-side para inserções; credenciais em segredos Vercel.
-- RLS e grants explícitos para tabelas expostas; não dar escrita indiscriminada aos clientes.
-- Não registrar IP bruto em logs de uso/analytics sem necessidade.
+[Publicação pelo Actions](https://github.com/Faysk/world-pulse/actions/runs/40041911767): conexão Neon/R2, sincronização server-side, candidata, smoke HTML/JS/CSS, revogação temporária, promoção e smoke público concluídos. Isso não prova persistência de participação real.
 
-## Critérios de sucesso
-
-- Protótipo implantável usando os planos gratuitos, sem custo recorrente.
-- Orçamento de requisições e egress medidos durante simulação 10 / 100 / 1.000 usuários.
-- Nenhum endpoint de tap gera atualização global para todos os visitantes.
-- Uso de R2 somente quando houver benefício concreto.
+[Cenários visuais](15-population-scenarios.md): até 1 trilhão representado por no máximo 756 células sintéticas. Não é teste de bilhões de conexões nem benchmark do banco nessa escala.

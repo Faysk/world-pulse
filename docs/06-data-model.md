@@ -1,6 +1,10 @@
 # 06 — Modelo de dados preliminar (sem SQL final)
 
-**Status:** proposta de domínio; nenhuma tabela criada no Supabase.
+**Status:** modelo de domínio proposto; migration de domínio experimental no PR #31, ainda não aplicada em produção. Banco Neon e schema de acesso já provisionados.
+
+**Atualização confirmada em 24/10/2026:** usar [saldo/expiração por participante e hashtag](14-time-credit-contract.md). `contributions` precisa de `expires_at` além do histórico de segundos creditados. Agregados ativos vêm dos pares com saldo positivo, não apenas de `participants.selected_hashtag_id`. Vários pares do mesmo participante podem ter saldo simultâneo. A proposta original abaixo deve ser lida com essa correção; o provedor implantado é Neon PostgreSQL.
+
+Os nomes abaixo são do domínio proposto. O draft #31 usa `tags`, `visitors`, `visitor_tags` e `tap_batches`; revisar sua implementação de expiração antes de integrar.
 
 ## Entidades
 
@@ -28,6 +32,7 @@ A inserção deve ser atômica: duas pessoas criando o mesmo # simultaneamente c
 
 - `participant_id` + `hashtag_id` (par único)
 - `seconds_total` inteiro não negativo (incrementos em +1 por tap)
+- `expires_at` expiração do saldo cronológico; saldo = máximo de zero e expiração menos relógio do servidor
 - `updated_at`
 
 **Trocar # não limpa nem move os segundos passados.**
@@ -46,14 +51,14 @@ Protege contra reenvio de lote. Avaliar retenção/deduplicação compacta para 
 - `participant_count` de **participantes distintos**; **nunca soma de segundos**
 - `computed_at`
 
-Agregação espacial deve ser derivável de `participants` ou snapshot explícito. Não atualizar a célula a cada tap.
+Agregação espacial ativa deve ser derivada dos pares participante/hashtag com saldo positivo, unidos à região aproximada autorizada. Não atualizar coordenadas nem gravar o saldo a cada segundo.
 
 ## Invariantes essenciais
 
 1. Uma hashtag tem uma única cor estável global.
 2. Um participante possui **no máximo uma hashtag selecionada** de cada vez.
 3. `seconds_total` somente aumenta com taps válidos ou ajustes explícitos.
-4. A quantidade de pessoas no campo espacial é calculada a partir de **participantes distintos**, nunca `SUM(seconds_total)`.
+4. A quantidade no campo espacial conta **participantes distintos por hashtag com expires_at futuro**, nunca `SUM(seconds_total)`. Um participante pode contar em várias hashtags com saldo positivo.
 5. A troca de hashtag não altera contribuições históricas das demais.
 6. Lotes reprocessados não duplicam o total.
 7. Nenhuma API de agregados públicos expõe IDs individuais ou localização exata.
@@ -61,7 +66,7 @@ Agregação espacial deve ser derivável de `participants` ou snapshot explícit
 
 ## Queries/visões pretendidas
 
-- `top_hashtags` — Top 10 por **métrica ainda a definir** (pessoas distintas ou presença selecionada).
+- `top_hashtags` — Top 10 por **métrica ainda a definir** (participantes com saldo positivo, participantes históricos ou segundos).
 - `top_hashtags_counters` — `participants_ever`, `participants_present` (se houver regra de validade), `seconds_total`.
 - `hashtag_origin_by_country` — quantidade agregada por país para cada hashtag.
 - `globe_density_by_cell` — participantes distintos por # e célula geográfica/resolução.
@@ -69,8 +74,8 @@ Agregação espacial deve ser derivável de `participants` ou snapshot explícit
 ## Pendências antes das migrations
 
 - Definir participante persistente sem login (ID anônimo local + limitações).
-- Definir duração ou expiração da presença visual; segundos são históricos.
-- Definir se participação visual requer ao menos um tap ou apenas seleção da hashtag.
+- Implementar expiração pelo saldo confirmado no contrato #14 da documentação; histórico permanece separado.
+- Participação visual requer saldo positivo originado de taps; selecionar uma hashtag sozinha não cria crédito.
 - Definir métrica do Top 10 e regra de atualização da origem.
 - Definir se atribuição de país registra origem inicial, atual ou última conhecida (sem rastrear trajetos pessoais).
 - Definir retenção diferenciada para identificadores, agregados e segundos.

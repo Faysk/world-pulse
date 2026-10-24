@@ -1,65 +1,88 @@
 # World Pulse 🌍
 
-> **Um planeta cinza que ganha cores com a participação das pessoas.**
+Um planeta cinza que ganha cores com a participação das pessoas.
 
-**Status:** descoberta / pesquisa técnica · **Nome:** provisório · **Documentação inicial:** 23/10/2026
+**Estado em 24/10/2026:** [demonstração visual publicada](https://map.faysk.dev), com dados simulados. A infraestrutura está provisionada; a aplicação ainda não grava participação real no banco de produção.
 
-O visitante abre o site e já vê um **globo 3D navegável**, com giro, zoom e transições fluidas. A Terra é inicialmente cinza. Cada hashtag recebe uma **cor aleatória persistida** na primeira criação; manchas daquela cor surgem e crescem conforme **mais participantes distintos** escolhem esse # em suas regiões.
+## Estrutura real
 
-A interação é simples: selecionar ou criar uma hashtag e contribuir. **Cada clique/tap elegível soma +1 segundo** ao acumulado do participante **na hashtag ativa**. É possível trocar de hashtag sem perder o tempo acumulado anteriormente; **nunca contribuir para duas simultaneamente**.
+| Parte | Tecnologia / serviço | Estado |
+| --- | --- | --- |
+| Interface | React 19 + TypeScript + Vite | Publicada na Vercel |
+| Globo | MapLibre GL + cartografia OpenFreeMap | Publicado; participantes sintéticos |
+| Hospedagem | Vercel Hobby, projeto `world-pulse` | HTTPS em `map.faysk.dev` |
+| Banco | Neon Free / PostgreSQL, Londres | Conectividade TLS e acesso SQL restrito verificados |
+| DNS | Cloudflare, zona `faysk.dev` | `map` aponta à Vercel, DNS only |
+| Objetos | Cloudflare R2, bucket privado `world-pulse-production` | Provisionado; ainda sem função no fluxo de taps |
+| Configuração e entrega | GitHub Actions + Environment `production` | Origem das secrets/configurações e deploy manual de `main` |
+| API de participação | [PR #31](https://github.com/Faysk/world-pulse/pull/31) | Draft, gate desligado, migração de domínio não aplicada |
 
-> **Regra principal:** as **manchas dependem da quantidade de pessoas distintas e sua distribuição geográfica**, **nunca dos cliques ou segundos acumulados**. O tempo é outra métrica.
+Não há serviço de autenticação externo, conexão direta do browser ao banco ou bucket público. Nenhum outro banco de outro projeto foi removido ou alterado.
 
-## Decisões confirmadas
+```mermaid
+flowchart LR
+  DNS[Cloudflare DNS: map.faysk.dev] --> WEB[Vercel: React / Vite / MapLibre]
+  WEB --> TILES[OpenFreeMap: cartografia]
+  GH[GitHub Actions + production secrets] --> WEB
+  GH --> DB[(Neon PostgreSQL: conectividade)]
+  GH --> R2[Cloudflare R2 privado: probes]
+  API[API experimental no PR 31] -. futura integração .-> DB
+  WEB -. futura integração .-> API
+```
 
-- Entrada diretamente no globo cinza, sem cadastro obrigatório.
-- Giro, zoom e exploração fluida, inclusive no celular.
-- Cada hashtag nova recebe cor aleatória; a cor é fixa depois.
-- Qualquer hashtag válida pode participar; tocar/clicar em uma hashtag ou cor existente permite selecioná-la.
-- Cada clique/tap elegível credita +1 segundo, **não 1 segundo de duração real**.
-- Apenas uma hashtag ativa por participante; tempos persistidos separadamente por hashtag.
-- Manchas: intensidade e extensão guiadas por participantes distintos e localização, não por taps.
-- Localização automática e aproximada; nunca posição residencial/individual precisa.
-- Top 10 global e origem geográfica das hashtags; sem filtros na etapa inicial.
-- Pilha desejada: **Vercel + Cloudflare DNS/R2 + Supabase**, buscando ficar dentro do gratuito.
-- Sem monetização planejada. Antiabuso sofisticado e filtros não são prioridade antes da validação.
-- Primeiro pesquisar/renderizar um protótipo gráfico com dados simulados; **nenhum motor está aprovado**.
+Linhas pontilhadas representam trabalho ainda não ativado. Veja [arquitetura](docs/05-free-tier-architecture.md) e [operações](docs/11-infrastructure-operations.md).
 
-## Documentação
+## Regras do produto
 
-- [01 — Visão e escopo](docs/01-vision-and-scope.md)
-- [02 — Regras de interação e contagem](docs/02-interaction-rules.md)
-- [03 — Pesquisa de motor gráfico](docs/03-globe-rendering-research.md)
-- [04 — Geolocalização e privacidade](docs/04-geolocation-privacy.md)
-- [05 — Arquitetura e Free Tier](docs/05-free-tier-architecture.md)
-- [06 — Modelo de dados proposto](docs/06-data-model.md)
-- [07 — Roadmap e critérios de aceite](docs/07-roadmap.md)
-- [08 — Pontos em aberto](docs/08-open-questions.md)
-- [09 — Direção visual Night Lights](docs/09-night-lights-visual-direction.md)
-- [10 — Milestones e progresso planejado](docs/10-milestones-and-progress.md)
-- [11 — Infraestrutura, secrets e GitHub Actions](docs/11-infrastructure-operations.md)
-- [12 — Revisão crítica e próxima entrega](docs/12-project-review.md)
-- [13 — Release visual v0.1](docs/13-visual-release-v0.1.md)
+- Cada tap elegível adiciona **+1 segundo de saldo** à hashtag selecionada e ao histórico creditado.
+- O saldo diminui com o relógio real, inclusive offline. Histórico e saldo restante são métricas diferentes.
+- Várias hashtags podem manter saldo/manchas simultaneamente; novos taps vão para uma seleção de cada vez.
+- A densidade conta participantes distintos por hashtag com saldo positivo, nunca soma de taps ou segundos.
+- Cor aleatória é persistida na primeira criação da hashtag; criação real ainda depende da API.
+- Localização será aproximada e agregada; não publicar posição individual.
+- Ordenação do Top 10 permanece aberta na [issue #8](https://github.com/Faysk/world-pulse/issues/8).
 
-## Planejamento por versões
+A POC publicada ainda possui contador local por sessão; não confundir esse teste com saldo persistido em produção. [Contrato confirmado](docs/14-time-credit-contract.md).
 
-| Release | Objetivo | Issues |
-|---|---|---|
-| **v0.1 — Living Earth** | Globo cinza, luzes orgânicas e preview visual | #1, #2, #10, #11, #12 |
-| **v0.2 — Hashtags & Taps** | Seleção de #, cores e +1 segundo | #3, #4 |
-| **v0.3 — Data & Presence** | Banco, presença e localização aproximada | #5, #6, #7, #9 |
-| **v0.4 — Alpha** | Top 10 e integração ponta a ponta | #8, #13 |
+## Executar e verificar
 
-📍 [Ver organização, critérios de aceite e progresso](docs/10-milestones-and-progress.md) · [Todas as issues](https://github.com/Faysk/world-pulse/issues) · [GitHub Milestones](https://github.com/Faysk/world-pulse/milestones)
+Node compatível com `package.json` (CI visual usa Node 22; infraestrutura usa Node 24):
 
-**✅ Milestones nativos criados e 13 issues vinculadas.** Veja o [painel automático de progresso](https://github.com/Faysk/world-pulse/milestones). A configuração está documentada e automatizada pelo [GitHub Actions](.github/workflows/setup-milestones.yml).
+```sh
+npm ci
+npm run dev
+npm run check
+npx playwright install chromium
+npm run test:browser
+npm ci --prefix infra --ignore-scripts
+npm test --prefix infra
+```
 
-## Próximo passo
+O app visual não exige secrets. Nunca colocar credenciais em `VITE_*` nem versionar `.env.local`.
 
-**Prova de conceito do globo**: base cinza, navegação fluida, campos de densidade multicoloridos em múltiplos níveis de zoom e dados *simulados identificados como teste*. Só depois plugar localização, persistência e contagem real.
+## Organização do repositório
 
-### Estado atual
+```text
+src/                         interface, globo, datasets sintéticos e contrato de saldo
+tests/                      testes de domínio e navegador
+infra/                       probes Neon/R2, sincronização e publicação staged
+infra/sql/0001-runtime-access.sql  baseline de acesso SQL; não é schema da aplicação
+scripts/                     benchmark dos cenários agregados
+.github/workflows/           validação, produção manual e organização de milestones
+docs/                        arquitetura, regras, evidências e pendências
+```
 
-**A POC visual v0.1 está publicada em [map.faysk.dev](https://map.faysk.dev)** (Vercel production READY, commit `84d50a5`, PR #14 integrado). Inclui globo MapLibre, luzes de hashtags simuladas e teste de +1 segundo apenas local; **não** há usuários reais, backend da aplicação ou geolocalização integrada. A infraestrutura Neon Free e R2 foi preservada. [Detalhes e limitações da publicação](docs/13-visual-release-v0.1.md).
+As pastas `api/`, `server/` e a migração `0002-participation-core.sql` estão **somente no PR #31** enquanto ele permanecer em draft.
 
-Licença: [MIT](LICENSE).
+## Documentação e próximos passos
+
+- [Visão e escopo](docs/01-vision-and-scope.md) · [Interação](docs/02-interaction-rules.md)
+- [Arquitetura implantada](docs/05-free-tier-architecture.md) · [Modelo de domínio](docs/06-data-model.md)
+- [Roadmap atual](docs/07-roadmap.md) · [Decisões abertas](docs/08-open-questions.md)
+- [Milestones e entregas](docs/10-milestones-and-progress.md) · [Runbook de produção](docs/11-infrastructure-operations.md)
+- [Revisão crítica atual](docs/12-project-review.md) · [Primeira publicação visual](docs/13-visual-release-v0.1.md)
+- [Saldo cronológico](docs/14-time-credit-contract.md) · [Cenários de 0 a 8 bilhões e 1 trilhão](docs/15-population-scenarios.md)
+
+Próxima entrega: revisar a API, alinhar banco e respostas ao saldo cronológico, validar em banco descartável e integrar dois navegadores. Geografia pública, retenção, abuso e ranking exigem trabalho próprio antes da alpha. O laboratório suporta até 756 células sintéticas; isso não comprova capacidade de atender bilhões de usuários reais.
+
+[Issues](https://github.com/Faysk/world-pulse/issues) · [Milestones](https://github.com/Faysk/world-pulse/milestones) · Licença [MIT](LICENSE).
