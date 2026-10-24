@@ -1,6 +1,6 @@
 import {
   ApiError, onlyMethod, parseBody, readSessionCookie,
-  requireSameOrigin, json, fail, normalizeHashtag, validateTagId, validateTapBatch
+  requireSameOrigin, json, fail, normalizeHashtag, validateTagId, validateTapBatch, tokenHash
 } from './protocol.mjs';
 import * as store from './store.mjs';
 
@@ -49,6 +49,10 @@ export function route(kind, operations = store) {
         return json(res, 200, {
           anonymous: true,
           sessionFresh: !existing,
+          // Stable non-authenticating queue marker derived from a 256-bit random
+          // HttpOnly cookie. It is only returned to the same-origin client;
+          // the backend NEVER accepts it as proof of identity.
+          sessionBinding: tokenHash('world-pulse-queue-binding-v1:' + (newToken ?? token)),
           activeTagId: visitor.active_tag_id ?? null,
           activeTag: visitor.active_tag_id && visitor.active_tag_name
             ? { id: visitor.active_tag_id, name: '#' + visitor.active_tag_name, color: visitor.active_tag_color }
