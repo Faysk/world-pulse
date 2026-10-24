@@ -1,7 +1,8 @@
 # Estado verificado antes da publicação — 24/10/2026
 
-**Publicação pausada.** O código novo está na branch do draft
+**Publicação pausada.** O pacote de implementação/evidências é reunido no
 [PR #31](https://github.com/Faysk/world-pulse/pull/31), milestone v0.4.
+Integrá-lo à `main` não implanta nem ativa a alpha.
 `map.faysk.dev` continua com a demonstração anterior. Não foi feito deploy,
 promoção, migração de domínio ou habilitação de participação em produção.
 
@@ -61,7 +62,7 @@ medidas de FPS ou gestos em dispositivos físicos. O benchmark de 0 a 1 trilhão
 
 Isso distingue preparação técnica validada de aceite público completo. As
 issues #5, #6, #7, #8, #13 e #53 continuam abertas pelos gates correspondentes.
-Entregas de implementação #74, #76, #77, #79, #81 e #83 foram concluídas em
+Entregas de implementação #74, #76, #77, #79, #81, #83 e #85 foram concluídas em
 PRs vinculados a milestones, sem fechar gates que não foram testados.
 
 A sequência de liberação/interrupção/rollback está em
