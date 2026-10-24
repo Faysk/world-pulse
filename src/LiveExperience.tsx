@@ -102,9 +102,9 @@ export default function LiveExperience(){
       {live.quarantined&&<div className="live-quarantine"><p>A fila anterior foi preservada. Descartá-la pode perder taps ainda não reconhecidos.</p>
         <button onClick={()=>void live.discard()}>Descartar fila antiga e reconectar</button></div>}
       <details><summary>Como funciona e privacidade</summary>
-        <p>Selecione uma hashtag e toque no planeta ou em +1 segundo. Arrastar e aproximar só navegam. Segundos extras não multiplicam participações no ranking.</p>
+        <p>Selecione uma hashtag e use +1 segundo ou toque no terreno sem área colorida. Tocar um país colorido inspeciona as origens e não adiciona tempo. Arrastar e aproximar só navegam. Segundos extras não multiplicam participações no ranking.</p>
         <p>Este navegador usa uma sessão pseudônima. Após 30 dias sem retorno e com todos os saldos zerados, o histórico individual é consolidado nos totais por hashtag. Limpar cookies pode impedir sua recuperação.</p>
-        <label><input type="checkbox" checked={live.countryPreference.consent} disabled={!live.ready||live.consentBusy||!live.countryPreference.available} onChange={event=>void live.setGeoConsent(event.target.checked)}/> Compartilhar meu país estimado nas áreas agregadas</label>
+        <label><input type="checkbox" checked={live.countryPreference.consent} disabled={!live.ready||live.consentBusy||(!live.countryPreference.available&&!live.countryPreference.consent)} onChange={event=>void live.setGeoConsent(event.target.checked)}/> Compartilhar meu país estimado nas áreas agregadas</label>
         <p>Opcional. Sua participação continua no ranking sem compartilhar. País atual: {live.countryPreference.country==='ZZ'?'desconhecido':live.countryPreference.country}. Retirar a opção remove seu país das próximas leituras; cópias já recebidas não podem ser apagadas.</p>
         <p>Não coletamos cidade ou coordenadas nesta experiência. Agrupar cinco sessões não garante anonimato: comparações entre leituras podem revelar mudanças. O mapa não contém participantes simulados.</p>
       </details>

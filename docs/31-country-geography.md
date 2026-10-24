@@ -87,3 +87,17 @@ O código XK do dataset é de uso excepcional e não pertence à lista ISO atrib
 Source e duas layers permanecem estáveis até desmontar o mapa; snapshots mudam somente dados/cor. A geometria pública é carregada/parseada uma vez por página, com timeout e retry após falha, sem mutar a coleção compartilhada. Ausência de dados limpa as features, sem reconstruir recursos a cada 5s.
 
 O país sob o pointerdown fica associado apenas à intenção daquele gesto elegível. Se a área desaparecer antes da soltura, o gesto continua sendo inspeção e nunca vira crédito. Drag/pinch/wheel/long-press continuam passando pelo mesmo reconhecedor. Teste de globo verifica refresh sem nova geometria/source, retirada da área durante o gesto, ausência de taps acidentais e liberação dos recursos no unmount. Nada é persistido dessa intenção do ponteiro.
+
+## Desativação e retirada da preferência (#88)
+
+Com a API/sessão ainda disponível, desligar a capability geográfica não impede
+uma pessoa já consentida de retirar a opção. Opt-in fica bloqueado nesse estado;
+depois do opt-out, o checkbox fica desativado até nova disponibilidade. A UI
+limpa a leitura anterior e descarta respostas em trânsito anteriores à mudança,
+inclusive durante atualização de consentimento. Falha no pedido informa que a
+preferência não foi confirmada, sem fingir sucesso. Isso não elimina cópias já
+recebidas por terceiros nem permite autenticar uma sessão cujo cookie foi perdido.
+
+Teste em desktop/mobile cobre país visível, leitura seguinte retida em trânsito,
+desativação/refresh de sessão, descarte dessa resposta e retirada autenticada,
+mantendo o saldo e sem criar taps. O backend continua com os mesmos gates.

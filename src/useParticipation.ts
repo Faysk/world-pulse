@@ -37,13 +37,16 @@ export function useParticipation() {
   const [countryPreference,setCountryPreference]=useState(client.countryPreference());
   const [consentBusy,setConsentBusy]=useState(false);
   const countryRequest=useRef<Promise<void>|null>(null);
+  const countryRevision=useRef(0);
   const sending=useRef(false);
   const rankingRequest=useRef<Promise<void>|null>(null);
   const mounted=useRef(false);
 
   const view=useCallback(()=>{
     if(!mounted.current)return;
-    setCountryPreference(client.countryPreference());
+    const preference=client.countryPreference();
+    setCountryPreference(preference);
+    if(!preference.available){countryRevision.current++;setCountrySnapshot(null);setCountryError(false);}
     setSelected(client.selectedTagDetails());setBalances(client.balances());
     setPending(client.pendingClicks());setQuarantined(client.isQuarantined());
   },[client]);
@@ -64,17 +67,18 @@ export function useParticipation() {
   const refreshCountries=useCallback(async(afterMutation=false):Promise<void>=>{
     if(countryRequest.current){await countryRequest.current;if(!afterMutation)return;}
     if(!mounted.current||!client.countryPreference().available)return;
+    const revision=countryRevision.current;
     const task=client.countries().then(snapshot=>{
-      if(mounted.current){setCountrySnapshot(snapshot);setCountryError(false);}
-    }).catch(()=>{if(mounted.current){setCountryError(true);setCountrySnapshot(null);}});
+      if(mounted.current&&client.countryPreference().available&&revision===countryRevision.current){setCountrySnapshot(snapshot);setCountryError(false);}
+    }).catch(()=>{if(mounted.current&&revision===countryRevision.current){setCountryError(client.countryPreference().available);setCountrySnapshot(null);}});
     countryRequest.current=task;
     try{await task;}finally{if(countryRequest.current===task)countryRequest.current=null;}
   },[client]);
   const setGeoConsent=useCallback(async(allowed:boolean)=>{
     if(consentBusy||!ready)return;
     setConsentBusy(true);
-    try{await client.setGeoConsent(allowed);view();await refreshCountries(true);}
-    catch(reason){failure(reason);}
+    try{await client.setGeoConsent(allowed);if(!mounted.current)return;countryRevision.current++;setCountrySnapshot(null);view();await refreshCountries(true);}
+    catch(reason){failure(reason);if(mounted.current&&!client.isQuarantined())setError('Não foi possível confirmar sua escolha de país. Recarregue a página para conferir a preferência salva.');}
     finally{if(mounted.current)setConsentBusy(false);}
   },[client,consentBusy,ready,view,refreshCountries,failure]);
   useEffect(()=>{
