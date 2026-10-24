@@ -4,6 +4,8 @@
  */
 export type LiveTag = { id: string; name: string; color: string };
 export type PendingTapBatch = { batchId: string; tagId: string; clicks: number };
+export type TimeBalance = { tagId: string; creditedSeconds: string;
+  expiresAtMs: number; serverNowMs: number; remainingMs: number };
 export type ApiRanking = {
   type: 'historical';
   ranking: Array<{
@@ -23,6 +25,8 @@ export class ParticipationClient {
   private readonly makeId: () => string;
   private selectedTagId: string | null = null;
   private pending: PendingTapBatch[] = [];
+  private readonly sealed = new Set<string>();
+  private latestBalances: TimeBalance[] = [];
   private sessionPromise: Promise<void> | null = null;
   private sending: Promise<void> | null = null;
   private selectionQueue: Promise<unknown> = Promise.resolve();
@@ -36,6 +40,9 @@ export class ParticipationClient {
     this.storage = storage;
     this.makeId = makeId;
     this.pending = this.readPending();
+    // A restored request may have reached the server before its response was
+    // lost. Its ID and fingerprint must never receive new taps.
+    for (const batch of this.pending) this.sealed.add(batch.batchId);
   }
 
   private readPending(): PendingTapBatch[] {
@@ -77,8 +84,11 @@ export class ParticipationClient {
 
   async connect(): Promise<void> {
     if (!this.sessionPromise) {
-      this.sessionPromise = this.request<{ anonymous: true }>('/api/session', {})
-        .then(() => undefined)
+      this.sessionPromise = this.request<{ anonymous: true; activeTagId: string | null; credits: TimeBalance[] }>('/api/session', {})
+        .then(session => {
+          this.selectedTagId = session.activeTagId;
+          this.latestBalances = session.credits;
+        })
         .catch(error => { this.sessionPromise = null; throw error; });
     }
     await this.sessionPromise;
@@ -118,7 +128,7 @@ export class ParticipationClient {
     // A submitted batch is frozen until acknowledged; never mutate its
     // fingerprint while a request may be in flight.
     const last = this.sending ? null : this.pending[this.pending.length - 1];
-    if (last && last.tagId === this.selectedTagId && last.clicks < 30) {
+    if (last && !this.sealed.has(last.batchId) && last.tagId === this.selectedTagId && last.clicks < 30) {
       last.clicks++;
     } else {
       this.pending.push({
@@ -133,6 +143,12 @@ export class ParticipationClient {
     return this.pending.reduce((sum, b) => sum + b.clicks, 0);
   }
 
+  /** Server snapshots, including expired history. Rendering a countdown must
+   * use the elapsed time since receipt, not assume the browser clock is correct. */
+  balances(): TimeBalance[] {
+    return this.latestBalances.map(balance => ({ ...balance }));
+  }
+
   /** Retries keep the same batch IDs and do not manufacture new credits. */
   async flush(): Promise<void> {
     if (this.sending) return this.sending;
@@ -140,8 +156,11 @@ export class ParticipationClient {
       await this.connect();
       while (this.pending.length) {
         const batch = { ...this.pending[0] };
-        await this.request('/api/taps', batch);
+        this.sealed.add(batch.batchId);
+        const credited = await this.request<TimeBalance>('/api/taps', batch);
+        this.latestBalances = [...this.latestBalances.filter(b => b.tagId !== credited.tagId), credited];
         this.pending.shift();
+        this.sealed.delete(batch.batchId);
         this.persist();
       }
     };

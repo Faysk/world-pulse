@@ -16,7 +16,7 @@ O [contrato de saldo](14-time-credit-contract.md) está confirmado: cada tap adi
 
 ## Bloqueios concretos da API
 
-Na revisão inicial do PR #31, `visitor_tags` armazena `seconds` históricos, mas não `expires_at`. O ranking é explicitamente histórico. Antes de integrar o cliente é necessário persistir/retornar saldo cronológico e testar que retry não estende a expiração. Não habilitar manchas reais usando contagens históricas.
+A revisão inicial do PR #31 encontrou ausência de expiração e mutação de lotes após falha de rede. A correção #39 acrescenta `expires_at`, snapshots do relógio/saldo e congelamento de lotes enviados/restaurados. Validar essas alterações no PostgreSQL descartável e revisar antes da integração. O ranking permanece explicitamente histórico; não habilitar manchas reais usando essa contagem.
 
 A seleção global por navegador e os lotes atrasados precisam de contrato coerente: o lote conserva sua hashtag original, não muda a seleção atual, e não permite usar retries para criar crédito adicional. Definir janela/retenção antes de limpar IDs de idempotência.
 

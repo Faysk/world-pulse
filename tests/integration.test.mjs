@@ -25,7 +25,20 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
   await owner.query("CREATE ROLE world_pulse_app LOGIN PASSWORD 'local-only'");
   await owner.query(await readFile(new URL('../infra/sql/0001-runtime-access.sql', import.meta.url), 'utf8'));
   await owner.query(await readFile(new URL('../infra/sql/0002-participation-core.sql', import.meta.url), 'utf8'));
+  const legacyVisitor = randomUUID(), legacyTag = randomUUID();
+  await owner.query("INSERT INTO world_pulse.tags(id,normalized,color) VALUES($1,'legacy_migration','#123456')", [legacyTag]);
+  await owner.query("INSERT INTO world_pulse.visitors(id,session_hash,expires_at) VALUES($1,$2,now()+interval '1 day')", [legacyVisitor, '0'.repeat(64)]);
+  await owner.query('INSERT INTO world_pulse.visitor_tags(visitor_id,tag_id,seconds) VALUES($1,$2,42)', [legacyVisitor,legacyTag]);
+  await owner.query(await readFile(new URL('../infra/sql/0003-time-balances.sql', import.meta.url), 'utf8'));
   useTestPool(app);
+
+  await t.test('Migration preserves history without inventing live balances and is repeatable', async () => {
+    const [legacy] = await getCredits(legacyVisitor);
+    assert.equal(legacy.creditedSeconds, '42');
+    assert.equal(legacy.remainingMs, 0);
+    await owner.query(await readFile(new URL('../infra/sql/0003-time-balances.sql', import.meta.url), 'utf8'));
+    assert.equal((await getCredits(legacyVisitor))[0].expiresAtMs, legacy.expiresAtMs);
+  });
 
   let sessionA, sessionB, gta6, lofi;
   await t.test('Session token stored as a hash, not plaintext', async () => {
@@ -71,7 +84,7 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
     assert.equal(b.creditedSeconds, '1');
   });
 
-  await t.test('Delayed A batch is attributed to A after selecting B, never reactivates A', async () => {
+  await t.test('Delayed A batch extends A balance after selecting B, never changes current selection', async () => {
     await selectTag(sessionA.visitorId, lofi.id);
     const old = await creditBatch(sessionA.visitorId, {
       tagId: gta6.id, batchId: randomUUID(), clicks: 2
@@ -97,6 +110,45 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
     assert.equal('lat' in top, false);
     assert.equal('visitorId' in top, false);
     assert.equal('active' in top, false);
+  });
+
+  await t.test('Eight-hour balance top-up, duplicates, offline return and several live tags', async () => {
+    const visitor = await createVisitor();
+    await selectTag(visitor.visitorId, gta6.id);
+    // Set a known unexpired balance independently of historical tap totals.
+    const expiry = new Date(Date.now() + 8 * 60 * 60 * 1000);
+    await owner.query('UPDATE world_pulse.visitor_tags SET seconds=10,expires_at=$3 WHERE visitor_id=$1 AND tag_id=$2',
+      [visitor.visitorId, gta6.id, expiry]);
+    const batch = { tagId:gta6.id, batchId:randomUUID(), clicks:3 };
+    const [one, duplicate] = await Promise.all([creditBatch(visitor.visitorId,batch),creditBatch(visitor.visitorId,batch)]);
+    assert.equal(one.expiresAtMs, expiry.getTime()+3000);
+    assert.equal(duplicate.expiresAtMs, one.expiresAtMs);
+    assert.equal(one.creditedSeconds, '13');
+    assert.equal(duplicate.creditedSeconds, '13');
+
+    await selectTag(visitor.visitorId, lofi.id);
+    const b = await creditBatch(visitor.visitorId, { tagId:lofi.id,batchId:randomUUID(),clicks:30 });
+    const a = (await getCredits(visitor.visitorId)).find(x=>x.tagId===gta6.id);
+    assert.equal(a.expiresAtMs, one.expiresAtMs, 'selecting/crediting B never pauses or resets A');
+    assert.ok(a.remainingMs>0 && b.remainingMs>0);
+    assert.equal((await findVisitor(visitor.token)).active_tag_id, lofi.id);
+
+    // Model wall-clock passage without sleeping or writing periodic countdowns.
+    await owner.query("UPDATE world_pulse.visitor_tags SET expires_at=statement_timestamp()-interval '1 hour' WHERE visitor_id=$1 AND tag_id=$2", [visitor.visitorId,gta6.id]);
+    const returningVisitor = await findVisitor(visitor.token);
+    const expired = (await getCredits(returningVisitor.id)).find(x=>x.tagId===gta6.id);
+    assert.equal(expired.remainingMs, 0);
+    assert.equal(expired.creditedSeconds, '13');
+    const oldRetry = await creditBatch(visitor.visitorId,batch);
+    assert.equal(oldRetry.expiresAtMs, expired.expiresAtMs, 'retry cannot revive expired credit');
+    assert.equal(oldRetry.remainingMs, 0);
+
+    await selectTag(visitor.visitorId, gta6.id);
+    const renewed = await creditBatch(visitor.visitorId, { tagId:gta6.id,batchId:randomUUID(),clicks:2 });
+    assert.equal(renewed.creditedSeconds, '15');
+    assert.ok(renewed.expiresAtMs>=renewed.serverNowMs);
+    assert.ok(renewed.remainingMs<=2000, 'expired balance starts from server clock, never adds old history');
+    assert.equal((await getCredits(visitor.visitorId)).find(x=>x.tagId===lofi.id).expiresAtMs, b.expiresAtMs);
   });
 
   await t.test('Limits prevent giant claimed batches and repeated fast submissions', async () => {
