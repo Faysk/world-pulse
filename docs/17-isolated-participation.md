@@ -99,6 +99,23 @@ Não há PostgreSQL/Docker instalado na máquina usada nesta revisão; o caminho
 com banco real é executado pelo CI. Isso não autoriza instalar um banco de
 produção local nem puxar credenciais do Neon para este teste.
 
+## Evidência de execução — 24/10/2026
+
+[Participation API CI 40046758612](https://github.com/Faysk/world-pulse/actions/runs/40046758612):
+job de transações PostgreSQL aprovado e job de dois navegadores aprovado, com
+dois testes concluídos em desktop/celular emulado. Cada teste usa duas sessões
+independentes e verifica também os registros no banco, inclusive após perder
+a resposta de uma transação já confirmada.
+
+![Laboratório isolado com banco descartável, desktop e celular](assets/participation-isolated.jpg)
+
+As identidades/hashtags nas capturas são dados de teste, não usuários públicos.
+O banco é real e descartável; o mapa de fundo é o estilo mínimo de teste.
+
+O preview remoto deste PR foi recusado pela Vercel com `build-rate-limit` e
+orientação de aguardar 24 horas. Nenhum upgrade foi feito. O CI e a validação
+isolada concluíram independentemente; staging remoto continua pendente.
+
 ## Antes de produção
 
 Validar staging Vercel/Neon isolado, integrar a UX definitiva, resolver retenção,
