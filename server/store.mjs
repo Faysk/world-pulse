@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { ApiError, batchFingerprint, newSession, randomColor, tokenHash } from './protocol.mjs';
 import { chargeBudget } from './costPolicy.mjs';
 import { beginLimitedTransaction } from './databaseLimits.mjs';
+import { consolidateInactive } from './retention.mjs';
 
 let pool;
 
@@ -66,11 +67,16 @@ function query(text, values) {
 export async function findVisitor(token) {
   if (!token) return null;
   const { rows } = await query(
-    `SELECT v.id, v.active_tag_id,
+    `WITH renewed AS (
+      UPDATE world_pulse.visitors AS current SET last_seen_at=statement_timestamp(),
+        expires_at=GREATEST(current.expires_at,statement_timestamp()+interval '30 days',
+          COALESCE((SELECT max(vt.expires_at)+interval '1 day' FROM world_pulse.visitor_tags vt WHERE vt.visitor_id=current.id),statement_timestamp()))
+      WHERE session_hash=$1 AND current.expires_at>statement_timestamp() RETURNING id,active_tag_id,expires_at
+    ) SELECT v.id, v.active_tag_id,v.expires_at,
       t.normalized AS active_tag_name, t.color AS active_tag_color
-    FROM world_pulse.visitors v
+    FROM renewed v
     LEFT JOIN world_pulse.tags t ON t.id = v.active_tag_id
-    WHERE v.session_hash = $1 AND v.expires_at > now()`,
+    `,
     [tokenHash(token)]
   );
   return rows[0] ?? null;
@@ -218,12 +224,14 @@ export async function getCredits(visitorId) {
 export async function getRanking() {
   const rows = await query(`
     SELECT t.id, t.normalized, t.color,
-           COUNT(vt.visitor_id)::text AS historical_participants,
-           COALESCE(SUM(vt.seconds),0)::text AS credited_seconds
+           (COUNT(vt.visitor_id)+COALESCE(MAX(h.participants),0))::text AS historical_participants,
+           (COALESCE(SUM(vt.seconds),0)+COALESCE(MAX(h.credited_seconds),0))::text AS credited_seconds
     FROM world_pulse.tags t
-    JOIN world_pulse.visitor_tags vt ON vt.tag_id=t.id
+    LEFT JOIN world_pulse.visitor_tags vt ON vt.tag_id=t.id
+    LEFT JOIN world_pulse.tag_history_totals h ON h.tag_id=t.id
     GROUP BY t.id,t.normalized,t.color
-    ORDER BY COUNT(vt.visitor_id) DESC, t.normalized ASC, t.id ASC
+    HAVING COUNT(vt.visitor_id)+COALESCE(MAX(h.participants),0)>0
+    ORDER BY COUNT(vt.visitor_id)+COALESCE(MAX(h.participants),0) DESC, t.normalized ASC, t.id ASC
     LIMIT 10
   `);
   return rows.rows.map(row => ({
@@ -252,11 +260,12 @@ export async function getActiveBalanceSnapshot() {
         COUNT(vt.visitor_id) FILTER (
           WHERE vt.expires_at > snapshot.observed_at
         ) AS active_participants,
-        COUNT(vt.visitor_id) AS historical_participants,
-        COALESCE(SUM(vt.seconds), 0) AS credited_seconds
+        COUNT(vt.visitor_id)+COALESCE(MAX(h.participants),0) AS historical_participants,
+        COALESCE(SUM(vt.seconds), 0)+COALESCE(MAX(h.credited_seconds),0) AS credited_seconds
       FROM world_pulse.tags AS t
       CROSS JOIN snapshot
       LEFT JOIN world_pulse.visitor_tags AS vt ON vt.tag_id = t.id
+      LEFT JOIN world_pulse.tag_history_totals h ON h.tag_id=t.id
       GROUP BY t.id, t.normalized, t.color
     )
     SELECT id, normalized, color,
@@ -283,6 +292,10 @@ export async function getActiveBalanceSnapshot() {
       creditedSeconds: row.credited_seconds
     }))
   };
+}
+
+export function consolidateInactiveVisitors(options) {
+  return consolidateInactive(getPool(),options);
 }
 
 /**

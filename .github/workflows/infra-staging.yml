@@ -6,7 +6,7 @@ on:
         description: Check runtime access, or deliberately apply reviewed staging migrations
         type: choice
         default: check
-        options: [check, migrate]
+        options: [check, migrate, maintain]
   push:
     branches: [codex/remote-staging]
     paths: ['infra/staging-db*', '.github/workflows/infra-staging.yml']
@@ -33,7 +33,7 @@ jobs:
       - run: npm ci --prefix infra --ignore-scripts
       - run: npm test --prefix infra
       - name: Verify TLS, schema and restricted runtime access
-        if: inputs.operation != 'migrate'
+        if: inputs.operation != 'migrate' && inputs.operation != 'maintain'
         run: node infra/staging-db.mjs
         env:
           WP_STAGING_OPERATION: check
@@ -46,3 +46,9 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
       # The owner is present only in an explicit migration step, never in runtime checks.
+      - name: Consolidate expired inactive sessions only on the pinned staging branch
+        if: inputs.operation == 'maintain'
+        run: node infra/staging-db.mjs
+        env:
+          WP_STAGING_OPERATION: maintain
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}

@@ -147,6 +147,7 @@ export default function ParticipationLab() {
     <div className="eyebrow">AMBIENTE DE TESTE · PARTICIPAÇÃO</div>
     <h2>Seu tempo nas hashtags</h2>
     <p>Este laboratório usa o banco configurado para desenvolvimento. O globo atrás continua simulado e não recebe estes dados.</p>
+    <p>Uma sessão identifica este navegador, não uma pessoa comprovada. A política em homologação consolida o histórico individual após 30 dias sem retorno e com todos os saldos zerados, preservando os totais por hashtag.</p>
     <div role="status" data-testid="participation-status">{ready ? 'Sessão conectada' : 'Conectando sessão…'}</div>
     <form onSubmit={select}>
       <label htmlFor="live-hashtag">Hashtag</label>

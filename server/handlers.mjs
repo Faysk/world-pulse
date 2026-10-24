@@ -4,6 +4,14 @@ import {
 } from './protocol.mjs';
 import * as store from './store.mjs';
 
+function setSessionCookie(res, token, expiresAt) {
+  const base=2592000;
+  const requested=expiresAt ? Math.ceil((new Date(expiresAt).getTime()-Date.now())/1000) : base;
+  const maxAge=Number.isFinite(requested) ? Math.max(base,Math.min(34560000,requested)) : base;
+  const secure=process.env.NODE_ENV === 'development' ? '' : '; Secure';
+  res.setHeader('Set-Cookie','wp_session='+token+'; HttpOnly; Path=/; SameSite=Lax; Max-Age='+maxAge+secure);
+}
+
 export function route(kind, operations = store) {
   const {
     findVisitor, createVisitor, requireVisitor, createOrGetTag,
@@ -46,10 +54,9 @@ export function route(kind, operations = store) {
           newToken = created.token;
         }
         const visitor = existing ?? await requireVisitor(newToken);
-        if (newToken) {
-          const secure = process.env.NODE_ENV === 'development' ? '' : '; Secure';
-          res.setHeader('Set-Cookie',
-            'wp_session=' + newToken + '; HttpOnly; Path=/; SameSite=Lax; Max-Age=2592000' + secure);
+        const sessionToken = newToken ?? token;
+        if (sessionToken) {
+          setSessionCookie(res,sessionToken,visitor.expires_at);
         }
         return json(res, 200, {
           anonymous: true,
@@ -86,7 +93,11 @@ export function route(kind, operations = store) {
           throw new ApiError(409, 'session_binding_mismatch',
             'Lote vinculado a outra sessão anônima.');
         }
-        return json(res, 200, await creditBatch(visitor.id, validateTapBatch(body)));
+        const credit=await creditBatch(visitor.id, validateTapBatch(body));
+        // Refresh the same credential after extending a long balance. Its
+        // expiry must not silently cut off return before that balance ends.
+        if (token) setSessionCookie(res,token,(await requireVisitor(token)).expires_at);
+        return json(res, 200, credit);
       }
       throw new ApiError(404,'not_found','Rota inexistente.');
     } catch (error) {
