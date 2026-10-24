@@ -17,6 +17,8 @@ export type ApiRanking = {
 type FetchLike = typeof fetch;
 type StoreLike = Pick<Storage, 'getItem' | 'setItem'>;
 const STORAGE_KEY = 'world-pulse-pending-v1';
+const QUARANTINE_KEY = 'world-pulse-pending-quarantined-v1';
+export const SELECTION_NOTICE_KEY = 'world-pulse-selection-changed-v1';
 const MAX_PENDING_CLICKS = 3000;
 
 export class ParticipationClient {
@@ -24,6 +26,8 @@ export class ParticipationClient {
   private readonly storage: StoreLike | null;
   private readonly makeId: () => string;
   private selectedTagId: string | null = null;
+  private selectedTag: LiveTag | null = null;
+  private quarantined = false;
   private pending: PendingTapBatch[] = [];
   private readonly sealed = new Set<string>();
   private latestBalances: TimeBalance[] = [];
@@ -44,6 +48,7 @@ export class ParticipationClient {
     this.makeId = makeId;
     this.clock = clock;
     this.pending = this.readPending();
+    try { this.quarantined = this.storage?.getItem(QUARANTINE_KEY) === '1'; } catch { this.quarantined = false; }
     // A restored request may have reached the server before its response was
     // lost. Its ID and fingerprint must never receive new taps.
     for (const batch of this.pending) this.sealed.add(batch.batchId);
@@ -70,6 +75,34 @@ export class ParticipationClient {
     catch { /* Storage may be unavailable in private mode. In-memory queue remains. */ }
   }
 
+  private quarantinePending(): void {
+    this.quarantined = true;
+    try { this.storage?.setItem(QUARANTINE_KEY, '1'); }
+    catch { /* Still blocked in this tab when local storage is unavailable. */ }
+  }
+
+  /**
+   * Old pending taps cannot be assigned to a NEW anonymous visitor.
+   * User must explicitly choose to abandon this orphaned queue; automatic
+   * recovery or silently moving old credits to a new cookie is forbidden.
+   */
+  discardOrphanedPending(): void {
+    if (!this.quarantined) return;
+    this.pending = [];
+    this.sealed.clear();
+    this.persist();
+    this.quarantined = false;
+    try { this.storage?.setItem(QUARANTINE_KEY, '0'); } catch { /* best effort */ }
+    this.sessionPromise = null;
+  }
+
+  isQuarantined(): boolean { return this.quarantined; }
+
+  private signalSelectionChange(): void {
+    try { this.storage?.setItem(SELECTION_NOTICE_KEY, this.makeId()); }
+    catch { /* Another tab can still refresh on focus without storage. */ }
+  }
+
   private async request<T>(path: string, body?: unknown): Promise<T> {
     const response = await this.fetcher(path, {
       method: body === undefined ? 'GET' : 'POST',
@@ -81,22 +114,49 @@ export class ParticipationClient {
     if (!response.ok) {
       const code = (payload && typeof payload === 'object' && 'error' in payload) ?
         String(payload.error) : 'network_error';
+      if (response.status === 401 && code === 'session_expired') {
+        this.sessionPromise = null;
+        if (this.pending.length) this.quarantinePending();
+      }
       throw new Error(code);
     }
     return payload as T;
   }
 
+  private async loadSession(): Promise<void> {
+    if (this.quarantined) throw new Error('session_rotated_pending');
+    const session = await this.request<{
+      anonymous: true; sessionFresh: boolean; activeTagId: string | null;
+      activeTag: LiveTag | null; credits: TimeBalance[];
+    }>('/api/session', {});
+    if (session.sessionFresh && this.pending.length > 0) {
+      // An old cookie expired, was deleted or rotated. Never credit its
+      // previously queued events to a new pseudonymous session.
+      this.quarantinePending();
+      throw new Error('session_rotated_pending');
+    }
+    this.selectedTagId = session.activeTagId;
+    this.selectedTag = session.activeTag;
+    this.latestBalances = session.credits;
+    for (const balance of session.credits) this.receivedAt.set(balance.tagId, this.clock());
+  }
+
   async connect(): Promise<void> {
+    if (this.quarantined) throw new Error('session_rotated_pending');
     if (!this.sessionPromise) {
-      this.sessionPromise = this.request<{ anonymous: true; activeTagId: string | null; credits: TimeBalance[] }>('/api/session', {})
-        .then(session => {
-          this.selectedTagId = session.activeTagId;
-          this.latestBalances = session.credits;
-          for (const balance of session.credits) this.receivedAt.set(balance.tagId, this.clock());
-        })
+      this.sessionPromise = this.loadSession()
         .catch(error => { this.sessionPromise = null; throw error; });
     }
     await this.sessionPromise;
+  }
+
+  /** Reconcile selection against the authoritative server after another tab
+   * switches hashtags. Never infer the current choice from a storage event. */
+  refreshSession(): Promise<void> {
+    return this.enqueueSelection(async () => {
+      await this.loadSession();
+      this.sessionPromise = Promise.resolve();
+    });
   }
 
   private enqueueSelection<T>(task: () => Promise<T>): Promise<T> {
@@ -112,6 +172,8 @@ export class ParticipationClient {
       const response = await this.request<{ tag: LiveTag }>('/api/tags', { name });
       await this.request('/api/select', { tagId: response.tag.id });
       this.selectedTagId = response.tag.id;
+      this.selectedTag = response.tag;
+      this.signalSelectionChange();
       return response.tag;
     });
   }
@@ -121,12 +183,14 @@ export class ParticipationClient {
       await this.connect();
       await this.request('/api/select', { tagId: null });
       this.selectedTagId = null;
+      this.selectedTag = null;
+      this.signalSelectionChange();
     });
   }
 
   /** Call this method on a validated user click/tap, never on clock ticks. */
   creditClick(): boolean {
-    if (!this.selectedTagId) return false;
+    if (!this.selectedTagId || this.quarantined) return false;
     const queued = this.pending.reduce((sum, b) => sum + b.clicks, 0);
     if (queued >= MAX_PENDING_CLICKS) return false;
 
@@ -155,6 +219,7 @@ export class ParticipationClient {
   }
 
   selection(): string | null { return this.selectedTagId; }
+  selectedTagDetails(): LiveTag | null { return this.selectedTag ? { ...this.selectedTag } : null; }
 
   remainingMilliseconds(tagId: string): number {
     const balance = this.latestBalances.find(item => item.tagId === tagId);
@@ -165,6 +230,7 @@ export class ParticipationClient {
 
   /** Retries keep the same batch IDs and do not manufacture new credits. */
   async flush(): Promise<void> {
+    if (this.quarantined) throw new Error('session_rotated_pending');
     if (this.sending) return this.sending;
     const task = async () => {
       await this.connect();
