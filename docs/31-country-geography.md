@@ -81,3 +81,9 @@ O código XK do dataset é de uso excepcional e não pertence à lista ISO atrib
 - Migração 0001–0006 e acesso restrito no Neon staging: [40058318799](https://github.com/Faysk/world-pulse/actions/runs/40058318799), aprovado.
 - Check de staging após migração: [40058318548](https://github.com/Faysk/world-pulse/actions/runs/40058318548), aprovado na repetição após o schema novo existir.
 - Oito testes locais de UI/renderer em desktop e celular emulado aprovados, inclusive inspeção sem crédito. Emulação não é teste de hardware físico.
+
+## Atualização segura durante gestos (#81)
+
+Source e duas layers permanecem estáveis até desmontar o mapa; snapshots mudam somente dados/cor. A geometria pública é carregada/parseada uma vez por página, com timeout e retry após falha, sem mutar a coleção compartilhada. Ausência de dados limpa as features, sem reconstruir recursos a cada 5s.
+
+O país sob o pointerdown fica associado apenas à intenção daquele gesto elegível. Se a área desaparecer antes da soltura, o gesto continua sendo inspeção e nunca vira crédito. Drag/pinch/wheel/long-press continuam passando pelo mesmo reconhecedor. Teste de globo verifica refresh sem nova geometria/source, retirada da área durante o gesto, ausência de taps acidentais e liberação dos recursos no unmount. Nada é persistido dessa intenção do ponteiro.

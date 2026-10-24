@@ -266,6 +266,7 @@ export function WorldGlobe({
     // This prevents rotation, pinch and scroll from becoming fake +1 seconds.
     const gestureGuard = new TapGestureGuard();
     const canvas = map.getCanvas();
+    let countryAtPointerDown:string|null=null;
     const sample = (event: PointerEvent): PointerInput => ({
       id: event.pointerId,
       x: event.clientX,
@@ -274,8 +275,17 @@ export function WorldGlobe({
       pointerType: event.pointerType
     });
     const down = (event: PointerEvent) => {
+      const input=sample(event);
       if (event.isPrimary === false) gestureGuard.invalidate();
-      gestureGuard.pointerDown(sample(event));
+      else{
+        countryAtPointerDown=null;
+        if(callbacks.current.onCountryPick&&map.getLayer('live-country-fill')){
+          const box=canvas.getBoundingClientRect();
+          const country=map.queryRenderedFeatures([event.clientX-box.left,event.clientY-box.top],{layers:['live-country-fill']})[0]?.properties?.countryCode;
+          if(typeof country==='string')countryAtPointerDown=country;
+        }
+      }
+      gestureGuard.pointerDown(input);
     };
     const move = (event: PointerEvent) => gestureGuard.pointerMove(sample(event));
     const up = (event: PointerEvent) => gestureGuard.pointerUp(sample(event));
@@ -340,6 +350,8 @@ export function WorldGlobe({
       if (!original || !gestureGuard.consumeClick(
         original.clientX, original.clientY, performance.now()
       )) return;
+      const intendedCountry=countryAtPointerDown;countryAtPointerDown=null;
+      if(intendedCountry&&callbacks.current.onCountryPick){callbacks.current.onCountryPick(intendedCountry);return;}
       if(map.getLayer('live-country-fill')){
         const country=map.queryRenderedFeatures(event.point,{layers:['live-country-fill']})[0]?.properties?.countryCode;
         if(typeof country==='string'&&callbacks.current.onCountryPick){callbacks.current.onCountryPick(country);return;}
