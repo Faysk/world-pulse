@@ -1,0 +1,51 @@
+name: Overlap WebGL2 CI
+
+on:
+  pull_request:
+    paths:
+      - "src/overlapCompositor.ts"
+      - "tests/overlapCompositor.test.mjs"
+      - "tests/browser/overlapCompositor.spec.ts"
+      - "experiments/overlap-lab.html"
+      - ".github/workflows/overlap-webgl-ci.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "src/overlapCompositor.ts"
+      - "tests/overlapCompositor.test.mjs"
+      - "tests/browser/overlapCompositor.spec.ts"
+      - "experiments/overlap-lab.html"
+      - ".github/workflows/overlap-webgl-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  gpu-spike:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - run: npm ci --no-fund
+      - name: Palette invariants and code typechecks
+        run: npm run check
+      - name: Install Chromium WebGL software fallback
+        run: npx playwright install chromium --with-deps
+      - name: Render shader in desktop and mobile Chromium
+        run: |
+          mkdir -p test-artifacts
+          npx playwright test tests/browser/overlapCompositor.spec.ts --project=chromium --project=mobile-chromium
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: world-pulse-overlap-webgl-spike
+          path: |
+            test-artifacts/overlap-*.png
+            test-results/
+          retention-days: 7
