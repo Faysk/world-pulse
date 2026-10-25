@@ -66,7 +66,7 @@ export async function stagedRelease({ api, smoke, sha, project, repo, pause, rec
 
 export class SmokeCheckError extends Error {}
 
-export async function smokeStaticSite(origin, secret, fetcher = fetch, {ignorePreviewToolbar=false} = {}) {
+export async function smokeStaticSite(origin, secret, fetcher = fetch, {ignorePreviewToolbar=false,activeApi=false} = {}) {
   const base = new URL(origin);
   const cookies = new Map();
   const request = async (path) => {
@@ -111,4 +111,11 @@ export async function smokeStaticSite(origin, secret, fetcher = fetch, {ignorePr
     }
     if (!(await asset.text()).trim()) throw new SmokeCheckError('Empty application asset');
   }
+  if(activeApi){
+    const response=await request('/api/ranking');
+    if(!response.headers.get('content-type')?.includes('application/json'))throw new SmokeCheckError('Active ranking JSON unavailable');
+    const ranking=await response.json();
+    if(ranking.type!=='active'||ranking.metric!=='distinct_anonymous_sessions_with_positive_balance'||!Array.isArray(ranking.ranking))throw new SmokeCheckError('Active ranking contract unavailable');
+  }
 }
+

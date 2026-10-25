@@ -12,7 +12,7 @@ try {
   await validateRelease(process.cwd());
   const { VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID } = process.env;
   const api = vercelApi({ token: VERCEL_TOKEN, team: VERCEL_ORG_ID });
-  const id = await stagedRelease({ api, smoke: smokeStaticSite, sha: process.env.GITHUB_SHA,
+  const id = await stagedRelease({ api, smoke: (origin,secret)=>smokeStaticSite(origin,secret,fetch,{activeApi:process.env.WP_API_ENABLED==='true'}), sha: process.env.GITHUB_SHA,
     project: VERCEL_PROJECT_ID, repo: process.env.GITHUB_REPOSITORY_ID, pause: setTimeout,
     receipt: id => console.log(`Staged production deployment: ${id}`),
     progress: message => { lastStage = message; console.log(message); },
