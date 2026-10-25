@@ -213,3 +213,45 @@ test('A temporary 429 resumes automatically with the identical batch and no manu
   await expect(page.getByText('Taps guardados neste navegador. A sincronização tenta novamente automaticamente.',{exact:true})).toBeVisible();
   await expect(page.getByTestId('live-pending')).toHaveText('0');expect(attempts).toHaveLength(2);expect(attempts[0]).toEqual(attempts[1]);
 });
+
+test('Modern loading remains visible until the map is ready and respects reduced motion',async({page},info)=>{
+  await page.emulateMedia({reducedMotion:'reduce'});
+  let release!:()=>void;
+  const held=new Promise<void>(resolve=>{release=resolve;});
+  await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/,async route=>{await held;await route.fulfill({json:{version:8,sources:{},layers:[{id:'bg',type:'background',paint:{'background-color':'#14222e'}}]}});});
+  await page.route('**/api/**',route=>route.fulfill({status:503,json:{error:'unavailable'}}));
+  await page.goto('/?experiencePreview=1');
+  try{
+    await expect(page.getByRole('status').filter({hasText:'Conectando o mundo'})).toBeVisible();
+    await expect(page.locator('.world-loading-orbit>span')).toHaveCSS('animation-name','none');
+    await expect(page.getByText('Abrindo World Pulse…',{exact:true})).toHaveCount(0);
+    await page.screenshot({path:`test-artifacts/world-loading-${info.project.name}.png`});
+  }finally{release();}
+  await expect(page.locator('.world-loading')).toBeHidden();
+});
+
+test('Own country preview needs positive time and consent; zero balance and opt-out remove it',async({page})=>{
+  let consent=true,remaining=60000;
+  await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/,route=>route.fulfill({json:{version:8,sources:{},layers:[{id:'bg',type:'background',paint:{'background-color':'#14222e'}}]}}));
+  await page.route('**/api/**',route=>{
+    const path=new URL(route.request().url()).pathname;
+    if(path==='/api/session'){
+      const body=route.request().postDataJSON();if(typeof body.geoConsent==='boolean')consent=body.geoConsent;
+      return route.fulfill({json:{anonymous:true,sessionFresh:false,sessionBinding:'a'.repeat(64),activeTagId:id,activeTag:{id,name:'#gta6',color:'#5d5de5'},credits:[{tagId:id,name:'#gta6',color:'#5d5de5',creditedSeconds:'60',remainingMs:remaining,serverNowMs:Date.now(),expiresAtMs:Date.now()+remaining}],geoConsent:consent,geoConsentDecided:true,geoCountry:consent?'PT':'ZZ',geographyAvailable:true}});
+    }
+    if(path==='/api/countries')return route.fulfill({json:{type:'country_snapshot',asOfMs:Date.now(),validUntilMs:Date.now()+5000,granularity:'country',privacyThreshold:5,tags:[]}});
+    if(path==='/api/ranking')return route.fulfill({json:{type:'active',asOfMs:Date.now(),ranking:[]}});
+    return route.fulfill({status:404,json:{error:'not_found'}});
+  });
+  await page.goto('/?experiencePreview=1');
+  await expect(page.getByTestId('live-personal')).toContainText('prévia só para você');
+  await page.getByRole('checkbox',{name:'Compartilhar meu país aproximado'}).uncheck();
+  await expect(page.getByTestId('live-personal')).toHaveCount(0);
+  await expect.poll(()=>consent).toBe(false);
+  await expect(page.getByRole('checkbox',{name:'Compartilhar meu país aproximado'})).toBeEnabled();
+  await page.getByRole('checkbox',{name:'Compartilhar meu país aproximado'}).check();
+  await expect(page.getByTestId('live-personal')).toBeVisible();
+  remaining=0;await page.reload();
+  await expect(page.getByTestId('live-connection')).toHaveText('Sessão conectada');
+  await expect(page.getByTestId('live-personal')).toHaveCount(0);
+});

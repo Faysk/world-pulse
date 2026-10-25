@@ -57,3 +57,17 @@ test('Multiple colors share native country resources and focus reuses the same i
   await page.getByRole('button',{name:'Unmount layer',exact:true}).click();
   await expect.poll(()=>page.evaluate(()=>(window as any).testMap.hasImage('live-country-pattern-PT'))).toBe(false);
 });
+
+test('Personal country preview draws with no public participants and disappears on withdrawal',async({page},info)=>{
+  await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/,route=>route.fulfill({json:{version:8,sources:{},layers:[{id:'bg',type:'background',paint:{'background-color':'#172333'}}]}}));
+  await page.goto('/tests/fixtures/country-map.html?personal=1');
+  await expect.poll(()=>page.evaluate(()=>Boolean((window as any).testMap?.getLayer('personal-country-fill')))).toBe(true);
+  await expect.poll(()=>page.evaluate(async()=>((await (window as any).testMap.getSource('personal-country').getData()).features.length))).toBe(1);
+  expect(await page.evaluate(async()=>(await (window as any).testMap.getSource('live-countries').getData()).features.length)).toBe(0);
+  await expect.poll(()=>page.evaluate(()=>{const map=(window as any).testMap;return map.queryRenderedFeatures(map.project([-8,39]),{layers:['personal-country-fill']}).length;})).toBeGreaterThan(0);
+  await page.screenshot({path:`test-artifacts/personal-country-${info.project.name}.png`});
+  await page.getByRole('button',{name:'Clear',exact:true}).click();
+  await expect.poll(()=>page.evaluate(async()=>(await (window as any).testMap.getSource('personal-country').getData()).features.length)).toBe(0);
+  await page.getByRole('button',{name:'Unmount layer',exact:true}).click();
+  expect(await page.evaluate(()=>Boolean((window as any).testMap.getSource('personal-country')))).toBe(false);
+});

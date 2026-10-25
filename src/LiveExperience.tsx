@@ -7,6 +7,8 @@ import { useParticipation } from './useParticipation';
 import {tagLabelStyle} from './tagLabel';
 import {composeCountries,countryTagPage} from './countryComposition';
 import './liveExperience.css';
+import {WorldLoading} from './WorldLoading';
+import {PersonalCountryLayer} from './PersonalCountryLayer';
 
 const EMPTY_GEOGRAPHY:PulseCollection={type:'FeatureCollection',features:[]};
 const numberFormat=Intl.NumberFormat('pt-BR');
@@ -19,6 +21,7 @@ export default function LiveExperience(){
   const [countriesOpen,setCountriesOpen]=useState(false);
   const [countryPick,setCountryPick]=useState<string|null>(null);
   const [countryDrawError,setCountryDrawError]=useState('');
+  const [personalDrawError,setPersonalDrawError]=useState('');
   const [focusSelected,setFocusSelected]=useState(false);
   const [countrySearch,setCountrySearch]=useState('');
   const [countryPage,setCountryPage]=useState(0);
@@ -33,6 +36,7 @@ export default function LiveExperience(){
   const [mapReady,setMapReady]=useState(false);
   const [mapError,setMapError]=useState('');
   const [mapVersion,setMapVersion]=useState(0);
+  const personalCountry=live.shareCountry&&live.countryPreference.consent&&live.countryPreference.available&&live.countryPreference.country!=='ZZ'&&live.selected&&live.remaining(live.selected.id)>0?live.countryPreference.country:null;
   async function select(event:FormEvent){event.preventDefault();await live.select(name);}
   return <main className="live-world" aria-label="World Pulse participação">
     <WorldGlobe key={mapVersion} ariaLabel="Globo interativo com países agregados" scale={0} population={EMPTY_GEOGRAPHY} selected={null} cityLights={false}
@@ -40,6 +44,8 @@ export default function LiveExperience(){
       onCountryPick={code=>{setCountryPick(code);setCountrySearch('');setCountryPage(0);setCountriesOpen(true);setRankingOpen(false);setBalancesOpen(false);}} onZoom={()=>{}} onFps={()=>{}}
       onTap={()=>void live.tap()} onTagPick={()=>{}} onFailure={setMapError}/>
     <CountryLayer map={map} snapshot={live.countrySnapshot} tagId={live.selected?.id??null} mode={focusId?'selected':'all'} onError={setCountryDrawError}/>
+    <PersonalCountryLayer map={map} country={personalCountry} color={live.selected?.color??'#63d7bd'} onError={setPersonalDrawError}/>
+    <WorldLoading ready={mapReady||Boolean(mapError)}/>
     <div className="live-shade" aria-hidden="true"/>
     <header className="live-header">
       <div className="live-brand">WORLD<span>PULSE</span><small>PARTICIPAÇÃO EM TESTE</small></div>
@@ -99,6 +105,8 @@ export default function LiveExperience(){
     </aside>}
     <section className="live-controls" aria-label="Sua participação">
       <p className="live-geography" data-testid="live-geography">{mapError?'Mapa indisponível. Seus saldos continuam acessíveis.':mapReady?(composition.length>0?(focusId?'Países agregados da hashtag selecionada. Toque na área para inspecionar.':'Países agregados com várias hashtags. Toque na área para inspecionar.'):emptyGeography):'Carregando mapa…'}</p>
+      {personalCountry&&!personalDrawError&&<p className="live-personal" data-testid="live-personal">Sua mancha em {personalCountry} · prévia só para você, no país aproximado. O mapa público reúne grupos de 5 ou mais.</p>}
+      {personalDrawError&&<p role="status">{personalDrawError}</p>}
       {mapError&&<button onClick={()=>{setMap(null);setMapReady(false);setMapError('');setMapVersion(v=>v+1);}}>Recarregar mapa</button>}
       <div className="live-sharing" aria-label="Compartilhamento de país">
         <label><input type="checkbox" checked={live.shareCountry} disabled={live.consentBusy} onChange={event=>void live.setGeoConsent(event.target.checked)}/> Compartilhar meu país aproximado</label>
