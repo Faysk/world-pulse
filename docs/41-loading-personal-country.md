@@ -37,3 +37,26 @@ confere status visível e movimento reduzido, e só libera quando o mapa fica pr
 Isso não é prova de FPS físico ou de estimativa correta em toda rede/VPN.
 
 ![Novo carregamento, captura de teste com movimento reduzido](assets/world-loading-2026-10-25.png)
+
+## Recibo de produção
+
+PR #111 integrado em `f63605a`. CI [40242582051](https://github.com/Faysk/world-pulse/actions/runs/40242582051)
+aprovou build, gate compilado (3 testes) e navegador (59 aprovados, 1 pulado).
+CI [40242582020](https://github.com/Faysk/world-pulse/actions/runs/40242582020)
+aprovou PostgreSQL e dois navegadores. Testes focados locais: 24 aprovados;
+os seis do renderer foram repetidos após o ajuste de inspeção e passaram.
+
+[Deploy 40243486238](https://github.com/Faysk/world-pulse/actions/runs/40243486238)
+aprovou probes, sincronização, candidato, revogação de acesso temporário, promoção
+e smoke público de HTML/JS/CSS/API. Deployment `dpl_9XrMpXrhwhXh1E1TKV1giWVDLQU8`.
+Sem migração ou novas credenciais/flags.
+
+Chrome público mostrou o novo carregamento ao recarregar e restaurou #gta6/país PT.
+Taps reais nessa sessão desenharam Portugal na cor roxa da hashtag, mesmo com
+apenas uma participação ativa no ranking. A fila retomou automaticamente até zero;
+a prévia desapareceu quando o saldo terminou. Zoom foi conferido visualmente.
+A captura contém tempo provisório e a indicação correspondente; não é recibo
+individual de todos os segundos nem prova de FPS físico. Nenhuma sessão extra
+foi criada para ultrapassar o limiar público de cinco.
+
+![Prévia pessoal de Portugal em produção, somente neste navegador](assets/personal-country-production-2026-10-25.png)
