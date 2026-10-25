@@ -5,8 +5,8 @@ export async function smokePreviewApi(origin,secret,createdHashes,fetcher=fetch)
   const base=new URL(origin);
   if(base.protocol!=='https:'||!/^world-pulse-[a-z0-9-]+\.vercel\.app$/.test(base.hostname)||base.pathname!=='/')throw new Error('preview_smoke_origin_rejected');
   function session(){
-    const cookies=new Map();let binding;
-    return {async call(path,body){
+    const cookies=new Map();let binding,authorized=false;
+    async function request(path,body,json=true){
       const url=new URL(path,base);assert.equal(url.origin,base.origin);
       if(!cookies.size)url.searchParams.set('_vercel_share',secret);
       for(let redirects=0;redirects<4;redirects++){
@@ -18,18 +18,24 @@ export async function smokePreviewApi(origin,secret,createdHashes,fetcher=fetch)
           const pair=cookie.split(';')[0],split=pair.indexOf('=');if(split<1)continue;
           const name=pair.slice(0,split),value=pair.slice(split+1);cookies.set(name,value);
           if(name==='wp_session'){
-            assert.match(cookie,/;\s*Secure/i);assert.match(cookie,/;\s*HttpOnly/i);assert.match(cookie,/;\s*SameSite=Lax/i);
             createdHashes.add(createHash('sha256').update(value).digest('hex'));
+            assert.match(cookie,/;\s*Secure/i);assert.match(cookie,/;\s*HttpOnly/i);assert.match(cookie,/;\s*SameSite=Lax/i);
           }
         }
         if(response.status>=300&&response.status<400){
           const next=new URL(response.headers.get('location'),url);assert.equal(next.origin,base.origin);url.href=next.href;continue;
         }
-        assert.equal(response.status,200,'preview_api_status');const value=await response.json();
+        if(response.status!==200)throw new Error('preview_http_'+response.status);
+        if(!json)return response.text();
+        const value=await response.json();
         if(path==='/api/session')binding=value.sessionBinding;
         return value;
       }
       throw new Error('preview_redirect_limit');
+    }
+    return {async call(path,body){
+      if(!authorized){await request('/',undefined,false);authorized=true;}
+      return request(path,body);
     }};
   }
   const first=session(),second=session();

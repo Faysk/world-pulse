@@ -3,7 +3,7 @@ import {setTimeout} from 'node:timers/promises';
 import pg from 'pg';
 import {previewTeam} from './preview-config.mjs';
 import {deployPreview} from './preview-deployment.mjs';
-import {smokeStaticSite} from './staged-release.mjs';
+import {smokeStaticSite,SmokeCheckError} from './staged-release.mjs';
 import {smokePreviewApi} from './preview-api-smoke.mjs';
 import {validateStagingUrl} from './staging-db.mjs';
 import {beginLimitedTransaction} from '../server/databaseLimits.mjs';
@@ -18,12 +18,16 @@ try{
       for(let attempt=0;;attempt++){
         try{await smokeStaticSite(origin,secret);break;}catch(error){if(attempt>=3)throw error;await setTimeout(2000);}
       }
+      console.log('Preview HTML/JS/CSS passed; testing API sessions.');
       await smokePreviewApi(origin,secret,hashes);
     }});
   console.log('Preview HTTPS HTML/assets, two sessions, secure cookies, balances, idempotent retry, return and consent passed. Temporary access revoked.');
   if(process.env.GITHUB_STEP_SUMMARY)await appendFile(process.env.GITHUB_STEP_SUMMARY,`Protected staging preview: ${result.origin}\nCommit: ${result.sha}\nDeployment: ${result.id}\nHTTPS/API smoke passed. Temporary test access revoked; production unchanged.\n`);
 }catch(error){
   console.error('Staging preview deployment or smoke failed; provider bodies, cookies, bindings and credentials suppressed. No promotion or production mutation.');
+  if(error instanceof SmokeCheckError)console.error(`Safe static smoke failure: ${error.message}`);
+  if(/^preview_http_[0-9]{3}$/.test(error?.message??''))console.error(error.message);
+  if(error?.name==='AssertionError')console.error('Preview API contract assertion failed.');
   if(['TimeoutError','AbortError','TypeError'].includes(error?.name))console.error(`Safe failure category: ${error.name}`);
   if(Number.isInteger(error?.providerStatus))console.error(`Provider HTTP status: ${error.providerStatus}`);
   if(['preview_deploy_rejected','preview_receipt_rejected','preview_build_failed','preview_build_timeout','preview_access_missing'].includes(error?.message))console.error(error.message);
