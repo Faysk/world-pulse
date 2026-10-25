@@ -98,13 +98,12 @@ export async function smokeStaticSite(origin, secret, fetcher = fetch, {ignorePr
   if (!page.headers.get('content-type')?.includes('text/html')) throw new SmokeCheckError('Not an HTML page');
   const html = await page.text();
   if (!html.includes('World Pulse') || !html.includes('id="root"')) throw new SmokeCheckError('Unexpected application page');
-  const assets = [...html.matchAll(/(?:src|href)="([^"?#]+\.(?:js|css))"/g)].map(match => match[1]);
+  const assets = [...html.matchAll(/(?:src|href)="([^"?#]+\.(?:js|css))"/g)].map(match => match[1])
+    .filter(path=>!(ignorePreviewToolbar&&path==='https://vercel.live/_next-live/feedback/feedback.js'));
   if (!assets.some(path => path.endsWith('.js')) || !assets.some(path => path.endsWith('.css'))) {
     throw new SmokeCheckError('Application bundle references missing');
   }
   for (const path of new Set(assets)) {
-    // Provider-injected preview toolbar is not an app bundle. Never fetch it or send access/cookies there.
-    if(ignorePreviewToolbar&&path==='https://vercel.live/_next-live/feedback/feedback.js')continue;
     const asset = await request(path);
     const type = asset.headers.get('content-type') || '';
     if (path.endsWith('.js') ? !/(?:javascript|ecmascript)/.test(type) : !type.includes('text/css')) {

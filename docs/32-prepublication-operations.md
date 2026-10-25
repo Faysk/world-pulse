@@ -1,7 +1,8 @@
 # Operações preparadas antes da publicação
 
 Este documento descreve código pronto para revisão e execução deliberada, não
-afirma ativação de produção. Publicação está pausada. Integrar o código do PR #31 não publica nem ativa a API.
+afirma ativação de produção. Publicação de produção está pausada; previews de
+staging foram retomados em 25/10/2026. Integrar o código do PR #31 não publica nem ativa a API.
 
 ## Preview separado
 
@@ -129,3 +130,23 @@ vence antes, em 31/10 às 01:15:25 UTC, e seus validadores continuam impedindo u
 após essa data. Não recuperar/reutilizar a secret production.
 
 Referência: [API de deployments](https://vercel.com/docs/rest-api/deployments/create-a-new-deployment).
+
+
+## Evidência remota — 25/10/2026
+
+[Run 40231987193](https://github.com/Faysk/world-pulse/actions/runs/40231987193),
+commit ff3a346: preview dpl_9J6CLuZgAezwsiJVt45UkSPrM3c1 READY, recibo validado,
+HTML/JS/CSS e duas sessões pela API HTTPS aprovados, acesso temporário revogado
+e duas sessões sintéticas removidas. A barra oficial de feedback da Vercel é
+ignorada como ferramenta do provedor, nunca recebendo cookies/acesso do smoke;
+ela não pode substituir o bundle JS obrigatório. Outros assets externos falham.
+
+Chrome real no preview anterior dpl_9GavNMmPPsD4WGXnEN2k4WMNWpF5: hashtag de QA,
+três taps, fila confirmada e histórico de três segundos restaurado após reload.
+Essa sessão manual não foi removida pelo job (a limpeza só remove suas próprias
+sessões); fica sujeita à expiração/retencão do staging. Nenhum dado de produção.
+
+![Preview remoto com sessão conectada e histórico restaurado](assets/vercel-staging-browser-2026-10-25.png)
+
+Isso não valida VPN/IPv6/rede móvel, headers confiáveis de país ou hardware/FPS.
+A fonte geográfica continua false, e o domínio de produção mantém a demo anterior.

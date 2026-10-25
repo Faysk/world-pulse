@@ -113,3 +113,8 @@ test('preview may skip only the exact provider toolbar without fetching it; prod
     assert.ok(calls.every(origin=>origin==='https://candidate.vercel.app'));
   }
 });
+
+test('provider toolbar cannot substitute the required application JavaScript bundle',async()=>{
+  const toolbarOnly=html.replace('/assets/app.js','/missing')+'<script src="https://vercel.live/_next-live/feedback/feedback.js"></script>';
+  await assert.rejects(smokeStaticSite('https://candidate.vercel.app','temporary',async()=>new Response(toolbarOnly,{headers:{'Content-Type':'text/html'}}),{ignorePreviewToolbar:true}),/Application bundle references missing/);
+});

@@ -2,7 +2,7 @@
 
 Um planeta cinza que ganha cores com a participação das pessoas.
 
-**Estado em 24/10/2026:** [demonstração visual publicada](https://map.faysk.dev), com dados simulados. A infraestrutura está provisionada; a aplicação ainda não grava participação real no banco de produção.
+**Estado em 25/10/2026:** [demonstração visual publicada](https://map.faysk.dev), com dados simulados. A infraestrutura está provisionada; a aplicação ainda não grava participação real no banco de produção.
 
 ## Estrutura real
 
@@ -16,7 +16,7 @@ Um planeta cinza que ganha cores com a participação das pessoas.
 | Objetos | Cloudflare R2, bucket privado `world-pulse-production` | Provisionado; ainda sem função no fluxo de taps |
 | Configuração e entrega | GitHub Actions + Environments `production` e `staging` | Origem das secrets/configurações e deploy manual de `main` |
 | Steam LIVE | `GET /api/steam` · Steam Web API oficial | **Oculto na interface de produção**, código e endpoint preservados para desenvolvimento |
-| API de participação | [PR #31](https://github.com/Faysk/world-pulse/pull/31) | Draft, gate desligado em produção; PostgreSQL descartável e branch Neon staging isolada |
+| API de participação | [PR #31](https://github.com/Faysk/world-pulse/pull/31) | Integrada à main, gate desligado em produção; Neon staging com preview HTTPS validado |
 
 Não há serviço de autenticação externo, conexão direta do browser ao banco ou bucket público. Nenhum outro banco de outro projeto foi removido ou alterado.
 
@@ -49,7 +49,7 @@ A POC publicada ainda possui contador local por sessão; não confundir esse tes
 
 ## Experiência integrada em homologação
 
-Na branch experimental da API, `/?experiencePreview=1` em desenvolvimento abre
+Na main, `/?experiencePreview=1` em desenvolvimento abre
 o fluxo de hashtags livres, taps no planeta, fila confirmada, saldos simultâneos
 e ranking atual. O mapa não recebe população sintética nesse modo: aguarda
 geografia confiável. Build remoto exige preview explicitamente autorizado;
@@ -82,7 +82,7 @@ infra/sql/                   migrações 0001–0006; domínio aplicado/verifica
 scripts/                     benchmark dos cenários agregados
 api/steam.mjs                endpoint do feed externo Steam
 server/steam.mjs             consulta/validação do feed externo
-server/geoPrivacy.mjs       país aproximado fechado por padrão; API draft agrega com consentimento
+server/geoPrivacy.mjs       país aproximado fechado por padrão; API agrega com consentimento e gate de origem
 .github/workflows/           validação, produção manual e organização de milestones
 docs/                        arquitetura, regras, evidências e pendências
 ```
