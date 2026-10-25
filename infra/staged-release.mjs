@@ -66,7 +66,7 @@ export async function stagedRelease({ api, smoke, sha, project, repo, pause, rec
 
 export class SmokeCheckError extends Error {}
 
-export async function smokeStaticSite(origin, secret, fetcher = fetch) {
+export async function smokeStaticSite(origin, secret, fetcher = fetch, {ignorePreviewToolbar=false} = {}) {
   const base = new URL(origin);
   const cookies = new Map();
   const request = async (path) => {
@@ -103,6 +103,8 @@ export async function smokeStaticSite(origin, secret, fetcher = fetch) {
     throw new SmokeCheckError('Application bundle references missing');
   }
   for (const path of new Set(assets)) {
+    // Provider-injected preview toolbar is not an app bundle. Never fetch it or send access/cookies there.
+    if(ignorePreviewToolbar&&path==='https://vercel.live/_next-live/feedback/feedback.js')continue;
     const asset = await request(path);
     const type = asset.headers.get('content-type') || '';
     if (path.endsWith('.js') ? !/(?:javascript|ecmascript)/.test(type) : !type.includes('text/css')) {

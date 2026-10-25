@@ -16,7 +16,7 @@ try{
     receipt:id=>console.log(`Isolated preview: ${id}`),progress:message=>console.log(message),
     smoke:async(origin,secret)=>{
       for(let attempt=0;;attempt++){
-        try{await smokeStaticSite(origin,secret);break;}catch(error){if(attempt>=3)throw error;await setTimeout(2000);}
+        try{await smokeStaticSite(origin,secret,fetch,{ignorePreviewToolbar:true});break;}catch(error){if(attempt>=3)throw error;await setTimeout(2000);}
       }
       console.log('Preview HTML/JS/CSS passed; testing API sessions.');
       await smokePreviewApi(origin,secret,hashes);
