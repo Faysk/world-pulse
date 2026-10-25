@@ -6,7 +6,7 @@ on:
         description: Plan only, or deliberately sync staging runtime to its branch-specific preview
         type: choice
         default: plan
-        options: [plan, sync]
+        options: [plan, sync, deploy]
 permissions:
   contents: read
 concurrency:
@@ -17,7 +17,7 @@ jobs:
     if: github.ref == 'refs/heads/codex/remote-staging'
     environment: staging
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -43,6 +43,14 @@ jobs:
         run: node infra/preview-sync.mjs
         env:
           WP_PREVIEW_OPERATION: sync
+          WP_PREVIEW_SYNC_ENABLED: ${{ vars.WP_PREVIEW_SYNC_ENABLED }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      - name: Publish only the reviewed staging preview, test HTTPS/API and revoke temporary access
+        if: inputs.operation == 'deploy'
+        run: node infra/preview-deploy.mjs
+        env:
           WP_PREVIEW_SYNC_ENABLED: ${{ vars.WP_PREVIEW_SYNC_ENABLED }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
