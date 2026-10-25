@@ -60,7 +60,7 @@ export async function stagedRelease({ api, smoke, sha, project, repo, pause, rec
     await pause(2_000);
   }
   if (!promoted) throw new Error('Promotion did not confirm the expected deployment');
-  await smoke('https://map.faysk.dev');
+  await smokePublishedSite(smoke,pause,progress);
   return candidate.id;
 }
 
@@ -119,3 +119,14 @@ export async function smokeStaticSite(origin, secret, fetcher = fetch, {ignorePr
   }
 }
 
+
+export async function smokePublishedSite(smoke,pause,progress=()=>{}){
+  for(let attempt=0;;attempt++){
+    try{await smoke('https://map.faysk.dev');return;}
+    catch(error){
+      if(attempt>=3)throw error;
+      progress('Production edge not yet consistent; retrying public reads without redeploying or promoting again.');
+      await pause(2000);
+    }
+  }
+}

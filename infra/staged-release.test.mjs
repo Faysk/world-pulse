@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { stagedRelease, smokeStaticSite } from './staged-release.mjs';
+import { stagedRelease, smokeStaticSite, smokePublishedSite } from './staged-release.mjs';
 
 function fixture({ smokeFails = false, transientFailures = 0, cleanupFails = false, state = 'READY' } = {}) {
   const calls = [];
@@ -131,4 +131,11 @@ test('active production release requires the current ranking JSON contract as we
     if(valid)await check;else await assert.rejects(check,/Active ranking contract unavailable/);
     assert.equal(calls.at(-1),'/api/ranking');
   }
+});
+
+test('post-promotion propagation retries only public reads and stays bounded',async()=>{
+  let calls=0,waits=0;
+  await smokePublishedSite(async origin=>{assert.equal(origin,'https://map.faysk.dev');if(++calls<3)throw new Error('edge_404');},async ms=>{assert.equal(ms,2000);waits++;});
+  assert.equal(calls,3);assert.equal(waits,2);
+  calls=0;await assert.rejects(smokePublishedSite(async()=>{calls++;throw new Error('permanent_failure');},async()=>{}),/permanent_failure/);assert.equal(calls,4);
 });
