@@ -6,7 +6,7 @@ import type { CountrySnapshot } from './countryTypes';
 import {composeCountries,countryPattern,type CountryComposition} from './countryComposition';
 const EMPTY:FeatureCollection={type:'FeatureCollection',features:[]};
 let geometry:Promise<FeatureCollection>|null=null;
-function countryGeometry(){
+export function countryGeometry(){
   if(!geometry)geometry=fetch(geometryUrl,{signal:AbortSignal.timeout(10000)}).then(response=>{
     if(!response.ok)throw new Error('geometry_unavailable');return response.json() as Promise<FeatureCollection>;
   }).catch(error=>{geometry=null;throw error;});
