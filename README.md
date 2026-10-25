@@ -2,14 +2,14 @@
 
 Um planeta cinza que ganha cores com a participação das pessoas.
 
-**Estado em 25/10/2026:** [alpha funcional publicada](https://map.faysk.dev), com hashtags, saldos e ranking persistidos no Neon de produção. A fonte de país continua desativada; nenhuma posição é inventada. [Recibo e limites da publicação](docs/39-production-alpha-release.md).
+**Estado em 25/10/2026:** [alpha funcional publicada](https://map.faysk.dev), com hashtags, saldos e ranking persistidos no Neon de produção. Taps têm resposta local imediata e confirmação em segundo plano. País aproximado tem aviso visível, escolha inicial marcada e retirada permitida; áreas exigem cinco participações na mesma hashtag/país. [Estado e evidências](docs/40-fluid-taps-country-choice.md).
 
 ## Estrutura real
 
 | Parte | Tecnologia / serviço | Estado |
 | --- | --- | --- |
 | Interface | React 19 + TypeScript + Vite | Publicada na Vercel |
-| Globo | MapLibre GL + cartografia OpenFreeMap | Publicado sem participantes sintéticos; país desativado |
+| Globo | MapLibre GL + cartografia OpenFreeMap | Países agregados com fonte Vercel direta; sem pontos individuais |
 | Hospedagem | Vercel Hobby, projeto `world-pulse` | HTTPS em `map.faysk.dev` |
 | Banco | Neon Free / PostgreSQL, Londres | Schema 0001–0006 e runtime restrito ativos em produção |
 | DNS | Cloudflare, zona `faysk.dev` | `map` aponta à Vercel, DNS only |
@@ -42,7 +42,7 @@ O feed da Steam foi mantido no código, mas o painel foi **ocultado da experiên
 - Várias hashtags podem manter saldo/manchas simultaneamente; novos taps vão para uma seleção de cada vez.
 - A densidade conta participantes distintos por hashtag com saldo positivo, nunca soma de taps ou segundos.
 - Cor aleatória é persistida na primeira criação da hashtag e reutilizada nas seguintes.
-- Localização será aproximada e agregada; não publicar posição individual.
+- País aproximado é opcional e agregado; não publicar posição individual.
 - Top 10 atual conta participações com saldo positivo; ao zerar, sai do ranking e da mancha. Histórico começa na seleção e fica separado. [Contrato](docs/24-ranking-contract.md).
 
 A alpha pública grava o saldo no banco; a demonstração sintética permanece apenas como ferramenta de desenvolvimento. [Contrato confirmado](docs/14-time-credit-contract.md).
@@ -87,7 +87,7 @@ server/geoPrivacy.mjs       país aproximado fechado por padrão; API agrega com
 docs/                        arquitetura, regras, evidências e pendências
 ```
 
-As pastas `api/` e `server/` contêm a API de participação e o feed Steam preservado e oculto. O pacote do [PR #31](https://github.com/Faysk/world-pulse/pull/31) reúne sessões, filas, saldos, ranking e geografia por país; as migrações 0001–0006 foram aplicadas/verificadas no staging. Produção foi migrada e ativada em 25/10/2026, pelo Actions e autorização do usuário. Código na main continua separado de deploy: a publicação é manual, e fonte geográfica/migrações permanecem fechadas.
+As pastas `api/` e `server/` contêm a API de participação e o feed Steam preservado e oculto. O pacote do [PR #31](https://github.com/Faysk/world-pulse/pull/31) reúne sessões, filas, saldos, ranking e geografia por país; as migrações 0001–0006 foram aplicadas/verificadas no staging. Produção foi migrada e ativada em 25/10/2026, pelo Actions e autorização do usuário. Código na main continua separado de deploy: a publicação é manual. Fonte geográfica foi verificada e ativada; migrações futuras continuam fechadas.
 
 ## Documentação e próximos passos
 
@@ -110,10 +110,10 @@ As pastas `api/` e `server/` contêm a API de participação e o feed Steam pres
 
 O reconhecimento de gestos do globo foi reforçado no [PR #47](https://github.com/Faysk/world-pulse/pull/47), integrado em `main`. A agregação de células por zoom e seu benchmark entraram como módulo **não ligado ao renderer** no [PR #49](https://github.com/Faysk/world-pulse/pull/49); o compositor experimental por célula ([PR #63](https://github.com/Faysk/world-pulse/pull/63)) e o atlas WebGL2 para até 256 regiões em um draw ([PR #66](https://github.com/Faysk/world-pulse/pull/66)) estão na `main` como **pesquisa isolada**, sem ligação ao renderer público. O [PR #69](https://github.com/Faysk/world-pulse/pull/69) adicionou projeção **Mercator 2D com zoom/antimeridiano e paginação de viewport** (620 células sintéticas em 3 draws), ainda **sem integrar ao globo público**. Projeção esférica MapLibre, privacidade, visual orgânico, fallback e FPS físico continuam na [issue #32](https://github.com/Faysk/world-pulse/issues/32).
 
-O fluxo **interface → HTTPS privado no Actions → pooler Neon staging real → dois navegadores** passou em [40061344573](https://github.com/Faysk/world-pulse/actions/runs/40061344573), sem Vercel/deploy. Sessões independentes, cookies seguros, saldos, retorno, perda de resposta/retry e consentimento persistido foram conferidos; a borda pública ainda precisa de homologação. [Países multicolor com foco opcional e busca](docs/38-multicolor-countries.md) aparecem sem pontos individuais; a fonte geográfica está desligada até ser verificada. CPU/BigInt podem representar contagens enormes, mas não comprovam bilhões de conexões ou FPS físico.
+O fluxo **interface → HTTPS privado no Actions → pooler Neon staging real → dois navegadores** passou em [40061344573](https://github.com/Faysk/world-pulse/actions/runs/40061344573), sem Vercel/deploy. Sessões independentes, cookies seguros, saldos, retorno, perda de resposta/retry e consentimento persistido foram conferidos; a borda pública ainda precisa de homologação. [Países multicolor com foco opcional e busca](docs/38-multicolor-countries.md) aparecem sem pontos individuais; a fonte geográfica foi verificada no preview (incluindo spoof recusado) e ativada em produção. CPU/BigInt podem representar contagens enormes, mas não comprovam bilhões de conexões ou FPS físico.
 
 [Issues](https://github.com/Faysk/world-pulse/issues) · [Milestones](https://github.com/Faysk/world-pulse/milestones) · Licença [MIT](LICENSE).
 
-[Geografia por país com consentimento e limites reais](docs/31-country-geography.md): implementação integrada; fonte de país ainda desativada.
+[Geografia por país com consentimento e limites reais](docs/31-country-geography.md): implementação integrada e fonte direta ativa; VPN/IPv6/rede móvel ainda exigem QA.
 
-[Operações finais: preview, retenção e ativação explícita da alpha](docs/32-prepublication-operations.md), com gates independentes; alpha/API de produção ativadas e fonte geográfica fechada.
+[Operações finais: preview, retenção e ativação explícita da alpha](docs/32-prepublication-operations.md), com gates independentes; alpha/API e país ativos em produção.

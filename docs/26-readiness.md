@@ -1,8 +1,8 @@
 # 26 — Estrutura real e prontidão da participação
 
 Atualizado em 25/10/2026. Alpha/API de produção foram deliberadamente ativadas
-pelo Actions; fonte de país continua desligada. Código na main não publica
-automaticamente. [Estado operacional atual](39-production-alpha-release.md).
+pelo Actions; fonte direta de país foi verificada e ativada. Código na main não publica
+automaticamente. [Estado operacional atual](40-fluid-taps-country-choice.md).
 
 ## Caminhos reais
 
@@ -46,7 +46,7 @@ sessão na mesma transação. DELETE/CASCADE isolado perderia histórico e é pr
 
 | Ambiente | Estado |
 |---|---|
-| Produção Neon `main` | Schema 0001–0006 verificado; alpha/API ativas, fonte de país desligada |
+| Produção Neon `main` | Schema 0001–0006 verificado; alpha/API e fonte direta de país ativas |
 | Neon `world-pulse-staging` | Criado schema-only, sem copiar produção; fixtures de QA próprias e credenciais separadas no GitHub; 0001–0006 e timeouts transacionais no pooler verificados. Expira 31/10 às 01:15 UTC |
 | CI PostgreSQL descartável | Migrações 0001–0006; testes HTTP/duas sessões/abas e concorrência, sem secrets reais |
 | Local visual | Funciona sem secrets; teste SQL requer PostgreSQL descartável do CI ou instalação local explícita |
@@ -67,16 +67,16 @@ e expiração, recusando atingir produção por engano.
 - Ranking atual separado do histórico, contagem por pares distintos, sem peso
   ou desempate por segundos. Snapshot com relógio do servidor e polling explícito.
 - Limpeza limitada de IDs de lotes de sessões já expiradas há mais de 24h,
-  preservando histórico; rotina não agendada em produção.
+  preservando histórico; retenção horária habilitada via Actions em produção.
 - Orçamentos globais compartilhados, limites de filas/lotes e timeouts de queries.
 
-## O que ainda impede a alpha pública
+## QA e operação ainda pendentes após a alpha
 
-1. Staging HTTPS integrado e sincronização GitHub → preview; teste do pooler,
-   cookies protegidos, duas sessões e retries no ambiente remoto.
-2. Verificar a fonte geográfica na borda remota e revisar privacidade. A [implementação
-   country-only](31-country-geography.md) agrega no SQL com consentimento e fonte fechada
-   por padrão; testes locais não comprovam headers reais do provedor.
+1. Repetir QA em dispositivos físicos e redes distintas. Staging HTTPS com Neon,
+   duas sessões e retries passou; preview Vercel validou país e spoof recusado.
+2. Complementar país com VPN/IPv6/rede móvel. A [implementação
+   country-only](31-country-geography.md) agrega no SQL com escolha visível e fonte
+   direta verificada; não há posição individual nem garantia de anonimato.
 3. Validar a operação/agendamento monitorado da retenção já aprovada, backups/logs
    do provedor e informação ao usuário. [Política e limites](27-retention-policy.md).
 4. Verificar os polígonos por hashtag da [experiência integrada](29-live-experience.md)

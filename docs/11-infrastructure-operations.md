@@ -11,11 +11,11 @@
 | Banco | Neon Free, `world-pulse-production`, Londres | Provisionado pelo Vercel Marketplace; runtime configurado pelo GitHub; `SELECT 1` com TLS validado |
 | Objetos | R2 Standard, `world-pulse-production` | Privado; teste de escrita/leitura/remoção validado |
 | Credenciais | GitHub Environment `production` | Credenciais de banco e R2 armazenadas; deploy permitido somente na branch `main` |
-| App | React/Vite/MapLibre em `main` | Alpha/API reais publicadas; fonte de país desativada |
+| App | React/Vite/MapLibre em `main` | Alpha/API reais publicadas; país agregado ativo com escolha visível |
 
 O domínio responde com a alpha funcional desde 25/10/2026. Migrações e runtime
 verificados, retenção ativa, candidato testado/promovido e conferência pública
-aprovada. [Recibo, flags e pendências](39-production-alpha-release.md).
+aprovada. [Primeira alpha](39-production-alpha-release.md) e [taps/país: estado atual](40-fluid-taps-country-choice.md).
 
 ## Banco e limites
 

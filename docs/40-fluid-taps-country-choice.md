@@ -68,3 +68,46 @@ aprovou preview, duas sessões API, país conhecido e spoof recusado. A sessão 
 no Chrome recebeu PT após Participar; DNS do domínio aponta diretamente à Vercel.
 A suíte HTTPS privada inicialmente confundiu checkbox local otimista com confirmação
 de escrita: a asserção agora aguarda o valor persistido, e a UI indica salvamento.
+
+## Publicação verificada em 25/10/2026
+
+PR #108 integrado em `9c24577`. Todos os checks do commit `18300a1` passaram:
+[visual/desktop/mobile](https://github.com/Faysk/world-pulse/actions/runs/40239595865),
+[PostgreSQL e dois navegadores](https://github.com/Faysk/world-pulse/actions/runs/40239595889),
+[infraestrutura](https://github.com/Faysk/world-pulse/actions/runs/40239595868) e
+[privacidade](https://github.com/Faysk/world-pulse/actions/runs/40239595894).
+O teste antigo do laboratório foi ajustado para aguardar ACK automático: tentar
+clicar em Sincronizar depois da fila zerada era uma corrida do teste.
+
+O [HTTPS privado com Neon real](https://github.com/Faysk/world-pulse/actions/runs/40238068928)
+aprovou desktop/mobile e removeu as quatro sessões sintéticas do job. O
+[preview Vercel](https://github.com/Faysk/world-pulse/actions/runs/40238375480)
+aprovou duas sessões API, país conhecido e recusa de spoof de país/CF/IP-forwarded;
+o acesso temporário foi revogado e as duas sessões sintéticas do job removidas.
+Isso não equivale a dois navegadores automatizados no preview público.
+
+A [publicação de produção](https://github.com/Faysk/world-pulse/actions/runs/40240376202)
+aprovou probes Neon/R2, sincronização, candidato, revogação de acesso temporário,
+promoção e smoke público HTML/JS/CSS/API. Deployment
+`dpl_7CL7TYZYvTj8JpLLLJRxayc9eNwb`, source `9c24577`.
+`WP_GEO_PUBLIC_ENABLED`, `WP_GEO_COUNTRY_ENABLED` e `WP_GEO_DIRECT_EDGE` estão
+true no Environment production e foram sincronizados pelo Actions. Migrações
+continuam fechadas e nenhuma nova migração foi necessária.
+
+No Chrome público, reload preservou #gta6 e retomou a fila v3 até zero sem botão.
+Três taps novos mostraram três segundos e três pendentes antes do ACK, mantendo
+histórico confirmado separado. `/`, `/api/ranking` e `/api/countries` responderam
+200. Novos taps/participação registram a escolha visível; apenas retomar fila antiga
+não ativa consentimento. As sessões manuais de QA não são removidas pelo job;
+seus saldos expiram normalmente e não foram criadas cinco sessões fictícias para
+forçar área colorida em produção.
+
+Limites continuam: país aproximado, VPN/IPv6/rede móvel e QA físico pendentes,
+sem garantia de anonimato ou custo zero. Não há prova de capacidade para bilhões.
+A projeção local não promete rede instantânea nem saldo confirmado antes do ACK.
+
+Após o ACK dos três taps, o histórico passou de 380 para 383 e a fila voltou a
+zero. O país estimado retornado pela borda foi PT. A captura mostra a interface
+pública depois da confirmação; não é medição de FPS físico.
+
+![Interface de produção com aviso de país visível e fila confirmada](assets/fluid-taps-production-2026-10-25.png)
