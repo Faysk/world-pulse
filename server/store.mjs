@@ -74,8 +74,8 @@ export async function findVisitor(token, country='ZZ') {
         country_code=CASE WHEN country_consent THEN $2 ELSE 'ZZ' END,
         expires_at=GREATEST(current.expires_at,statement_timestamp()+interval '30 days',
           COALESCE((SELECT max(vt.expires_at)+interval '1 day' FROM world_pulse.visitor_tags vt WHERE vt.visitor_id=current.id),statement_timestamp()))
-      WHERE session_hash=$1 AND current.expires_at>statement_timestamp() RETURNING id,active_tag_id,expires_at,country_consent,country_code
-    ) SELECT v.id, v.active_tag_id,v.expires_at,v.country_consent,v.country_code,
+      WHERE session_hash=$1 AND current.expires_at>statement_timestamp() RETURNING id,active_tag_id,expires_at,country_consent,country_code,country_consent_at
+    ) SELECT v.id, v.active_tag_id,v.expires_at,v.country_consent,v.country_code,v.country_consent_at,
       t.normalized AS active_tag_name, t.color AS active_tag_color
     FROM renewed v
     LEFT JOIN world_pulse.tags t ON t.id = v.active_tag_id
@@ -212,7 +212,7 @@ export async function creditBatch(visitorId, { tagId, batchId, clicks }) {
         FROM world_pulse.tap_batches
         WHERE visitor_id=$1 AND created_at > now() - interval '1 minute'
       `, [visitorId]);
-      if (Number(recent.rows[0].clicks) + clicks > 120) {
+      if (Number(recent.rows[0].clicks) + clicks > 1200) {
         throw new ApiError(429, 'rate_limited', 'Limite temporário de toques atingido.');
       }
       await client.query(`

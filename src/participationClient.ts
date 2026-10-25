@@ -30,6 +30,9 @@ export const SELECTION_NOTICE_KEY = 'world-pulse-selection-changed-v1';
 const MAX_PENDING_CLICKS = 3000;
 const QUEUE_LOCK = 'world-pulse-pending-writer-v1';
 const memoryWriters = new WeakMap<StoreLike, Promise<unknown>>();
+const memorySenders = new WeakMap<StoreLike, Promise<unknown>>();
+const SENDER_LOCK='world-pulse-pending-sender-v1';
+export class ParticipationRequestError extends Error {retryAfterMs:number;constructor(code:string,retryAfterMs:number){super(code);this.retryAfterMs=retryAfterMs;}}
 function defaultStorage(): StoreLike | null {
   try { return typeof window === 'undefined' ? null : window.localStorage; }
   catch { return null; }
@@ -45,6 +48,7 @@ export class ParticipationClient {
   private pending: PendingTapBatch[] = [];
   private queueBinding: string | null = null;
   private readonly sealed = new Set<string>();
+  private readonly uncertainProjection=new Set<string>();
   private latestBalances: TimeBalance[] = [];
   private creditsHasMore=false;
   private readonly receivedAt = new Map<string, number>();
@@ -53,6 +57,8 @@ export class ParticipationClient {
   private sending: Promise<void> | null = null;
   private selectionQueue: Promise<unknown> = Promise.resolve();
   private memoryWriter: Promise<unknown> = Promise.resolve();
+  private memorySender:Promise<unknown>=Promise.resolve();
+  private geoDecided=false;
   private geoConsent=false;
   private geoCountry='ZZ';
   private geographyAvailable=false;
@@ -91,11 +97,13 @@ export class ParticipationClient {
           typeof v.batchId === 'string' && /^[0-9a-f-]{36}$/i.test(v.batchId) &&
           typeof v.tagId === 'string' && /^[0-9a-f-]{36}$/i.test(v.tagId) &&
           Number.isSafeInteger(v.clicks) && v.clicks >= 1 && v.clicks <= 30)
-      ).slice(0, 2000);
+      ).slice(0, MAX_PENDING_CLICKS);
       // Legacy queues have no durable submitted marker: freeze them all.
       const frozen = envelope.version === 3 && Array.isArray(envelope.sealed)
         ? new Set(envelope.sealed) : new Set(batches.map(b => b.batchId));
       this.sealed.clear();
+      const retained=new Set(batches.map(b=>b.batchId));
+      for(const id of this.uncertainProjection)if(!retained.has(id))this.uncertainProjection.delete(id);
       for (const batch of batches) if (frozen.has(batch.batchId)) this.sealed.add(batch.batchId);
       return batches;
     } catch {
@@ -137,6 +145,14 @@ export class ParticipationClient {
     return next;
   }
 
+  private withSender<T>(task:()=>Promise<T>):Promise<T>{
+    if(typeof navigator!=='undefined'&&navigator.locks)return navigator.locks.request(SENDER_LOCK,{signal:AbortSignal.timeout(30000)},task).then(value=>value);
+    if(this.storage&&typeof window!=='undefined')return Promise.reject(new Error('queue_coordination_unavailable'));
+    const next=(this.storage?memorySenders.get(this.storage)??Promise.resolve():this.memorySender).then(task,task);
+    if(this.storage)memorySenders.set(this.storage,next.catch(()=>undefined));else this.memorySender=next.catch(()=>undefined);
+    return next;
+  }
+
   private quarantinePending(): void {
     this.quarantined = true;
     try { this.storage?.setItem(QUARANTINE_KEY, '1'); }
@@ -153,7 +169,7 @@ export class ParticipationClient {
       if (!this.quarantined) return;
       this.pending = [];
       this.queueBinding = null;
-      this.sealed.clear();
+      this.sealed.clear();this.uncertainProjection.clear();
       this.persist();
       this.quarantined = false;
       try { this.storage?.setItem(QUARANTINE_KEY, '0'); } catch { /* best effort */ }
@@ -169,12 +185,12 @@ export class ParticipationClient {
     catch { /* Another tab can still refresh on focus without storage. */ }
   }
 
-  private async request<T>(path: string, body?: unknown): Promise<T> {
+  private async request<T>(path: string, body?: unknown, binding=this.queueBinding): Promise<T> {
     const response = await this.fetcher(path, {
       method: body === undefined ? 'GET' : 'POST',
       headers: body === undefined ? {} : {
         'Content-Type': 'application/json',
-        ...(path === '/api/taps' ? { 'X-WP-Session-Binding': this.queueBinding ?? '' } : {})
+        ...(path === '/api/taps' ? { 'X-WP-Session-Binding': binding ?? '' } : {})
       },
       credentials: 'same-origin',
       signal: AbortSignal.timeout(10_000),
@@ -187,9 +203,10 @@ export class ParticipationClient {
       if ((response.status === 401 && code === 'session_expired') ||
         (response.status === 409 && code === 'session_binding_mismatch')) {
         this.sessionPromise = null;
-        if (this.pending.length) this.quarantinePending();
+        if (this.pending.length&&path!=='/api/taps') this.quarantinePending();
       }
-      throw new Error(code);
+      const wait=Number(response.headers.get('Retry-After'));
+      throw new ParticipationRequestError(code,Number.isFinite(wait)&&wait>0?Math.min(wait*1000,300000):3000);
     }
     return payload as T;
   }
@@ -199,7 +216,7 @@ export class ParticipationClient {
     const session = await this.request<{
       anonymous: true; sessionFresh: boolean; sessionBinding: string;
       activeTagId: string | null; activeTag: LiveTag | null; credits: TimeBalance[];creditsHasMore?:boolean;
-      geoConsent?:boolean;geoCountry?:string;geographyAvailable?:boolean;
+      geoConsent?:boolean;geoConsentDecided?:boolean;geoCountry?:string;geographyAvailable?:boolean;
     }>('/api/session', geoConsent===undefined?{}:{geoConsent});
     if (typeof session.sessionBinding !== 'string' ||
       !/^[0-9a-f]{64}$/.test(session.sessionBinding)) {
@@ -214,15 +231,26 @@ export class ParticipationClient {
       throw new Error('session_rotated_pending');
     }
     this.queueBinding = session.sessionBinding;
+    if(typeof session.geoConsentDecided==='boolean')this.geoDecided=session.geoConsentDecided;
+    else if(geoConsent!==undefined||session.geoConsent===true)this.geoDecided=true;
     this.geoConsent=session.geoConsent===true;
     this.geoCountry=typeof session.geoCountry==='string'&&/^[A-Z]{2}$/.test(session.geoCountry)?session.geoCountry:'ZZ';
     this.geographyAvailable=session.geographyAvailable===true;
     if (!this.pending.length) this.persist();
     this.selectedTagId = session.activeTagId;
     this.selectedTag = session.activeTag;
-    this.latestBalances = session.credits;
+    // A sealed POST may already be committed although its response was lost.
+    // Keep the old per-tag view until its stable batch ID is acknowledged;
+    // otherwise a fresh session snapshot plus the same pending taps doubles it.
+    const frozenTags=new Set(this.pending.filter(b=>this.sealed.has(b.batchId)).map(b=>b.tagId));
+    this.latestBalances=session.credits.map(balance=>{
+      const previous=this.latestBalances.find(row=>row.tagId===balance.tagId);
+      if(frozenTags.has(balance.tagId)&&previous)return previous;
+      if(frozenTags.has(balance.tagId))for(const b of this.pending)if(b.tagId===balance.tagId&&this.sealed.has(b.batchId))this.uncertainProjection.add(b.batchId);
+      this.receivedAt.set(balance.tagId,this.clock());return balance;
+    });
     this.creditsHasMore=session.creditsHasMore===true;
-    for (const balance of session.credits) this.receivedAt.set(balance.tagId, this.clock());
+
   }
 
   connect(): Promise<void> { return this.withWriter(() => this.connectUnlocked()); }
@@ -245,7 +273,7 @@ export class ParticipationClient {
     }));
   }
 
-  countryPreference(){return {consent:this.geoConsent,country:this.geoCountry,available:this.geographyAvailable};}
+  countryPreference(){return {consent:this.geoConsent,decided:this.geoDecided,country:this.geoCountry,available:this.geographyAvailable};}
   setGeoConsent(allowed:boolean):Promise<void>{
     return this.enqueueSelection(()=>this.withWriter(async()=>{
       await this.loadSession(allowed);this.sessionPromise=Promise.resolve();this.signalSelectionChange();
@@ -301,14 +329,16 @@ export class ParticipationClient {
   /** Call this method on a validated user click/tap, never on clock ticks. */
   creditClick(): Promise<boolean> {
     // Capture the hashtag at the gesture, before waiting for another tab.
-    const clickedTagId = this.selectedTagId;
+    const clickedTagId = this.selectedTagId,clickedBinding=this.queueBinding;
     return this.withWriter(() => {
       if (!clickedTagId || !this.queueBinding || this.quarantined) return false;
+      if(clickedBinding!==this.queueBinding)throw new Error('session_rotated_pending');
       const queued = this.pending.reduce((sum, b) => sum + b.clicks, 0);
       if (queued >= MAX_PENDING_CLICKS) return false;
 
       // A submitted batch is frozen until acknowledged; never mutate its
       // fingerprint while a request may be in flight.
+      const previous=this.pending.map(batch=>({...batch}));
       const last = this.pending[this.pending.length - 1];
       if (last && !this.sealed.has(last.batchId) && last.tagId === clickedTagId && last.clicks < 30) {
         last.clicks++;
@@ -317,7 +347,7 @@ export class ParticipationClient {
           tagId: clickedTagId, batchId: this.makeId(), clicks: 1
         });
       }
-      this.persist();
+      try{this.persist();}catch(error){this.pending=previous;throw error;}
       return true;
     });
   }
@@ -325,6 +355,8 @@ export class ParticipationClient {
   pendingClicks(): number {
     return this.pending.reduce((sum, b) => sum + b.clicks, 0);
   }
+
+  pendingForTag(tagId:string):number{return this.quarantined?0:this.pending.filter(b=>b.tagId===tagId&&!this.uncertainProjection.has(b.batchId)).reduce((n,b)=>n+b.clicks,0);}
 
   persistsPending(): boolean { return this.storage !== null; }
   balancesLimited():boolean{return this.creditsHasMore;}
@@ -350,28 +382,41 @@ export class ParticipationClient {
     if (this.quarantined) throw new Error('session_rotated_pending');
     if (this.sending) return this.sending;
     const task = async () => {
-      await this.connectUnlocked();
-      // Cached connect() alone is not safe across cookie rotations in other
-      // tabs. Refresh the binding BEFORE any queued batch is transmitted.
-      if (this.pending.length) await this.loadSession();
-      // Yield after three batches so another tab can add taps or change
-      // selection. Each fetch also has a bounded timeout.
-      let sent = 0;
-      const yieldAt = this.clock() + 5000;
-      while (this.pending.length && sent < 3 && (sent === 0 || this.clock() < yieldAt)) {
-        sent++;
-        const batch = { ...this.pending[0] };
-        this.sealed.add(batch.batchId);
-        this.persist(); // Durable BEFORE fetch, including if this tab crashes.
-        const credited = await this.request<TimeBalance>('/api/taps', batch);
-        this.receivedAt.set(credited.tagId, this.clock());
-        this.latestBalances = [...this.latestBalances.filter(b => b.tagId !== credited.tagId), credited];
-        this.pending.shift();
-        this.sealed.delete(batch.batchId);
-        this.persist();
+      await this.withWriter(async()=>{
+        await this.connectUnlocked();
+        if(this.pending.length)await this.loadSession();
+      });
+      let sent=0;const yieldAt=this.clock()+5000;
+      while(sent<3&&(sent===0||this.clock()<yieldAt)){
+        const submission=await this.withWriter(()=>{
+          if(this.quarantined)throw new Error('session_rotated_pending');
+          if(!this.pending.length)return null;
+          const batch={...this.pending[0]},binding=this.queueBinding;
+          this.sealed.add(batch.batchId);this.persist();
+          return {batch,binding};
+        });
+        if(!submission)break;sent++;
+        // The sender lock serializes POSTs; the queue lock is free for taps.
+        let credited:TimeBalance;
+        try{credited=await this.request<TimeBalance>('/api/taps',submission.batch,submission.binding);}
+        catch(error){
+          if(error instanceof Error&&['session_expired','session_binding_mismatch'].includes(error.message))await this.withWriter(()=>{
+            if(this.queueBinding===submission.binding&&this.pending.length)this.quarantinePending();
+          });
+          throw error;
+        }
+        const acknowledged=await this.withWriter(()=>{
+          if(this.quarantined||this.queueBinding!==submission.binding)return false;
+          const index=this.pending.findIndex(b=>b.batchId===submission.batch.batchId);
+          if(index<0)return false; // An explicit discard must not resurrect an old queue.
+          this.receivedAt.set(credited.tagId,this.clock());
+          this.latestBalances=[...this.latestBalances.filter(b=>b.tagId!==credited.tagId),credited];
+          this.pending.splice(index,1);this.sealed.delete(submission.batch.batchId);this.uncertainProjection.delete(submission.batch.batchId);this.persist();return true;
+        });
+        if(!acknowledged)return;
       }
     };
-    this.sending = this.withWriter(task).finally(() => { this.sending = null; });
+    this.sending=this.withSender(task).finally(()=>{this.sending=null;});
     return this.sending;
   }
 

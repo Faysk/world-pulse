@@ -319,7 +319,7 @@ test('Concurrent clients never overwrite a shared queue or resurrect acknowledge
   assert.equal(b.pendingClicks(),0);
 });
 
-test('Another writer waits for in-flight batch, then preserves its frozen ID after a lost response', async () => {
+test('Another writer adds taps during in-flight POST and preserves frozen IDs after a lost response', async () => {
   const storage=fakeStorage(), transport=mockTransport({loseResponseOnce:true});
   let release, entered;
   const gate=new Promise(resolve=>release=resolve);
@@ -337,8 +337,8 @@ test('Another writer waits for in-flight batch, then preserves its frozen ID aft
   assert.deepEqual(durable.sealed,[durable.batches[0].batchId]);
   let wrote=false;
   const addition=b.creditClick().then(()=>{wrote=true;});
-  await Promise.resolve(); assert.equal(wrote,false);
-  release(); await assert.rejects(sending,/response-lost/); await addition;
+  await addition;assert.equal(wrote,true);
+  release(); await assert.rejects(sending,/response-lost/);
   const after=JSON.parse(storage.getItem('world-pulse-pending-v1'));
   assert.equal(after.batches.length,2);
   assert.deepEqual(after.batches[0],durable.batches[0]);
@@ -352,7 +352,7 @@ test('Storage write failures are explicit, never reported as a durable accepted 
   await client.selectTag('#GTA6');
   storage.setItem=()=>{throw new Error('quota');};
   await assert.rejects(()=>client.creditClick(),/queue_storage_unavailable/);
-  assert.equal(transport.credited.size,0);
+  assert.equal(transport.credited.size,0);assert.equal(client.pendingClicks(),0);
 });
 
 test('Malformed ranking snapshots fail explicitly instead of crashing bigint/date rendering',async()=>{
@@ -382,4 +382,25 @@ test('Malformed country identities are rejected before reaching the renderer',as
   tags=[tag,tag];await assert.rejects(client.countries(),/invalid_country_snapshot/);
   tags=[{...tag,countries:[...tag.countries,...tag.countries]}];
   await assert.rejects(client.countries(),/invalid_country_snapshot/);
+});
+
+test('Retry-After is preserved and a refused batch remains frozen for automatic retry',async()=>{
+  const storage=fakeStorage(),transport=mockTransport();let reject=true;
+  const handle=async(path,init)=>path==='/api/taps'&&reject?Response.json({error:'rate_limited'},{status:429,headers:{'Retry-After':'1'}}):transport.handle(path,init);
+  const client=new ParticipationClient(handle,storage,randomUUID);await client.selectTag('#gta6');await client.creditClick();
+  await assert.rejects(client.flush(),error=>error.message==='rate_limited'&&error.retryAfterMs===1000);
+  const before=JSON.parse(storage.getItem('world-pulse-pending-v1')).batches[0];
+  await client.creditClick();assert.deepEqual(JSON.parse(storage.getItem('world-pulse-pending-v1')).batches[0],before);
+  reject=false;await client.flush();assert.equal(transport.credited.get(ID_A),2);assert.equal(client.pendingClicks(),0);
+});
+
+test('Lost response plus refreshed snapshot never doubles provisional seconds',async()=>{
+  const transport=mockTransport({loseResponseOnce:true}),storage=fakeStorage();
+  const client=new ParticipationClient(transport.handle,storage,randomUUID,()=>1000);
+  await client.selectTag('#gta6');await client.creditClick();
+  await assert.rejects(client.flush(),/response-lost/);await client.refreshSession();
+  assert.ok(client.remainingMilliseconds(ID_A)+client.pendingForTag(ID_A)*1000<=1000);
+  const resumed=new ParticipationClient(transport.handle,storage,randomUUID,()=>1000);
+  await resumed.refreshSession();assert.equal(resumed.pendingForTag(ID_A),0,'unknown submitted batch cannot be projected twice after reload');
+  await resumed.flush();assert.equal(transport.credited.get(ID_A),1);assert.equal(resumed.pendingClicks(),0);
 });

@@ -76,6 +76,7 @@ export function route(kind, operations = store) {
           anonymous: true,
           sessionFresh: !existing,
           geoConsent:visitor.country_consent===true,
+          geoConsentDecided:visitor.country_consent_at!=null,
           geoCountry:visitor.country_consent===true?visitor.country_code:'ZZ',
           geographyAvailable:process.env.WP_GEO_PUBLIC_ENABLED==='true',
           // Stable non-authenticating queue marker derived from a 256-bit random

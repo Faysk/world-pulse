@@ -22,3 +22,10 @@ test('preview sync fails closed by default and never calls deployment or promoti
   assert.equal(calls.length,1);assert.equal(calls[0].path,`/v10/projects/${previewProject}/env?upsert=true`);
   await assert.rejects(()=>syncPreviewConfiguration(async()=>({failed:[{}]}),env,now),/preview_sync_failed/);
 });
+
+test('preview country source requires a separate direct-edge attestation and keeps production untouched',()=>{
+  assert.throws(()=>previewConfiguration({...env,WP_PREVIEW_GEO_COUNTRY_ENABLED:'true'},now),/preview_geo_unattested/);
+  const config=previewConfiguration({...env,WP_PREVIEW_GEO_COUNTRY_ENABLED:'true',WP_PREVIEW_GEO_DIRECT_EDGE:'true'},now);
+  assert.equal(config.find(row=>row.key==='WP_GEO_COUNTRY_ENABLED').value,'true');
+  for(const row of config){assert.deepEqual(row.target,['preview']);assert.equal(row.gitBranch,previewBranch);}
+});

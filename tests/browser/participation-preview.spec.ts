@@ -33,7 +33,8 @@ test('Development lab renders server snapshots and sends taps; public view stays
   await expect(page.getByTestId('participation-selected')).toHaveText('#gta6');
   await page.getByRole('button',{name:'Adicionar 1 segundo',exact:true}).click();
   await page.getByRole('button',{name:'Adicionar 1 segundo',exact:true}).click();
-  await page.getByRole('button',{name:'Sincronizar agora',exact:true}).click();
+  // Automatic delivery may finish before a manual click, especially on mobile.
+  // Assert the acknowledged result instead of requiring a nonempty queue.
   await expect(page.locator('[data-tag-name="#gta6"]').getByTestId('live-history')).toHaveText('28802');
   await expect(page.getByTestId('participation-pending')).toHaveText('0');
   await expect(page.locator('[data-tag-name="#lofi"]').getByTestId('live-history')).toHaveText('1920');

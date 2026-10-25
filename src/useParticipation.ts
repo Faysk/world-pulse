@@ -1,6 +1,6 @@
 import type { CountrySnapshot } from './countryTypes';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ParticipationClient, PENDING_NOTICE_KEY, SELECTION_NOTICE_KEY, type ActiveRanking, type LiveTag, type TimeBalance } from './participationClient';
+import { ParticipationClient, ParticipationRequestError, PENDING_NOTICE_KEY, SELECTION_NOTICE_KEY, type ActiveRanking, type LiveTag, type TimeBalance } from './participationClient';
 
 export function participationError(error: unknown): string {
   const code=error instanceof Error ? error.message : '';
@@ -36,6 +36,13 @@ export function useParticipation() {
   const [countryError,setCountryError]=useState(false);
   const [countryPreference,setCountryPreference]=useState(client.countryPreference());
   const [consentBusy,setConsentBusy]=useState(false);
+  const [shareCountry,setShareCountry]=useState(true);
+  const [deliveryNotice,setDeliveryNotice]=useState('');
+  const intents=useRef(new Map<string,number>());
+  const participatedHere=useRef(false);
+  const retryAt=useRef(0);
+  const retryCount=useRef(0);
+  useEffect(()=>{if(countryPreference.decided)setShareCountry(countryPreference.consent);},[countryPreference.decided,countryPreference.consent]);
   const countryRequest=useRef<Promise<void>|null>(null);
   const countryRevision=useRef(0);
   const sending=useRef(false);
@@ -75,12 +82,17 @@ export function useParticipation() {
     try{await task;}finally{if(countryRequest.current===task)countryRequest.current=null;}
   },[client]);
   const setGeoConsent=useCallback(async(allowed:boolean)=>{
+    setShareCountry(allowed);
     if(consentBusy||!ready)return;
     setConsentBusy(true);
     try{await client.setGeoConsent(allowed);if(!mounted.current)return;countryRevision.current++;setCountrySnapshot(null);view();await refreshCountries(true);}
     catch(reason){failure(reason);if(mounted.current&&!client.isQuarantined())setError('Não foi possível confirmar sua escolha de país. Recarregue a página para conferir a preferência salva.');}
     finally{if(mounted.current)setConsentBusy(false);}
   },[client,consentBusy,ready,view,refreshCountries,failure]);
+  const ensureCountryChoice=useCallback(async()=>{
+    const preference=client.countryPreference();
+    if(!preference.decided||preference.consent!==shareCountry){await client.setGeoConsent(shareCountry);view();}
+  },[client,shareCountry,view]);
   useEffect(()=>{
     if(!ready||!countryPreference.available)return;
     void refreshCountries();
@@ -110,17 +122,25 @@ export function useParticipation() {
     if(!ready||sending.current||client.isQuarantined())return;
     sending.current=true;setSyncing(true);
     try{
+      if(participatedHere.current)await ensureCountryChoice();
       await client.refreshPending();
       if(client.pendingClicks())await client.flush();
-      view();setError('');await refreshRanking(true);
-    }catch(reason){failure(reason);}
+      retryAt.current=0;retryCount.current=0;view();setError('');setDeliveryNotice('');await refreshRanking(true);
+    }catch(reason){
+      if(client.isQuarantined())failure(reason);
+      else{
+        retryCount.current++;
+        retryAt.current=performance.now()+(reason instanceof ParticipationRequestError?reason.retryAfterMs:Math.min(30000,2000*2**Math.min(retryCount.current,4)));
+        view();setError('');setDeliveryNotice('Taps guardados neste navegador. A sincronização tenta novamente automaticamente.');
+      }
+    }
     finally{sending.current=false;if(mounted.current){view();setSyncing(false);}}
-  },[client,ready,view,refreshRanking,failure]);
+  },[client,ready,view,refreshRanking,failure,ensureCountryChoice]);
   useEffect(()=>{
-    if(!ready||error)return;
-    const id=window.setInterval(()=>{if(!document.hidden&&client.pendingClicks()>0)void sync();},2000);
+    if(!ready)return;
+    const id=window.setInterval(()=>{if(!document.hidden&&client.pendingClicks()>0&&performance.now()>=retryAt.current)void sync();},2000);
     return()=>window.clearInterval(id);
-  },[client,ready,error,sync]);
+  },[client,ready,sync]);
   useEffect(()=>{
     const reconcile=()=>{if(!document.hidden){void connect();if(ready)void refreshRanking();}};
     const storage=(event:StorageEvent)=>{
@@ -134,20 +154,29 @@ export function useParticipation() {
 
   const select=useCallback(async(name:string)=>{
     if(selecting||!ready)return;
-    setSelecting(true);
-    try{await client.selectTag(name);view();setError('');await refreshRanking(true);}
+    setSelecting(true);participatedHere.current=true;
+    try{await ensureCountryChoice();await client.selectTag(name);view();setError('');await refreshRanking(true);}
     catch(reason){failure(reason);}
     finally{if(mounted.current)setSelecting(false);}
-  },[client,selecting,ready,view,refreshRanking,failure]);
-  const tap=useCallback(async()=>{
-    if(!ready||selecting||!client.selection())return;
-    try{if(!await client.creditClick())throw new Error(client.isQuarantined()?'session_rotated_pending':'queue_full');view();}
-    catch(reason){failure(reason);}
+  },[client,selecting,ready,view,refreshRanking,failure,ensureCountryChoice]);
+  const tap=useCallback(()=>{
+    const tagId=client.selection();
+    if(!ready||selecting||!tagId)return;
+    participatedHere.current=true;
+    intents.current.set(tagId,(intents.current.get(tagId)??0)+1);
+    setTick(n=>n+1); // Immediate provisional feedback, before any lock or network.
+    void client.creditClick().then(accepted=>{
+      if(!accepted)throw new Error(client.isQuarantined()?'session_rotated_pending':'queue_full');
+    }).catch(failure).finally(()=>{
+      const count=(intents.current.get(tagId)??1)-1;
+      if(count)intents.current.set(tagId,count);else intents.current.delete(tagId);
+      view();if(mounted.current)setTick(n=>n+1);
+    });
   },[client,ready,selecting,view,failure]);
   const discard=useCallback(async()=>{
     try{await client.discardOrphanedPending();await connect();}
     catch(reason){failure(reason);}
   },[client,connect,failure]);
-  return {countrySnapshot,countryError,countryPreference,consentBusy,setGeoConsent,ready,selecting,syncing,error,selected,balances,pending,quarantined,ranking,rankingError,tick,persistent:client.persistsPending(),balancesLimited:client.balancesLimited(),
-    remaining:(tagId:string)=>client.remainingMilliseconds(tagId),connect,select,tap,sync,discard};
+  return {shareCountry,deliveryNotice,countrySnapshot,countryError,countryPreference,consentBusy,setGeoConsent,ready,selecting,syncing,error,selected,balances,pending:pending+[...intents.current.values()].reduce((a,b)=>a+b,0),quarantined,ranking,rankingError,tick,persistent:client.persistsPending(),balancesLimited:client.balancesLimited(),
+    remaining:(tagId:string)=>client.remainingMilliseconds(tagId)+(client.pendingForTag(tagId)+(intents.current.get(tagId)??0))*1000,connect,select,tap,sync,discard};
 }

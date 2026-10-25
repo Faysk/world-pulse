@@ -157,7 +157,7 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
   await t.test('Limits prevent giant claimed batches and repeated fast submissions', async () => {
     const newcomer = await createVisitor();
     await selectTag(newcomer.visitorId, gta6.id);
-    for (let i=0; i<4; i++) {
+    for (let i=0; i<40; i++) {
       const x = await creditBatch(newcomer.visitorId, {tagId:gta6.id,batchId:randomUUID(),clicks:30});
       assert.equal(x.acceptedClicks,30);
     }
