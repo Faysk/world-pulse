@@ -118,3 +118,17 @@ test('provider toolbar cannot substitute the required application JavaScript bun
   const toolbarOnly=html.replace('/assets/app.js','/missing')+'<script src="https://vercel.live/_next-live/feedback/feedback.js"></script>';
   await assert.rejects(smokeStaticSite('https://candidate.vercel.app','temporary',async()=>new Response(toolbarOnly,{headers:{'Content-Type':'text/html'}}),{ignorePreviewToolbar:true}),/Application bundle references missing/);
 });
+
+test('active production release requires the current ranking JSON contract as well as assets',async()=>{
+  for(const valid of [true,false]){
+    const calls=[];const fetcher=async url=>{
+      calls.push(url.pathname);
+      if(url.pathname==='/')return new Response(html,{headers:{'Content-Type':'text/html'}});
+      if(url.pathname==='/api/ranking')return Response.json(valid?{type:'active',metric:'distinct_anonymous_sessions_with_positive_balance',ranking:[]}:{type:'historical',ranking:[]});
+      return new Response('asset',{headers:{'Content-Type':url.pathname.endsWith('.js')?'application/javascript':'text/css'}});
+    };
+    const check=smokeStaticSite('https://candidate.vercel.app','temporary',fetcher,{activeApi:true});
+    if(valid)await check;else await assert.rejects(check,/Active ranking contract unavailable/);
+    assert.equal(calls.at(-1),'/api/ranking');
+  }
+});
