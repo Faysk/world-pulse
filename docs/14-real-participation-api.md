@@ -129,7 +129,7 @@ A action [`Participation API CI`](../.github/workflows/participation-api-ci.yml)
 - A→B com lote atrasado de A credita/estende A sem trocar a seleção ativa.
 - Saldo válido de oito horas recebe top-up exato; retry concorrente não estende novamente.
 - Retorno à sessão, histórico preservado após expiração, múltiplos saldos e migração sem inventar saldo ativo.
-- Rejeição de hashtag que nunca foi selecionada, limite de 120/min, ranking histórico e restrição de DDL.
+- Rejeição de hashtag que nunca foi selecionada, limite de 1.200/min (atualizado no PR #108; ver docs/40), ranking histórico e restrição de DDL.
 
 O CI não usa Neon de produção, `DATABASE_URL` real nem segredos dos seus serviços.
 

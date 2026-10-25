@@ -2,8 +2,8 @@
 
 **Publicado em 25/10/2026, por autorização explícita do usuário.**
 [World Pulse](https://map.faysk.dev/) abre a experiência integrada na raiz, sem
-query de laboratório. Este é o estado operacional atual; docs/36 preserva o
-histórico anterior à publicação.
+query de laboratório. Este é o recibo da primeira alpha; [docs/40](40-fluid-taps-country-choice.md)
+registra a atualização posterior de taps/país. Docs/36 preserva o histórico anterior.
 
 ## O que está funcionando
 
@@ -15,7 +15,7 @@ histórico anterior à publicação.
   concede saldo. Não há população sintética na experiência pública.
 - Retenção monitorada ativada pelo Actions, com execução inicial sem backlog.
 
-A fonte geográfica **continua desativada**. Sem país confiável não há área colorida
+No momento desta primeira publicação, a fonte geográfica **estava desativada**. Sem país confiável não há área colorida
 inventada: o globo pode ficar sem manchas, mesmo com ranking funcional. R2 segue
 privado para infraestrutura/probes; não recebe objetos por tap. Steam segue oculto.
 

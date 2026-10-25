@@ -2,7 +2,7 @@
 
 > Atualização de 25/10/2026: a alpha/API foram publicadas por autorização do usuário.
 > O registro abaixo preserva preparações e verificações anteriores; o estado
-> operacional atual, flags e recibos estão em [produção](39-production-alpha-release.md).
+> operacional atual, flags e recibos estão em [taps/país](40-fluid-taps-country-choice.md) e [primeira alpha](39-production-alpha-release.md).
 
 Este documento descreve código pronto para revisão e execução deliberada, não
 afirma ativação de produção. Publicação de produção está pausada; previews de

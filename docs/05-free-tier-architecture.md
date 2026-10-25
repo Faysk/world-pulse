@@ -7,7 +7,7 @@
 | Componente | Responsabilidade | Limite de escopo atual |
 | --- | --- | --- |
 | React + TypeScript + Vite | Interface estática compilada | Alpha pública com saldos e ranking reais |
-| MapLibre GL + OpenFreeMap | Globo vetorial e cartografia | Sem posições pessoais; fonte de país desativada |
+| MapLibre GL + OpenFreeMap | Globo vetorial e cartografia | Sem posições pessoais; país aproximado agregado |
 | Vercel Hobby | Entrega do app e HTTPS | API real integrada e ativa |
 | Cloudflare DNS | Resolver `map.faysk.dev` para a Vercel | DNS only; Cloudflare não hospeda o frontend |
 | Neon Free / PostgreSQL | Banco relacional com TLS e role runtime restrita | Schema 0001–0006 e runtime restrito ativos em produção |
@@ -23,7 +23,7 @@ O PR #31 integra sessões, hashtags, lotes idempotentes, múltiplos saldos e ran
 A alpha/API foram ativadas em 25/10 pelo Actions, com migrações verificadas e
 retenção monitorada habilitada. Ranking atual conta pares sessão/hashtag com saldo
 positivo, independentemente de segundos; histórico fica separado. A fonte de país
-permanece fechada até validar a borda. [Recibo e limites](39-production-alpha-release.md).
+foi verificada na borda direta e ativada. [Recibo e limites atuais](40-fluid-taps-country-choice.md).
 
 Não foi adotado serviço externo de Auth/Realtime nem WebSocket por visitante. Agregados por viewport/zoom e mecanismo de atualização permanecem em projeto; H3 é alternativa de implementação, não dependência instalada.
 

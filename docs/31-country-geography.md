@@ -1,11 +1,11 @@
 # Geografia por país na experiência de homologação
 
-Implementação da issue #74, integrada pelo PR #75 ao pacote da API. Código versionado não significa ativação em produção.
+Implementação da issue #74 e PR #75; UX/fonte atualizadas no PR #108. Fonte direta ativa em produção, com [evidências e limitações](40-fluid-taps-country-choice.md).
 
 ## Contrato real
 
 `POST /api/session` recebe somente `geoConsent: boolean` opcional. O padrão é
-false. País, latitude, longitude e headers enviados fora da borda confiável não
+false no banco. Para uma sessão sem escolha salva, a UI mostra a opção marcada e o aviso visível; somente participar ou fazer novo tap registra essa escolha. Recusa anterior é respeitada. País, latitude, longitude e headers enviados fora da borda confiável não
 são fontes de localização. O usuário pode continuar participando sem compartilhar
 o país; seus saldos e ranking não mudam. A retirada apaga o código da sessão,
 invalida o cache agregado e mantém apenas `ZZ`. A data registra a última escolha,
@@ -14,13 +14,12 @@ sem manter histórico de países. A política de consolidação após 30 dias pe
 A fonte só é aceita com **todos**: `VERCEL=1`, `WP_GEO_COUNTRY_ENABLED=true` e
 `WP_GEO_DIRECT_EDGE=true`. A última variável exige atestar que a requisição chega
 diretamente à borda Vercel, sem proxy que faça seu próprio IP parecer o usuário.
-Por padrão a fonte é `ZZ`. VPNs, provedores e bases de IP podem errar. Ainda falta
-verificar headers e fluxo real no staging HTTPS; testes com headers controlados
-não comprovam esse comportamento remoto. O DNS-only atual é necessário, mas
-não substitui a verificação. Nunca usar cabeçalhos arbitrários de país como fallback.
+Por padrão a fonte é `ZZ`. VPNs, provedores e bases de IP podem errar. O preview remoto validou país conhecido e recusou spoof de país/CF/forwarded-IP.
+VPN/IPv6/rede móvel continuam pendentes. O DNS-only é necessário; testes
+locais com headers controlados não substituem essa verificação remota. Nunca usar cabeçalhos arbitrários de país como fallback.
 
 `GET /api/countries` requer `WP_API_ENABLED=true` **e**
-`WP_GEO_PUBLIC_ENABLED=true`. Ambos permanecem desligados em produção. Retorna
+`WP_GEO_PUBLIC_ENABLED=true`. Ambos foram ativados explicitamente em produção. Retorna
 somente contagens de sessões com saldo positivo por hashtag/país. Contagens são
 strings decimais e somas usam BigInt. Cinco sessões é o mínimo para nomear um país
 por hashtag; grupos menores vão para `OTHER`, sem país. Sem consentimento, código
@@ -67,10 +66,11 @@ testes de contrato validam origem fechada por padrão, códigos atribuídos e
 contagens acima de Number.MAX_SAFE_INTEGER. O navegador usa fixtures explícitas
 para a visualização de países; isso não comprova a estimativa pela borda.
 
-Antes de liberar: CI verde; aplicar 0006 **somente staging**; conferir privilégios;
-testar HTTPS com duas sessões, opt-in/opt-out, país desconhecido e proxy; revisar
-texto de privacidade; conferir hardware e custos. Não ativar flags de produção
-ou migrar o domínio de produção como consequência de um build bem-sucedido.
+Liberação de 25/10: 0006 aplicada e privilégios conferidos nos ambientes separados;
+CI verde, HTTPS privado com dois navegadores e preview Vercel com duas sessões API,
+país conhecido e tentativa de spoof recusada. País foi ativado deliberadamente pelo
+Actions com aviso visível. Hardware, custos e VPN/IPv6/rede móvel seguem pendentes.
+Um build aprovado, sozinho, não autoriza mudar flags ou migrar o domínio.
 
 O código XK do dataset é de uso excepcional e não pertence à lista ISO atribuída usada pela API; seu polígono foi omitido, sem inferir outro país.
 
