@@ -26,6 +26,7 @@ export default function LiveExperience(){
   const composition=useMemo(()=>composeCountries(live.countrySnapshot,focusId),[live.countrySnapshot,focusId]);
   const countryRows=useMemo(()=>countryTagPage(live.countrySnapshot,countryPick,countrySearch,countryPage),[live.countrySnapshot,countryPick,countrySearch,countryPage]);
   const countryTag=live.countrySnapshot?.tags.find(tag=>tag.id===live.selected?.id);
+  const emptyGeography=live.countryPreference.available?(live.countrySnapshot?.tags.some(tag=>tag.countries.some(row=>row.countryCode==='OTHER'))?'Grupos menores que cinco ficam reunidos na lista de países. Nenhuma posição é inventada.':'Participe para formar áreas por país. Nenhuma posição é inventada.'):'Mapa aguardando geografia confiável. Nenhuma posição é inventada.';
   const [name,setName]=useState('');
   const [rankingOpen,setRankingOpen]=useState(()=>window.innerWidth>760);
   const [balancesOpen,setBalancesOpen]=useState(false);
@@ -97,13 +98,13 @@ export default function LiveExperience(){
       {countryDrawError&&<p role="status">{countryDrawError}</p>}
     </aside>}
     <section className="live-controls" aria-label="Sua participação">
-      <p className="live-geography" data-testid="live-geography">{mapError?'Mapa indisponível. Seus saldos continuam acessíveis.':mapReady?(composition.length>0?(focusId?'Países agregados da hashtag selecionada. Toque na área para inspecionar.':'Países agregados com várias hashtags. Toque na área para inspecionar.'):'Mapa aguardando geografia confiável. Nenhuma posição é inventada.'):'Carregando mapa…'}</p>
+      <p className="live-geography" data-testid="live-geography">{mapError?'Mapa indisponível. Seus saldos continuam acessíveis.':mapReady?(composition.length>0?(focusId?'Países agregados da hashtag selecionada. Toque na área para inspecionar.':'Países agregados com várias hashtags. Toque na área para inspecionar.'):emptyGeography):'Carregando mapa…'}</p>
       {mapError&&<button onClick={()=>{setMap(null);setMapReady(false);setMapError('');setMapVersion(v=>v+1);}}>Recarregar mapa</button>}
       <div className="live-sharing" aria-label="Compartilhamento de país">
         <label><input type="checkbox" checked={live.shareCountry} disabled={live.consentBusy} onChange={event=>void live.setGeoConsent(event.target.checked)}/> Compartilhar meu país aproximado</label>
         <p>{live.shareCountry?'Ao participar, você aceita compartilhar seu país aproximado nos totais do mapa.':'Você participa sem compartilhar seu país.'} O mapa não mostra seu nome nem um ponto individual. Você pode desligar a opção a qualquer momento.</p>
         {!live.countryPreference.available&&<small>O país ainda está indisponível neste ambiente; sua participação continua funcionando.</small>}
-        {live.countryPreference.available&&<small>País estimado: {live.countryPreference.country==='ZZ'?'a confirmar ao participar':live.countryPreference.country} · grupos pequenos são reunidos.</small>}
+        {live.countryPreference.available&&<small>País estimado: {live.countryPreference.country==='ZZ'?'a confirmar ao participar':live.countryPreference.country} · áreas aparecem com 5 participações na mesma hashtag e país.</small>}
       </div>
       {live.consentBusy&&<small role="status">Salvando sua escolha de país…</small>}
       <form onSubmit={select}>
