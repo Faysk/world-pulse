@@ -1,5 +1,9 @@
 # Migração de produção preparada, sem execução (#90)
 
+> Atualização de 25/10/2026: a alpha/API foram publicadas por autorização do usuário.
+> O registro abaixo preserva preparações e verificações anteriores; o estado
+> operacional atual, flags e recibos estão em [produção](39-production-alpha-release.md).
+
 `Production infrastructure` aceita a operação manual `migrate`, separada de
 `check`, `sync` e `deploy`. **Não foi executada em produção nesta entrega.**
 O default `WP_PRODUCTION_MIGRATIONS_ENABLED=false` no Environment production

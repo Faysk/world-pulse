@@ -1,5 +1,9 @@
 # Estado verificado antes da publicação — atualizado em 25/10/2026
 
+> Atualização de 25/10/2026: a alpha/API foram publicadas por autorização do usuário.
+> O registro abaixo preserva preparações e verificações anteriores; o estado
+> operacional atual, flags e recibos estão em [produção](39-production-alpha-release.md).
+
 **Publicação de produção pausada; staging Vercel validado em 25/10.** O pacote de implementação/evidências é reunido no
 [PR #31](https://github.com/Faysk/world-pulse/pull/31), milestone v0.4.
 Integrá-lo à `main` não implanta nem ativa a alpha.

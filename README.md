@@ -2,21 +2,21 @@
 
 Um planeta cinza que ganha cores com a participação das pessoas.
 
-**Estado em 25/10/2026:** [demonstração visual publicada](https://map.faysk.dev), com dados simulados. A infraestrutura está provisionada; a aplicação ainda não grava participação real no banco de produção.
+**Estado em 25/10/2026:** [alpha funcional publicada](https://map.faysk.dev), com hashtags, saldos e ranking persistidos no Neon de produção. A fonte de país continua desativada; nenhuma posição é inventada. [Recibo e limites da publicação](docs/39-production-alpha-release.md).
 
 ## Estrutura real
 
 | Parte | Tecnologia / serviço | Estado |
 | --- | --- | --- |
 | Interface | React 19 + TypeScript + Vite | Publicada na Vercel |
-| Globo | MapLibre GL + cartografia OpenFreeMap | Publicado; participantes sintéticos |
+| Globo | MapLibre GL + cartografia OpenFreeMap | Publicado sem participantes sintéticos; país desativado |
 | Hospedagem | Vercel Hobby, projeto `world-pulse` | HTTPS em `map.faysk.dev` |
-| Banco | Neon Free / PostgreSQL, Londres | Conectividade TLS e acesso SQL restrito verificados |
+| Banco | Neon Free / PostgreSQL, Londres | Schema 0001–0006 e runtime restrito ativos em produção |
 | DNS | Cloudflare, zona `faysk.dev` | `map` aponta à Vercel, DNS only |
 | Objetos | Cloudflare R2, bucket privado `world-pulse-production` | Provisionado; ainda sem função no fluxo de taps |
 | Configuração e entrega | GitHub Actions + Environments `production` e `staging` | Origem das secrets/configurações e deploy manual de `main` |
 | Steam LIVE | `GET /api/steam` · Steam Web API oficial | **Oculto na interface de produção**, código e endpoint preservados para desenvolvimento |
-| API de participação | [PR #31](https://github.com/Faysk/world-pulse/pull/31) | Integrada à main, gate desligado em produção; Neon staging com preview HTTPS validado |
+| API de participação | [PR #31](https://github.com/Faysk/world-pulse/pull/31) | API ativa em produção; staging isolado para testes |
 
 Não há serviço de autenticação externo, conexão direta do browser ao banco ou bucket público. Nenhum outro banco de outro projeto foi removido ou alterado.
 
@@ -27,11 +27,11 @@ flowchart LR
   GH[GitHub Actions + production secrets] --> WEB
   GH --> DB[(Neon PostgreSQL: conectividade)]
   GH --> R2[Cloudflare R2 privado: probes]
-  API[API experimental no PR 31] -. futura integração .-> DB
-  WEB -. futura integração .-> API
+  API[API de participação: sessão e lotes] --> DB
+  WEB --> API
 ```
 
-Linhas pontilhadas representam o fluxo público ainda não ativado; o laboratório experimental já usa banco descartável no CI. O Neon staging remoto é uma branch separada, temporária, com expiração em 31/10/2026. [Staging](docs/18-remote-staging.md). Veja [arquitetura](docs/05-free-tier-architecture.md) e [operações](docs/11-infrastructure-operations.md).
+O fluxo público usa API server-side e banco de produção; testes usam PostgreSQL descartável e staging separado. O Neon staging remoto é uma branch separada, temporária, com expiração em 31/10/2026. [Staging](docs/18-remote-staging.md). Veja [arquitetura](docs/05-free-tier-architecture.md) e [operações](docs/11-infrastructure-operations.md).
 
 O feed da Steam foi mantido no código, mas o painel foi **ocultado da experiência pública** por não ser parte do conceito central do World Pulse. Não há consultas Steam feitas pela interface enquanto estiver oculto. [Decisão e documentação da integração](docs/16-steam-live-signals.md).
 
@@ -41,19 +41,19 @@ O feed da Steam foi mantido no código, mas o painel foi **ocultado da experiên
 - O saldo diminui com o relógio real, inclusive offline. Histórico e saldo restante são métricas diferentes.
 - Várias hashtags podem manter saldo/manchas simultaneamente; novos taps vão para uma seleção de cada vez.
 - A densidade conta participantes distintos por hashtag com saldo positivo, nunca soma de taps ou segundos.
-- Cor aleatória é persistida na primeira criação da hashtag; criação real ainda depende da API.
+- Cor aleatória é persistida na primeira criação da hashtag e reutilizada nas seguintes.
 - Localização será aproximada e agregada; não publicar posição individual.
 - Top 10 atual conta participações com saldo positivo; ao zerar, sai do ranking e da mancha. Histórico começa na seleção e fica separado. [Contrato](docs/24-ranking-contract.md).
 
-A POC publicada ainda possui contador local por sessão; não confundir esse teste com saldo persistido em produção. [Contrato confirmado](docs/14-time-credit-contract.md).
+A alpha pública grava o saldo no banco; a demonstração sintética permanece apenas como ferramenta de desenvolvimento. [Contrato confirmado](docs/14-time-credit-contract.md).
 
-## Experiência integrada em homologação
+## Experiência integrada
 
 Na main, `/?experiencePreview=1` em desenvolvimento abre
 o fluxo de hashtags livres, taps no planeta, fila confirmada, saldos simultâneos
 e ranking atual. O mapa não recebe população sintética nesse modo: aguarda
 geografia confiável. Build remoto exige preview explicitamente autorizado;
-parâmetro de URL não ativa a experiência em produção.
+em produção a experiência abre na raiz pelo gate de alpha explicitamente ativado.
 [Interface, gates e evidências](docs/29-live-experience.md).
 
 ## Executar e verificar
@@ -78,7 +78,7 @@ O app visual não exige secrets. Nunca colocar credenciais em `VITE_*` nem versi
 src/                         interface, globo, datasets sintéticos e contrato de saldo
 tests/                      testes de domínio e navegador
 infra/                       probes Neon/R2, sincronização e publicação staged
-infra/sql/                   migrações 0001–0006; domínio aplicado/verificado no staging
+infra/sql/                   migrações 0001–0006; domínio verificado em produção e staging
 scripts/                     benchmark dos cenários agregados
 api/steam.mjs                endpoint do feed externo Steam
 server/steam.mjs             consulta/validação do feed externo
@@ -87,7 +87,7 @@ server/geoPrivacy.mjs       país aproximado fechado por padrão; API agrega com
 docs/                        arquitetura, regras, evidências e pendências
 ```
 
-As pastas `api/` e `server/` contêm a API de participação e o feed Steam preservado e oculto. O pacote do [PR #31](https://github.com/Faysk/world-pulse/pull/31) reúne sessões, filas, saldos, ranking e geografia por país; as migrações 0001–0006 foram aplicadas/verificadas no staging. Produção mantém a demonstração, sem migrações de domínio/ativação da API realizadas nesta etapa. Código na main não equivale a publicação: flags e fluxo de deploy continuam fechados.
+As pastas `api/` e `server/` contêm a API de participação e o feed Steam preservado e oculto. O pacote do [PR #31](https://github.com/Faysk/world-pulse/pull/31) reúne sessões, filas, saldos, ranking e geografia por país; as migrações 0001–0006 foram aplicadas/verificadas no staging. Produção foi migrada e ativada em 25/10/2026, pelo Actions e autorização do usuário. Código na main continua separado de deploy: a publicação é manual, e fonte geográfica/migrações permanecem fechadas.
 
 ## Documentação e próximos passos
 
@@ -114,6 +114,6 @@ O fluxo **interface → HTTPS privado no Actions → pooler Neon staging real �
 
 [Issues](https://github.com/Faysk/world-pulse/issues) · [Milestones](https://github.com/Faysk/world-pulse/milestones) · Licença [MIT](LICENSE).
 
-[Geografia por país com consentimento e limites reais](docs/31-country-geography.md): implementação na branch da API, sem ativação pública.
+[Geografia por país com consentimento e limites reais](docs/31-country-geography.md): implementação integrada; fonte de país ainda desativada.
 
-[Operações finais: preview, retenção e ativação explícita da alpha](docs/32-prepublication-operations.md), com gates fechados e publicação pausada.
+[Operações finais: preview, retenção e ativação explícita da alpha](docs/32-prepublication-operations.md), com gates independentes; alpha/API de produção ativadas e fonte geográfica fechada.

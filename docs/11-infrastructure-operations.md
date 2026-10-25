@@ -1,6 +1,6 @@
 # 11 — Infraestrutura e operações
 
-**Atualizado em 24/10/2026.** Rastreio: #7, #15, #16, #17 e #18.
+**Atualizado em 25/10/2026.** Rastreio: #7, #15, #16, #17 e #18.
 
 ## Serviços e estado real
 
@@ -11,19 +11,18 @@
 | Banco | Neon Free, `world-pulse-production`, Londres | Provisionado pelo Vercel Marketplace; runtime configurado pelo GitHub; `SELECT 1` com TLS validado |
 | Objetos | R2 Standard, `world-pulse-production` | Privado; teste de escrita/leitura/remoção validado |
 | Credenciais | GitHub Environment `production` | Credenciais de banco e R2 armazenadas; deploy permitido somente na branch `main` |
-| App | React/Vite/MapLibre em `main` | POC publicada com dados simulados; API real em draft no PR #31 |
+| App | React/Vite/MapLibre em `main` | Alpha/API reais publicadas; fonte de país desativada |
 
-O domínio responde por HTTPS com a POC publicada. A [execução 40041911767](https://github.com/Faysk/world-pulse/actions/runs/40041911767)
-publicou o commit `91898e8`: candidata validada, acesso temporário revogado,
-promoção confirmada e smoke público aprovado. Isso comprova entrega do app e
-conectividade de infraestrutura, não persistência de participação real.
+O domínio responde com a alpha funcional desde 25/10/2026. Migrações e runtime
+verificados, retenção ativa, candidato testado/promovido e conferência pública
+aprovada. [Recibo, flags e pendências](39-production-alpha-release.md).
 
 ## Banco e limites
 
-Neon Free fornece PostgreSQL separado em Londres. A aplicação acessará o banco por
+Neon Free fornece PostgreSQL separado em Londres. A aplicação acessa o banco por
 API server-side com role runtime restrita; a credencial de migração permanece
-separada. Não usamos serviços externos de Auth/Realtime. Tabelas de participação
-seguem em migração versionada no PR #31, ainda não aplicada em produção.
+separada. Não usamos serviços externos de Auth/Realtime. Migrações 0001–0006 foram aplicadas/verificadas em produção; futuras mudanças
+continuam manuais e separadas do deploy.
 
 Planos/quotas devem ser conferidos nos painéis e nas fontes oficiais: [Neon](https://neon.com/pricing),
 [R2](https://developers.cloudflare.com/r2/pricing/) e [Vercel Hobby](https://vercel.com/docs/plans/hobby).
