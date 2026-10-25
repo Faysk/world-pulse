@@ -1,5 +1,6 @@
 import {randomUUID,createHash} from 'node:crypto';
 import assert from 'node:assert/strict';
+import {setTimeout as pause} from 'node:timers/promises';
 /** Exact HTTPS deployment only; no cookies or provider access sent to other origins. */
 export async function smokePreviewApi(origin,secret,createdHashes,fetcher=fetch,{countrySource=false}={}){
   const base=new URL(origin);
@@ -25,7 +26,8 @@ export async function smokePreviewApi(origin,secret,createdHashes,fetcher=fetch,
         if(response.status>=300&&response.status<400){
           const next=new URL(response.headers.get('location'),url);assert.equal(next.origin,base.origin);url.href=next.href;continue;
         }
-        if(response.status!==200)throw new Error('preview_http_'+response.status);
+        if(response.status===503&&body===undefined&&['/api/regions','/api/countries','/api/ranking'].includes(path)&&redirects<3){await response.body?.cancel();await pause(1000);continue;}
+        if(response.status!==200){const error=new Error('preview_http_'+response.status);error.operation=path;throw error;}
         if(!json)return response.text();
         const value=await response.json();
         if(path==='/api/session')binding=value.sessionBinding;

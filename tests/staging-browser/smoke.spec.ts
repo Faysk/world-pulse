@@ -20,7 +20,7 @@ async function taps(page:Page,n:number){
 async function snapshot(page:Page){return page.evaluate(async()=>{
   const response=await fetch('/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
   if(!response.ok)throw new Error('session_snapshot_failed');
-  const value=await response.json();return {activeTag:value.activeTag,credits:value.credits,geoConsent:value.geoConsent,geoCountry:value.geoCountry};
+  const value=await response.json();return {activeTag:value.activeTag,credits:value.credits,geoConsent:value.geoConsent,geoCountry:value.geoCountry,regionCell:value.regionCell};
 });}
 test('Private HTTPS to real Neon pooler preserves cookies, independent sessions, retry and consent',async({page,browser},info)=>{
   const second=await browser.newContext({...(info.project.name==='mobile'?devices['Pixel 7']:devices['Desktop Chrome']),baseURL:'https://127.0.0.1:4178',ignoreHTTPSErrors:true});

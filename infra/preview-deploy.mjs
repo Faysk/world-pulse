@@ -28,6 +28,7 @@ try{
   console.error('Staging preview deployment or smoke failed; provider bodies, cookies, bindings and credentials suppressed. No promotion or production mutation.');
   if(error instanceof SmokeCheckError)console.error(`Safe static smoke failure: ${error.message}`);
   if(/^preview_http_[0-9]{3}$/.test(error?.message??''))console.error(error.message);
+  if(['/api/session','/api/tags','/api/select','/api/taps','/api/location','/api/regions','/api/countries','/api/ranking'].includes(error?.operation))console.error('Safe smoke operation: '+error.operation);
   if(error?.name==='AssertionError')console.error('Preview API contract assertion failed.');
   if(['TimeoutError','AbortError','TypeError'].includes(error?.name))console.error(`Safe failure category: ${error.name}`);
   if(Number.isInteger(error?.providerStatus))console.error(`Provider HTTP status: ${error.providerStatus}`);
