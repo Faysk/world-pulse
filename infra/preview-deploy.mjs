@@ -13,7 +13,7 @@ try{
   const connectionString=validateStagingUrl(process.env.DATABASE_URL);
   pool=new pg.Pool({connectionString,max:1,connectionTimeoutMillis:15000,query_timeout:6000});
   const result=await deployPreview({api:vercelApi({token:process.env.VERCEL_TOKEN,team:previewTeam}),env:process.env,pause:setTimeout,
-    receipt:id=>console.log(`Isolated preview: ${id}`),
+    receipt:id=>console.log(`Isolated preview: ${id}`),progress:message=>console.log(message),
     smoke:async(origin,secret)=>{
       for(let attempt=0;;attempt++){
         try{await smokeStaticSite(origin,secret);break;}catch(error){if(attempt>=3)throw error;await setTimeout(2000);}
@@ -24,6 +24,7 @@ try{
   if(process.env.GITHUB_STEP_SUMMARY)await appendFile(process.env.GITHUB_STEP_SUMMARY,`Protected staging preview: ${result.origin}\nCommit: ${result.sha}\nDeployment: ${result.id}\nHTTPS/API smoke passed. Temporary test access revoked; production unchanged.\n`);
 }catch(error){
   console.error('Staging preview deployment or smoke failed; provider bodies, cookies, bindings and credentials suppressed. No promotion or production mutation.');
+  if(['TimeoutError','AbortError','TypeError'].includes(error?.name))console.error(`Safe failure category: ${error.name}`);
   if(Number.isInteger(error?.providerStatus))console.error(`Provider HTTP status: ${error.providerStatus}`);
   if(['preview_deploy_rejected','preview_receipt_rejected','preview_build_failed','preview_build_timeout','preview_access_missing'].includes(error?.message))console.error(error.message);
   process.exitCode=1;
