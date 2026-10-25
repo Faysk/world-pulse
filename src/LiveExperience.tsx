@@ -105,6 +105,7 @@ export default function LiveExperience(){
         {!live.countryPreference.available&&<small>O país ainda está indisponível neste ambiente; sua participação continua funcionando.</small>}
         {live.countryPreference.available&&<small>País estimado: {live.countryPreference.country==='ZZ'?'a confirmar ao participar':live.countryPreference.country} · grupos pequenos são reunidos.</small>}
       </div>
+      {live.consentBusy&&<small role="status">Salvando sua escolha de país…</small>}
       <form onSubmit={select}>
         <label htmlFor="live-name">Sua hashtag</label>
         <div className="live-form-row"><input id="live-name" value={name} onChange={e=>setName(e.target.value)} maxLength={34} placeholder="#o_que_te_move" autoComplete="off" required/>

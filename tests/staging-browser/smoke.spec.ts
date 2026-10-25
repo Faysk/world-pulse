@@ -49,7 +49,7 @@ test('Private HTTPS to real Neon pooler preserves cookies, independent sessions,
     const sharing=page.getByRole('checkbox',{name:'Compartilhar meu país aproximado'});
     await expect(sharing).toBeChecked();
     expect((await snapshot(page)).geoCountry).toBe('ZZ');
-    await sharing.click();await expect(sharing).not.toBeChecked();expect((await snapshot(page)).geoConsent).toBe(false);
+    await sharing.click();await expect(sharing).not.toBeChecked();await expect.poll(async()=>(await snapshot(page)).geoConsent).toBe(false);
     await page.screenshot({path:`test-artifacts/staging-smoke-${info.project.name}.png`});
   }finally{await second.close();}
 });

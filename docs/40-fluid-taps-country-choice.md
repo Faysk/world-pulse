@@ -61,3 +61,10 @@ antes da resposta, confirmação final sem duplicação e preferência visível 
 recusa persistida. Outro teste confere 429 e reenvio automático do mesmo lote.
 Node cobre resposta perdida, duas abas, lotes congelados, binding, storage e
 projeção sem dobro. PostgreSQL testa até 1.200 aceitos e recusa acima da janela.
+
+
+Primeira prova de fonte: [40237598249](https://github.com/Faysk/world-pulse/actions/runs/40237598249)
+aprovou preview, duas sessões API, país conhecido e spoof recusado. A sessão manual
+no Chrome recebeu PT após Participar; DNS do domínio aponta diretamente à Vercel.
+A suíte HTTPS privada inicialmente confundiu checkbox local otimista com confirmação
+de escrita: a asserção agora aguarda o valor persistido, e a UI indica salvamento.
