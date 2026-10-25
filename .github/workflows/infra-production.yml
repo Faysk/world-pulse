@@ -7,7 +7,7 @@ on:
         required: true
         default: check
         type: choice
-        options: [check, sync, deploy, migrate]
+        options: [check, sync, deploy, migrate, verify]
 permissions:
   contents: read
 concurrency:
@@ -95,5 +95,11 @@ jobs:
       - name: Stage exact main commit, smoke assets and promote
         if: inputs.operation == 'deploy'
         run: node infra/deploy.mjs
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      - name: Verify current production deployment and public API without deploying
+        if: inputs.operation == 'verify'
+        run: node infra/verify-production.mjs
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
