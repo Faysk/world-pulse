@@ -1,7 +1,8 @@
 # Operações preparadas antes da publicação
 
 Este documento descreve código pronto para revisão e execução deliberada, não
-afirma ativação de produção. Publicação está pausada. Integrar o código do PR #31 não publica nem ativa a API.
+afirma ativação de produção. Publicação de produção está pausada; previews de
+staging foram retomados em 25/10/2026. Integrar o código do PR #31 não publica nem ativa a API.
 
 ## Preview separado
 
@@ -13,7 +14,7 @@ plano antes de o novo workflow existir na branch principal.
 
 `sync` exige `WP_PREVIEW_SYNC_ENABLED=true` no Environment staging e um
 `VERCEL_TOKEN` próprio nesse Environment. A ausência mantém a operação bloqueada.
-O token está pendente; não é possível recuperar o valor da secret de produção,
+O token separado foi criado em 25/10/2026; não é possível recuperar o valor da secret de produção,
 e esse processo não deve fazê-lo. Não criar nem ampliar credenciais apenas para
 contornar a pausa na publicação.
 
@@ -27,7 +28,8 @@ um novo staging revisado substitua os identificadores fixos e as secrets.
 A API, UI e leitura agregada podem funcionar nesse preview; captura do país
 fica explicitamente desativada até validar a borda. O plano não ativa nada e a
 sincronização não publica: as variáveis só se aplicam a um novo deployment.
-Não existe endpoint de deploy, promoção ou alteração de domínio nesse fluxo.
+A sincronização não chama endpoints de deploy, promoção ou domínio. A operação
+manual `deploy` descrita ao final publica somente preview e nunca promove.
 Referências do provedor: [escopo por branch](https://vercel.com/docs/environment-variables/manage-across-environments)
 e [variáveis sensitive](https://vercel.com/docs/environment-variables/sensitive-environment-variables).
 
@@ -96,3 +98,55 @@ Pendências reais: #53 (HTTPS), #6 (fonte), #7 (custo), #12/#32 (hardware/visual
 ## Gate de build da alpha (#77)
 
 O build com VERCEL_ENV=production e WP_ALPHA_RELEASE=true monta a experiência na raiz, sem parâmetro de laboratório. Essa flag é distinta da autorização da API. Os três builds compilados são testados: produção fechada, preview com opt-in e alpha deliberada com API indisponível para verificar falha explícita. Nenhuma flag foi ativada nem sincronizada neste trabalho. Reverter WP_ALPHA_RELEASE/WP_API_ENABLED para false e reconstruir volta à demonstração; envs já publicadas não mudam sem redeploy. A leitura geográfica tem gate independente.
+
+## Preview protegido pelo Actions — operação manual
+
+Além de `plan` e `sync`, `infra-preview.yml` oferece `deploy` na branch
+`codex/remote-staging`, exclusivamente com o Environment staging. Exige a flag
+`WP_PREVIEW_SYNC_ENABLED=true`, token próprio, runtime pooled revisado, repository
+ID fixo e SHA de 40 caracteres. Owner, produção e staging expirado são recusados.
+
+O deploy sincroniza as seis variáveis permitidas e pede preview (target omitido
+conforme a API), branch + SHA fixados e atribuição de domínios customizados
+explicitamente desativada. Confere projeto/commit/branch/target no recibo antes
+de testar. Não contém promoção nem operação de DNS/domínio.
+
+Acesso temporário de dez minutos é criado somente para esse deployment e revogado
+em `finally`, inclusive quando o teste falha. Cookies, binding, conexões e tokens
+não entram no resumo. HTML/JS/CSS e duas sessões independentes são testados pela
+API HTTPS: mesma hashtag/cor, cookies Secure/HttpOnly/SameSite, lotes, retry do
+mesmo payload já confirmado, seleção/retorno, múltiplos históricos e consentimento
+com país desconhecido. Esse smoke HTTP não substitui o teste de UI em navegador,
+resposta realmente perdida nem geografia da borda.
+
+O runtime do staging remove somente sessões sintéticas identificadas pelos hashes
+dos cookies emitidos nesta execução, com transação e invalidação de cache sob lock.
+Falha de limpeza falha o job. Tags vazias e contadores de orçamento podem permanecer
+na branch temporária. Não copiar dados nem operar banco de produção.
+
+Token `world-pulse-staging-github`, restrito ao projeto world-pulse, criado em
+25/10/2026 e salvo como secret staging/VERCEL_TOKEN; vence 01/11/2026. O staging
+vence antes, em 31/10 às 01:15:25 UTC, e seus validadores continuam impedindo uso
+após essa data. Não recuperar/reutilizar a secret production.
+
+Referência: [API de deployments](https://vercel.com/docs/rest-api/deployments/create-a-new-deployment).
+
+
+## Evidência remota — 25/10/2026
+
+[Run 40231987193](https://github.com/Faysk/world-pulse/actions/runs/40231987193),
+commit ff3a346: preview dpl_9J6CLuZgAezwsiJVt45UkSPrM3c1 READY, recibo validado,
+HTML/JS/CSS e duas sessões pela API HTTPS aprovados, acesso temporário revogado
+e duas sessões sintéticas removidas. A barra oficial de feedback da Vercel é
+ignorada como ferramenta do provedor, nunca recebendo cookies/acesso do smoke;
+ela não pode substituir o bundle JS obrigatório. Outros assets externos falham.
+
+Chrome real no preview anterior dpl_9GavNMmPPsD4WGXnEN2k4WMNWpF5: hashtag de QA,
+três taps, fila confirmada e histórico de três segundos restaurado após reload.
+Essa sessão manual não foi removida pelo job (a limpeza só remove suas próprias
+sessões); fica sujeita à expiração/retencão do staging. Nenhum dado de produção.
+
+![Preview remoto com sessão conectada e histórico restaurado](assets/vercel-staging-browser-2026-10-25.png)
+
+Isso não valida VPN/IPv6/rede móvel, headers confiáveis de país ou hardware/FPS.
+A fonte geográfica continua false, e o domínio de produção mantém a demo anterior.

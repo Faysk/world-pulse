@@ -99,3 +99,22 @@ test('candidate access follows same-origin cookie redirect without reattaching t
     return new Response('asset', { headers: { 'Content-Type': url.pathname.endsWith('.js') ? 'application/javascript' : 'text/css' } });
   });
 });
+
+test('preview may skip only the exact provider toolbar without fetching it; production and foreign assets remain strict',async()=>{
+  const toolbar='https://vercel.live/_next-live/feedback/feedback.js';
+  for(const [external,preview,passes] of [[toolbar,true,true],[toolbar,false,false],['https://vercel.live.evil.example/_next-live/feedback/feedback.js',true,false]]){
+    const calls=[];const fetcher=async url=>{
+      calls.push(url.origin);assert.equal(url.origin,'https://candidate.vercel.app');
+      if(url.pathname==='/')return new Response(html+`<script src="${external}"></script>`,{headers:{'Content-Type':'text/html'}});
+      return new Response('asset',{headers:{'Content-Type':url.pathname.endsWith('.js')?'application/javascript':'text/css'}});
+    };
+    const result=smokeStaticSite('https://candidate.vercel.app','temporary',fetcher,{ignorePreviewToolbar:preview});
+    if(passes)await result;else await assert.rejects(result,/Cross-origin asset refused/);
+    assert.ok(calls.every(origin=>origin==='https://candidate.vercel.app'));
+  }
+});
+
+test('provider toolbar cannot substitute the required application JavaScript bundle',async()=>{
+  const toolbarOnly=html.replace('/assets/app.js','/missing')+'<script src="https://vercel.live/_next-live/feedback/feedback.js"></script>';
+  await assert.rejects(smokeStaticSite('https://candidate.vercel.app','temporary',async()=>new Response(toolbarOnly,{headers:{'Content-Type':'text/html'}}),{ignorePreviewToolbar:true}),/Application bundle references missing/);
+});

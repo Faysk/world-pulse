@@ -1,9 +1,9 @@
-# Estado verificado antes da publicação — 24/10/2026
+# Estado verificado antes da publicação — atualizado em 25/10/2026
 
-**Publicação pausada.** O pacote de implementação/evidências é reunido no
+**Publicação de produção pausada; staging Vercel validado em 25/10.** O pacote de implementação/evidências é reunido no
 [PR #31](https://github.com/Faysk/world-pulse/pull/31), milestone v0.4.
 Integrá-lo à `main` não implanta nem ativa a alpha.
-`map.faysk.dev` continua com a demonstração anterior. Não foi feito deploy,
+`map.faysk.dev` continua com a demonstração anterior. Não foi feito deploy de produção,
 promoção, migração de domínio ou habilitação de participação em produção.
 
 ## O que está comprovado
@@ -38,9 +38,8 @@ medidas de FPS ou gestos em dispositivos físicos. O benchmark de 0 a 1 trilhão
   Vercel confirmou apenas DATABASE_URL, R2 e APP_URL no target production;
   proprietário de migração/token operacional não estão no runtime.
 - GitHub production: `WP_ALPHA_RELEASE`, `WP_API_ENABLED`, `WP_GEO_PUBLIC_ENABLED`,
-  `WP_GEO_COUNTRY_ENABLED` e `WP_GEO_DIRECT_EDGE` estão false. Staging sync está
-  false; retenção horária está false no repositório e `WP_PRODUCTION_MIGRATIONS_ENABLED`
-  está false em production. Nenhuma dessas ativações
+  `WP_GEO_COUNTRY_ENABLED` e `WP_GEO_DIRECT_EDGE` estão false. Staging sync foi habilitado apenas para o preview em 25/10; retenção horária está false no repositório e `WP_PRODUCTION_MIGRATIONS_ENABLED`
+  está false em production. Nenhuma ativação de produção
   foi sincronizada/publicada nesta etapa.
 - Plano/sync preview só aceita a branch de staging e runtime restrito. Retenção
   tem plano READ ONLY, execução limitada e resumo/backlog; continua desligada.
@@ -52,9 +51,10 @@ medidas de FPS ou gestos em dispositivos físicos. O benchmark de 0 a 1 trilhão
 
 ## O que permanece como gate, sem marcar 100% por ficção
 
-1. **Vercel/HTTPS público:** token próprio do Environment staging, sync deliberado,
-   preview protegido e testes do runtime/cookies/headers no trajeto real. A última
-   tentativa foi limitada por quota; não houve nova tentativa de publicar aqui.
+1. **Homologação complementar:** preview Vercel com banco staging, cookie e duas
+   sessões pela API HTTPS aprovados em 25/10; Chrome real confirmou seleção, taps
+   e reload. UI com duas sessões/mobile remoto e resposta realmente perdida não
+   foram repetidas nesse preview; a prova anterior foi por HTTPS privado.
 2. **Geografia real:** verificar borda direta, proxy, VPN, IPv6, rede móvel e
    desconhecido antes de habilitar fonte. O teste HTTPS privado usa certificado
    self-signed e não comprova headers/certificado público da Vercel.
@@ -106,6 +106,22 @@ conexão do aplicativo ao staging nem fonte geográfica da borda.
 [Check Neon 40229816651](https://github.com/Faysk/world-pulse/actions/runs/40229816651)
 e [plano preview 40229862494](https://github.com/Faysk/world-pulse/actions/runs/40229862494)
 aprovados novamente. A branch de staging foi avançada por fast-forward à main
-revisada. Token de staging separado ainda pendente; nenhum valor da secret de
-produção foi recuperado. Sync e deploy da experiência com banco continuam como
-etapas distintas. Nenhuma migração, ativação ou alteração de domínio em produção.
+revisada. Nesse primeiro check o token separado ainda estava pendente; ele foi
+criado depois, e sync/deploy passaram conforme o registro final abaixo. Nenhum
+valor da secret de produção foi recuperado. Nenhuma migração, ativação ou
+alteração de domínio em produção.
+
+
+## Staging na Vercel validado — 25/10/2026
+
+Token restrito ao projeto e por sete dias salvo em staging/VERCEL_TOKEN; valor
+production não recuperado. Sync 40230733906 e deploy/smoke
+[40231987193](https://github.com/Faysk/world-pulse/actions/runs/40231987193)
+aprovados. Duas sessões por HTTP, cookie seguro, saldos/retry/retorno/consentimento,
+revogação de acesso temporário e limpeza de duas sessões comprovados. Chrome real
+confirmou três segundos históricos após reload. [Detalhes e captura](32-prepublication-operations.md).
+
+A quota não bloqueou os builds. Fonte de país permanece desligada; migrações de
+domínio, retenção e alpha/API de produção não foram ativadas. O staging continua
+expirando em 31/10/2026 01:15:25 UTC, antes do token (01/11). Registros anteriores
+neste documento descrevem a sequência histórica, não novos bloqueios de quota.
