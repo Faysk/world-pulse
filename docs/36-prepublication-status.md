@@ -1,6 +1,6 @@
 # Estado verificado antes da publicação — atualizado em 25/10/2026
 
-**Publicação pausada.** O pacote de implementação/evidências é reunido no
+**Publicação de produção pausada; staging Vercel validado em 25/10.** O pacote de implementação/evidências é reunido no
 [PR #31](https://github.com/Faysk/world-pulse/pull/31), milestone v0.4.
 Integrá-lo à `main` não implanta nem ativa a alpha.
 `map.faysk.dev` continua com a demonstração anterior. Não foi feito deploy de produção,
@@ -39,7 +39,7 @@ medidas de FPS ou gestos em dispositivos físicos. O benchmark de 0 a 1 trilhão
   proprietário de migração/token operacional não estão no runtime.
 - GitHub production: `WP_ALPHA_RELEASE`, `WP_API_ENABLED`, `WP_GEO_PUBLIC_ENABLED`,
   `WP_GEO_COUNTRY_ENABLED` e `WP_GEO_DIRECT_EDGE` estão false. Staging sync foi habilitado apenas para o preview em 25/10; retenção horária está false no repositório e `WP_PRODUCTION_MIGRATIONS_ENABLED`
-  está false em production. Nenhuma dessas ativações
+  está false em production. Nenhuma ativação de produção
   foi sincronizada/publicada nesta etapa.
 - Plano/sync preview só aceita a branch de staging e runtime restrito. Retenção
   tem plano READ ONLY, execução limitada e resumo/backlog; continua desligada.
@@ -106,9 +106,10 @@ conexão do aplicativo ao staging nem fonte geográfica da borda.
 [Check Neon 40229816651](https://github.com/Faysk/world-pulse/actions/runs/40229816651)
 e [plano preview 40229862494](https://github.com/Faysk/world-pulse/actions/runs/40229862494)
 aprovados novamente. A branch de staging foi avançada por fast-forward à main
-revisada. Token de staging separado ainda pendente; nenhum valor da secret de
-produção foi recuperado. Sync e deploy da experiência com banco continuam como
-etapas distintas. Nenhuma migração, ativação ou alteração de domínio em produção.
+revisada. Nesse primeiro check o token separado ainda estava pendente; ele foi
+criado depois, e sync/deploy passaram conforme o registro final abaixo. Nenhum
+valor da secret de produção foi recuperado. Nenhuma migração, ativação ou
+alteração de domínio em produção.
 
 
 ## Staging na Vercel validado — 25/10/2026
