@@ -60,3 +60,14 @@ CLI com gate fechado recusou conectar, como esperado.
 TLS/runtime/R2 aprovados; somente o hostname não secreto foi registrado e salvo
 em `WP_PRODUCTION_DB_HOST` no GitHub production. A flag de migração permanece
 false. Os passos de migração, sync e deploy foram **skipped**, não executados.
+
+## Primeira ativação de produção — 25/10/2026
+
+A execução 40234273937 confirmou aplicação de 0002–0006 e parou no teste final de
+atributos da role runtime, antes de qualquer sync/ativação/deploy. O gate foi
+fechado ao detectar a falha. A operação revisada também aplica `ALTER ROLE
+world_pulse_app NOINHERIT` sob o gate/lock existentes: remove herança da role
+inicial criada pelo painel, sem conceder memberships, atributos elevados ou DDL.
+A auditoria registra somente nome/flags de permissões e segue recusando qualquer
+atributo elevado, membership ou CREATE nos schemas. SQL existente é idempotente;
+nenhuma tabela é apagada para recuperar uma execução parcial.
