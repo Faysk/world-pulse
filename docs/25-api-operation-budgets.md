@@ -20,7 +20,7 @@ representa pedidos que chegaram ao controle, não só operações bem sucedidas.
 
 Os valores ficam versionados em `server/costPolicy.mjs`; exigem calibração com
 tráfego e recursos reais antes da alpha. Não escalam o plano gratuito para
-milhões/bilhões de pessoas. A quota de 120 taps/minuto/sessão continua separada.
+milhões/bilhões de pessoas. A quota de 1.200 taps/minuto/sessão continua separada.
 
 ## Atomicidade e dados mínimos
 

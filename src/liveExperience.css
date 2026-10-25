@@ -20,3 +20,5 @@
 .live-controls input[type=checkbox]{width:auto;min-width:18px;min-height:18px;margin-right:8px;vertical-align:middle}.live-ranking li:has(>span){display:flex;justify-content:space-between;gap:12px}
 
 .live-country-pages{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px;font-size:11px}.live-panel #country-search{width:100%;margin-top:5px}
+
+.live-sharing{border:1px solid #3d6e70;background:#16353d88;border-radius:12px;padding:11px 12px;margin-bottom:13px}.live-sharing label{display:flex;align-items:center;gap:9px;font-weight:650;margin:0}.live-sharing input[type=checkbox]{width:20px;height:20px;min-width:20px;min-height:20px;margin:0;accent-color:#63d7bd}.live-sharing p{margin:8px 0 0;font-size:11px;line-height:1.5}.live-sharing small{display:block;margin-top:7px;font-size:10px}.live-provisional{display:block;margin:0 0 8px;font-size:10px!important}.live-tap{touch-action:manipulation;user-select:none;transition:transform 70ms,background 70ms}.live-tap:active{transform:scale(.94);background:#3da28e!important}

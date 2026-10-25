@@ -1,17 +1,17 @@
 import {randomUUID,createHash} from 'node:crypto';
 import assert from 'node:assert/strict';
 /** Exact HTTPS deployment only; no cookies or provider access sent to other origins. */
-export async function smokePreviewApi(origin,secret,createdHashes,fetcher=fetch){
+export async function smokePreviewApi(origin,secret,createdHashes,fetcher=fetch,{countrySource=false}={}){
   const base=new URL(origin);
   if(base.protocol!=='https:'||!/^world-pulse-[a-z0-9-]+\.vercel\.app$/.test(base.hostname)||base.pathname!=='/')throw new Error('preview_smoke_origin_rejected');
   function session(){
     const cookies=new Map();let binding,authorized=false;
-    async function request(path,body,json=true){
+    async function request(path,body,json=true,geoHeaders={}){
       const url=new URL(path,base);assert.equal(url.origin,base.origin);
       if(!cookies.size)url.searchParams.set('_vercel_share',secret);
       for(let redirects=0;redirects<4;redirects++){
         const response=await fetcher(url,{method:body===undefined?'GET':'POST',redirect:'manual',signal:AbortSignal.timeout(30000),
-          headers:{Origin:base.origin,'Content-Type':'application/json',Cookie:[...cookies].map(([k,v])=>k+'='+v).join('; '),...(path==='/api/taps'?{'X-WP-Session-Binding':binding??''}:{})},
+          headers:{Origin:base.origin,'Content-Type':'application/json',Cookie:[...cookies].map(([k,v])=>k+'='+v).join('; '),...(path==='/api/taps'?{'X-WP-Session-Binding':binding??''}:{}),...geoHeaders},
           ...(body===undefined?{}:{body:JSON.stringify(body)})});
         const setCookies=response.headers.getSetCookie();
         for(const cookie of setCookies){
@@ -33,9 +33,9 @@ export async function smokePreviewApi(origin,secret,createdHashes,fetcher=fetch)
       }
       throw new Error('preview_redirect_limit');
     }
-    return {async call(path,body){
+    return {async call(path,body,geoHeaders={}){
       if(!authorized){await request('/',undefined,false);authorized=true;}
-      return request(path,body);
+      return request(path,body,true,geoHeaders);
     }};
   }
   const first=session(),second=session();
@@ -55,7 +55,12 @@ export async function smokePreviewApi(origin,secret,createdHashes,fetcher=fetch)
   const restored=await first.call('/api/session',{});assert.equal(restored.activeTag.id,other.id);
   assert.equal(restored.credits.find(row=>row.tagId===tagA.id).creditedSeconds,'30');
   assert.equal(restored.credits.find(row=>row.tagId===other.id).creditedSeconds,'2');
-  assert.equal((await first.call('/api/session',{geoConsent:true})).geoCountry,'ZZ');
+  const shared=await first.call('/api/session',{geoConsent:true});
+  if(countrySource){
+    assert.match(shared.geoCountry,/^[A-Z]{2}$/);assert.notEqual(shared.geoCountry,'ZZ');
+    const spoofed=await first.call('/api/session',{geoConsent:true},{'X-Vercel-IP-Country':'AQ','CF-IPCountry':'AQ','X-Forwarded-For':'198.51.100.7'});
+    assert.equal(spoofed.geoCountry,shared.geoCountry,'edge_country_spoof_rejected');
+  }else assert.equal(shared.geoCountry,'ZZ');
   assert.equal((await first.call('/api/session',{geoConsent:false})).geoConsent,false);
   assert.equal((await first.call('/api/ranking')).type,'active');
   assert.equal((await first.call('/api/countries')).type,'country_snapshot');

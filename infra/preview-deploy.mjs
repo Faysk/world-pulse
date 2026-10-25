@@ -19,7 +19,8 @@ try{
         try{await smokeStaticSite(origin,secret,fetch,{ignorePreviewToolbar:true});break;}catch(error){if(attempt>=3)throw error;await setTimeout(2000);}
       }
       console.log('Preview HTML/JS/CSS passed; testing API sessions.');
-      await smokePreviewApi(origin,secret,hashes);
+      await smokePreviewApi(origin,secret,hashes,fetch,{countrySource:process.env.WP_PREVIEW_GEO_COUNTRY_ENABLED==='true'});
+      if(process.env.WP_PREVIEW_GEO_COUNTRY_ENABLED==='true')console.log('Country estimate available; client country/forwarded-IP spoof attempt did not change it. No raw IP recorded.');
     }});
   console.log('Preview HTTPS HTML/assets, two sessions, secure cookies, balances, idempotent retry, return and consent passed. Temporary access revoked.');
   if(process.env.GITHUB_STEP_SUMMARY)await appendFile(process.env.GITHUB_STEP_SUMMARY,`Protected staging preview: ${result.origin}\nCommit: ${result.sha}\nDeployment: ${result.id}\nHTTPS/API smoke passed. Temporary test access revoked; production unchanged.\n`);

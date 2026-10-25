@@ -37,7 +37,7 @@ test('Private HTTPS to real Neon pooler preserves cookies, independent sessions,
     expect((await snapshot(other)).credits.find((row:any)=>row.name==='#'+name).creditedSeconds).toBe('15');
     await page.route('**/api/taps',async route=>{await route.fetch();await route.abort('failed');});
     await page.bringToFront();await page.getByRole('button',{name:'+1 segundo',exact:true}).click();
-    await expect(page.getByRole('alert')).toContainText('taps pendentes continuam na fila');
+    await expect(page.getByText('Taps guardados neste navegador. A sincronização tenta novamente automaticamente.',{exact:true})).toBeVisible();
     await page.unroute('**/api/taps');await page.getByRole('button',{name:'Sincronizar',exact:true}).click();
     await expect(page.getByTestId('live-pending')).toHaveText('0');
     expect((await snapshot(page)).credits.find((row:any)=>row.name==='#'+name).creditedSeconds).toBe('31');
@@ -46,8 +46,8 @@ test('Private HTTPS to real Neon pooler preserves cookies, independent sessions,
     expect(restored.credits.find((row:any)=>row.name==='#'+name).creditedSeconds).toBe('31');
     expect(restored.credits.find((row:any)=>row.name==='#'+another).creditedSeconds).toBe('2');
     await page.getByText('Como funciona e privacidade',{exact:true}).click();
-    const sharing=page.getByRole('checkbox',{name:'Compartilhar meu país estimado nas áreas agregadas'});
-    await expect(sharing).not.toBeChecked();await sharing.click();await expect(sharing).toBeChecked();
+    const sharing=page.getByRole('checkbox',{name:'Compartilhar meu país aproximado'});
+    await expect(sharing).toBeChecked();
     expect((await snapshot(page)).geoCountry).toBe('ZZ');
     await sharing.click();await expect(sharing).not.toBeChecked();expect((await snapshot(page)).geoConsent).toBe(false);
     await page.screenshot({path:`test-artifacts/staging-smoke-${info.project.name}.png`});

@@ -59,3 +59,8 @@ Uma aba antiga aberta antes desta alteração ainda pode escrever sem lock:
 antes da alpha, exigir recarga de todas as abas de teste. Alteração maliciosa do
 localStorage, extensões, remoção de cookie e comprovação de pessoa humana não
 são resolvidas aqui. O servidor permanece a autoridade dos créditos.
+
+
+Atualização #106: o POST usa lock de envio separado e deixa o lock da fila livre
+para taps. ACK é por ID, nunca shift sobre uma fila alterada. [Resposta imediata
+e limites atuais](40-fluid-taps-country-choice.md).

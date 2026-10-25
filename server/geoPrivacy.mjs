@@ -2,7 +2,7 @@
  * World Pulse privacy-first geographic primitives (#6).
  *
  * This module intentionally contains no IP parsing, per-person coordinates,
- * GPS, city or postal-code handling. It is NOT connected to production.
+ * GPS, city or postal-code handling. It uses explicit source gates; it never accepts country from client JSON.
  *
  * Source: Vercel geo headers are estimates derived from the request IP.
  * Only a trusted Vercel Function should pass these values. Do NOT accept

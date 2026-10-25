@@ -26,7 +26,7 @@ test('Integrated experience preserves queue, restores balances and never shows s
   await page.getByLabel('Sua hashtag',{exact:true}).fill('#GTA6');await page.getByRole('button',{name:'Participar',exact:true}).click();
   await expect(page.getByTestId('live-selected')).toHaveText('#gta6');
   await page.getByRole('button',{name:'+1 segundo',exact:true}).click();
-  await expect(page.getByRole('alert')).toContainText('taps pendentes continuam na fila');
+  await expect(page.getByText('Taps guardados neste navegador. A sincronização tenta novamente automaticamente.',{exact:true})).toBeVisible();
   await expect(page.getByTestId('live-pending')).toHaveText('1');
   await page.getByRole('button',{name:'Sincronizar',exact:true}).click();
   await expect(page.getByTestId('live-pending')).toHaveText('0');
@@ -57,7 +57,7 @@ test('Country sharing is optional, displays suppressed groups and survives withd
     const path=new URL(route.request().url()).pathname;
     if(path==='/api/session'){
       const body=route.request().postDataJSON();if(typeof body.geoConsent==='boolean')consent=body.geoConsent;
-      return route.fulfill({json:{anonymous:true,sessionFresh:false,sessionBinding:'a'.repeat(64),activeTagId:id,activeTag:{id,name:'#gta6',color:'#5d5de5'},credits:[],geoConsent:consent,geoCountry:consent?'PT':'ZZ',geographyAvailable:true}});
+      return route.fulfill({json:{anonymous:true,sessionFresh:false,sessionBinding:'a'.repeat(64),activeTagId:id,activeTag:{id,name:'#gta6',color:'#5d5de5'},credits:[],geoConsent:consent,geoConsentDecided:true,geoCountry:consent?'PT':'ZZ',geographyAvailable:true}});
     }
     if(path==='/api/countries')return route.fulfill({json:{type:'country_snapshot',asOfMs:Math.floor(Date.now()/5000)*5000,validUntilMs:Math.floor(Date.now()/5000)*5000+5000,granularity:'country',privacyThreshold:5,tags:[{id,name:'#gta6',color:'#5d5de5',activeParticipants:'12',countries:[{countryCode:'OTHER',activeParticipants:'2'},{countryCode:'PT',activeParticipants:'5'},{countryCode:'ZZ',activeParticipants:'5'}]}]}});
     if(path==='/api/ranking')return route.fulfill({json:{type:'active',asOfMs:Date.now(),metric:'distinct_anonymous_sessions_with_positive_balance',geography:'unavailable',ranking:[]}});
@@ -66,7 +66,7 @@ test('Country sharing is optional, displays suppressed groups and survives withd
   await page.goto('/?experiencePreview=1');
   await expect(page.getByTestId('live-connection')).toHaveText('Sessão conectada');
   await page.getByText('Como funciona e privacidade',{exact:true}).click();
-  const checkbox=page.getByRole('checkbox',{name:'Compartilhar meu país estimado nas áreas agregadas'});
+  const checkbox=page.getByRole('checkbox',{name:'Compartilhar meu país aproximado'});
   await expect(checkbox).not.toBeChecked();await checkbox.click();await expect(checkbox).toBeChecked();
   await expect(page.getByText(/País atual: PT/)).toBeVisible();
   await checkbox.click();await expect(page.getByText(/País atual: desconhecido/)).toBeVisible();
@@ -94,7 +94,7 @@ test('Disabling geography clears old and in-flight areas while authenticated wit
     const path=new URL(route.request().url()).pathname;
     if(path==='/api/session'){
       const body=route.request().postDataJSON();if(typeof body.geoConsent==='boolean')consent=body.geoConsent;
-      return route.fulfill({json:{anonymous:true,sessionFresh:false,sessionBinding:'a'.repeat(64),activeTagId:id,activeTag:{id,name:'#gta6',color:'#ff9465'},credits:[{tagId:id,name:'#gta6',color:'#ff9465',creditedSeconds:'3600',expiresAtMs:expires,serverNowMs:Date.now(),remainingMs:Math.max(0,expires-Date.now())}],geoConsent:consent,geoCountry:consent&&available?'PT':'ZZ',geographyAvailable:available}});
+      return route.fulfill({json:{anonymous:true,sessionFresh:false,sessionBinding:'a'.repeat(64),activeTagId:id,activeTag:{id,name:'#gta6',color:'#ff9465'},credits:[{tagId:id,name:'#gta6',color:'#ff9465',creditedSeconds:'3600',expiresAtMs:expires,serverNowMs:Date.now(),remainingMs:Math.max(0,expires-Date.now())}],geoConsent:consent,geoConsentDecided:true,geoCountry:consent&&available?'PT':'ZZ',geographyAvailable:available}});
     }
     if(path==='/api/countries'){
       if(++reads===2){secondStarted();await heldResponse;}
@@ -115,9 +115,9 @@ test('Disabling geography clears old and in-flight areas while authenticated wit
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
     await expect(page.getByTestId('live-geography')).toContainText('Nenhuma posição é inventada');
     await page.getByText('Como funciona e privacidade',{exact:true}).click();
-    const checkbox=page.getByRole('checkbox',{name:'Compartilhar meu país estimado nas áreas agregadas'});
+    const checkbox=page.getByRole('checkbox',{name:'Compartilhar meu país aproximado'});
     await expect(checkbox).toBeChecked();await expect(checkbox).toBeEnabled();
-    await checkbox.click();await expect(checkbox).not.toBeChecked();await expect(checkbox).toBeDisabled();
+    await checkbox.click();await expect(checkbox).not.toBeChecked();await expect(checkbox).toBeEnabled();
     await expect(page.getByTestId('live-selected')).toHaveText('#gta6');
     await expect(page.getByTestId('live-selected-balance')).not.toHaveText('0h 00m 00s');
     await expect(page.getByTestId('live-pending')).toHaveText('0');expect(taps).toBe(0);expect(consent).toBe(false);
@@ -153,4 +153,63 @@ test('Country overview pages all hashtags and minority selection never credits t
   await panel.getByRole('button',{name:'Focar hashtag selecionada',exact:true}).click();
   await expect(panel.getByRole('button',{name:'Ver todas as cores',exact:true})).toHaveAttribute('aria-pressed','true');
   await expect(page.getByTestId('live-pending')).toHaveText('0');expect(taps).toBe(0);
+});
+
+test('Taps update immediately while a POST is held; country notice is visible and joins only on participation',async({page})=>{
+  let entered!:()=>void,release!:()=>void;const started=new Promise<void>(r=>entered=r),held=new Promise<void>(r=>release=r);
+  let selected=false,consent=false,decided=false,seconds=0,expires=0,first=true;
+  const balance=()=>({tagId:id,name:'#gta6',color:'#ff9465',creditedSeconds:String(seconds),expiresAtMs:expires,remainingMs:Math.max(0,expires-Date.now()),serverNowMs:Date.now()});
+  await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/,route=>route.fulfill({json:{version:8,sources:{},layers:[]}}));
+  await page.route('**/api/**',async route=>{
+    const path=new URL(route.request().url()).pathname,body=route.request().postDataJSON();
+    if(path==='/api/session'){
+      if(typeof body?.geoConsent==='boolean'){consent=body.geoConsent;decided=true;}
+      return route.fulfill({json:{anonymous:true,sessionFresh:false,sessionBinding:'a'.repeat(64),activeTagId:selected?id:null,activeTag:selected?{id,name:'#gta6',color:'#ff9465'}:null,credits:seconds?[balance()]:[],geoConsent:consent,geoConsentDecided:decided,geoCountry:consent?'PT':'ZZ',geographyAvailable:true}});
+    }
+    if(path==='/api/tags')return route.fulfill({json:{tag:{id,name:'#gta6',color:'#ff9465'}}});
+    if(path==='/api/select'){selected=true;return route.fulfill({json:{activeTagId:id}});}
+    if(path==='/api/taps'){
+      if(first){first=false;entered();await held;}
+      seconds+=body.clicks;expires=Math.max(expires,Date.now())+body.clicks*1000;
+      return route.fulfill({json:{...balance(),batchId:body.batchId,acceptedClicks:body.clicks,duplicate:false}});
+    }
+    if(path==='/api/ranking')return route.fulfill({json:{type:'active',asOfMs:Date.now(),metric:'distinct_anonymous_sessions_with_positive_balance',geography:'unavailable',ranking:[]}});
+    if(path==='/api/countries'){const asOfMs=Math.floor(Date.now()/5000)*5000;return route.fulfill({json:{type:'country_snapshot',asOfMs,validUntilMs:asOfMs+5000,granularity:'country',privacyThreshold:5,tags:[]}});}
+    return route.fulfill({status:404,json:{error:'not_found'}});
+  });
+  try{
+    await page.goto('/?experiencePreview=1');await expect(page.getByTestId('live-connection')).toHaveText('Sessão conectada');
+    const choice=page.getByRole('checkbox',{name:'Compartilhar meu país aproximado'});
+    await expect(choice).toBeVisible();await expect(choice).toBeChecked();expect(consent).toBe(false);
+    await expect(page.getByText(/Ao participar, você aceita compartilhar seu país aproximado/)).toBeVisible();
+    await page.getByLabel('Sua hashtag',{exact:true}).fill('#gta6');await page.getByRole('button',{name:'Participar',exact:true}).click();
+    await expect(page.getByTestId('live-selected')).toHaveText('#gta6');expect(consent).toBe(true);
+    await page.getByRole('button',{name:'+1 segundo',exact:true}).click();await started;
+    for(let i=0;i<5;i++)await page.getByRole('button',{name:'+1 segundo',exact:true}).click();
+    await expect(page.getByTestId('live-pending')).toHaveText('6');
+    await expect(page.getByTestId('live-selected-balance')).toHaveText('0h 00m 06s');expect(seconds).toBe(0);
+    release();await expect(page.getByTestId('live-pending')).toHaveText('0');expect(seconds).toBe(6);
+    await choice.uncheck();await expect(choice).not.toBeChecked();await expect.poll(()=>consent).toBe(false);
+    await page.reload();await expect(choice).not.toBeChecked();
+  }finally{release();}
+});
+
+test('A temporary 429 resumes automatically with the identical batch and no manual synchronize',async({page})=>{
+  const attempts:any[]=[];
+  await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/,route=>route.fulfill({json:{version:8,sources:{},layers:[]}}));
+  await page.route('**/api/**',route=>{
+    const path=new URL(route.request().url()).pathname;
+    if(path==='/api/session')return route.fulfill({json:{anonymous:true,sessionFresh:false,sessionBinding:'a'.repeat(64),activeTagId:id,activeTag:{id,name:'#gta6',color:'#ff9465'},credits:[],geoConsent:false,geoConsentDecided:true,geographyAvailable:false}});
+    if(path==='/api/taps'){
+      const body=route.request().postDataJSON();attempts.push(body);
+      if(attempts.length===1)return route.fulfill({status:429,headers:{'Retry-After':'1'},json:{error:'rate_limited'}});
+      return route.fulfill({json:{tagId:id,batchId:body.batchId,creditedSeconds:'1',remainingMs:1000,serverNowMs:Date.now(),expiresAtMs:Date.now()+1000}});
+    }
+    if(path==='/api/ranking')return route.fulfill({json:{type:'active',asOfMs:Date.now(),metric:'distinct_anonymous_sessions_with_positive_balance',geography:'unavailable',ranking:[]}});
+    return route.fulfill({status:404,json:{error:'not_found'}});
+  });
+  await page.goto('/?experiencePreview=1');await expect(page.getByTestId('live-selected')).toHaveText('#gta6');
+  await page.getByRole('button',{name:'+1 segundo',exact:true}).click();
+  await expect(page.getByText('Taps guardados neste navegador. A sincronização tenta novamente automaticamente.',{exact:true})).toBeVisible();
+  await expect(page.getByTestId('live-pending')).toHaveText('0');expect(attempts).toHaveLength(2);expect(attempts[0]).toEqual(attempts[1]);
 });

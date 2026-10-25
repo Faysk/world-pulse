@@ -6,9 +6,11 @@ export const previewTeam='team_9wuTfarCQ3L63xtufPKUDzi0';
 export function previewConfiguration(env,now=Date.now()){
   if(env.GITHUB_REF!==`refs/heads/${previewBranch}`||env.GITHUB_REPOSITORY!=='Faysk/world-pulse')throw new Error('preview_target_rejected');
   if(env.DATABASE_MIGRATION_URL)throw new Error('preview_owner_forbidden');
+  const geo=env.WP_PREVIEW_GEO_COUNTRY_ENABLED==='true';
+  if(geo&&env.WP_PREVIEW_GEO_DIRECT_EDGE!=='true')throw new Error('preview_geo_unattested');
   const database=validateStagingUrl(env.DATABASE_URL,false,now);
   const values={DATABASE_URL:database,WP_API_ENABLED:'true',WP_PREVIEW_UI:'true',WP_GEO_PUBLIC_ENABLED:'true',
-    WP_GEO_COUNTRY_ENABLED:'false',WP_GEO_DIRECT_EDGE:'false'};
+    WP_GEO_COUNTRY_ENABLED:geo?'true':'false',WP_GEO_DIRECT_EDGE:geo?'true':'false'};
   return Object.entries(values).map(([key,value])=>({key,value,type:key==='DATABASE_URL'?'sensitive':'plain',target:['preview'],
     gitBranch:previewBranch,comment:'Managed from GitHub Environment staging; no production target'}));
 }
