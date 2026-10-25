@@ -117,3 +117,5 @@ O fluxo **interface → HTTPS privado no Actions → pooler Neon staging real �
 [Geografia por país com consentimento e limites reais](docs/31-country-geography.md): implementação integrada e fonte direta ativa; VPN/IPv6/rede móvel ainda exigem QA.
 
 [Operações finais: preview, retenção e ativação explícita da alpha](docs/32-prepublication-operations.md), com gates independentes; alpha/API e país ativos em produção.
+
+[Carregamento fluido e prévia pessoal da mancha](docs/41-loading-personal-country.md): publicados e verificados. A prévia da hashtag selecionada aparece neste navegador desde o primeiro saldo positivo, no país aproximado; o agregado público mantém o mínimo de cinco participações por hashtag/país.
