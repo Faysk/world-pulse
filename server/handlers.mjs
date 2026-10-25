@@ -4,6 +4,7 @@ import {
 } from './protocol.mjs';
 import * as store from './store.mjs';
 import { countryEstimateForRequest } from './geoPrivacy.mjs';
+import {regionCenter} from './regionGrid.mjs';
 
 function setSessionCookie(res, token, expiresAt) {
   const base=2592000;
@@ -16,7 +17,7 @@ function setSessionCookie(res, token, expiresAt) {
 export function route(kind, operations = store) {
   const {
     findVisitor, createVisitor, requireVisitor, createOrGetTag,
-    selectTag, creditBatch, getCredits, getRanking, getActiveBalanceSnapshot, consumeApiBudget,setCountryConsent,getCountrySnapshot
+    selectTag, creditBatch, getCredits, getRanking, getActiveBalanceSnapshot, consumeApiBudget,setCountryConsent,getCountrySnapshot,setRegionCell,getRegionSnapshot
   } = operations;
   return async function handler(req, res) {
     try {
@@ -37,6 +38,12 @@ export function route(kind, operations = store) {
         if(process.env.WP_GEO_PUBLIC_ENABLED!=='true')throw new ApiError(503,'geography_disabled','Origem geográfica ainda não liberada.');
         await consumeApiBudget();await consumeApiBudget('reads');
         return json(res,200,await getCountrySnapshot());
+      }
+      if(kind==='regions'){
+        onlyMethod(req,'GET');
+        if(process.env.WP_GEO_PUBLIC_ENABLED!=='true')throw new ApiError(503,'geography_disabled','Mapa regional indisponível.');
+        await consumeApiBudget();await consumeApiBudget('reads');
+        return json(res,200,await getRegionSnapshot());
       }
       if (kind === 'activity' || kind === 'ranking') {
         onlyMethod(req, 'GET');
@@ -79,6 +86,7 @@ export function route(kind, operations = store) {
           geoConsentDecided:visitor.country_consent_at!=null,
           geoCountry:visitor.country_consent===true?visitor.country_code:'ZZ',
           geographyAvailable:process.env.WP_GEO_PUBLIC_ENABLED==='true',
+          regionCell:visitor.region_cell??null,
           // Stable non-authenticating queue marker derived from a 256-bit random
           // HttpOnly cookie. It is only returned to the same-origin client;
           // the backend NEVER accepts it as proof of identity.
@@ -93,6 +101,14 @@ export function route(kind, operations = store) {
       }
 
       const visitor = await requireVisitor(token,country);
+      if(kind==='location'){
+        if(process.env.WP_GEO_PUBLIC_ENABLED!=='true')throw new ApiError(503,'geography_disabled','Mapa regional indisponível.');
+        if(req.headers?.['x-wp-session-binding']!==tokenHash('world-pulse-queue-binding-v1:'+token))throw new ApiError(409,'session_binding_mismatch','A sessão mudou. Recarregue antes de compartilhar a região.');
+        if(Object.keys(body).some(key=>key!=='cell')||!('cell'in body))throw new ApiError(400,'invalid_region_cell','Envie somente a célula regional.');
+        try{if(body.cell!==null)regionCenter(body.cell);}catch{throw new ApiError(400,'invalid_region_cell','Célula regional inválida.');}
+        await setRegionCell(visitor.id,body.cell);
+        return json(res,200,{regionCell:body.cell});
+      }
       if (kind === 'tags') {
         if (typeof body.name !== 'string') throw new ApiError(400,'invalid_hashtag','Nome obrigatório.');
         normalizeHashtag(body.name);

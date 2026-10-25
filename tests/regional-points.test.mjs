@@ -1,0 +1,35 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {regionCell,regionCenter} from '../server/regionGrid.mjs';
+import {route} from '../server/handlers.mjs';
+import {newSession,tokenHash} from '../server/protocol.mjs';
+test('Regional grid bounds, quantization, dateline and poles; center is never raw input',()=>{
+  for(const [lat,lon]of [[38.72,-9.14],[41.15,-8.61],[90,180],[-90,-180],[0,180],[0,-180]]){
+    const cell=regionCell(lat,lon),center=regionCenter(cell);
+    assert.equal(regionCell(center[1],center[0]),cell);
+    assert.notDeepEqual(center,[lon,lat]);
+    assert.ok(center[0]>=-180&&center[0]<=180&&center[1]>=-90&&center[1]<=90);
+  }
+  assert.equal(regionCell(38.72001,-9.14001),regionCell(38.72002,-9.14002));
+  for(const args of [[NaN,0],[0,Infinity],[91,0],[0,-181]])assert.throws(()=>regionCell(...args));
+  for(const cell of ['r1:360:0','r1:0:999','r1:01:2','r2:1:2',{},null,'38.72,-9.14'])assert.throws(()=>regionCenter(cell));
+});
+function res(){return {code:200,headers:{},setHeader(k,v){this.headers[k]=v;},status(n){this.code=n;return this;},end(s){this.payload=JSON.parse(s);}};}
+const session=newSession();
+const request=body=>({method:'POST',body,headers:{cookie:'wp_session='+session.token,'x-wp-session-binding':tokenHash('world-pulse-queue-binding-v1:'+session.token),origin:'https://map.faysk.dev',host:'map.faysk.dev'}});
+const operations={consumeApiBudget:async()=>{},requireVisitor:async()=>({id:'private-id'}),setRegionCell:async()=>{}};
+process.env.WP_API_ENABLED='true';process.env.WP_GEO_PUBLIC_ENABLED='true';
+test('Location API accepts only coarse cells or withdrawal, rejects exact coordinates and extra fields',async()=>{
+  const received=[];
+  for(const body of [{cell:regionCell(38.72,-9.14)},{cell:null}]){
+    const r=res();await route('location',{...operations,setRegionCell:async(id,cell)=>received.push([id,cell])})(request(body),r);
+    assert.equal(r.code,200);assert.deepEqual(r.payload,{regionCell:body.cell});
+  }
+  assert.equal(received.length,2);
+  const rotated=res(),bad=request({cell:null});bad.headers['x-wp-session-binding']='0'.repeat(64);
+  await route('location',operations)(bad,rotated);assert.equal(rotated.code,409);
+  for(const body of [{latitude:38.72,longitude:-9.14},{cell:'r1:999:1'},{cell:'r1:257:266',latitude:38},{cell:55},{}]){
+    const r=res();await route('location',operations)(request(body),r);assert.equal(r.code,400);
+  }
+  const r=res();await route('location',operations)({...request({cell:null}),headers:{host:'map.faysk.dev',origin:'https://attacker.invalid'}},r);assert.equal(r.code,403);
+});

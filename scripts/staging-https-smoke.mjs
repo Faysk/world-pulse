@@ -20,6 +20,7 @@ async function cleanup(){
         const removed=await client.query('DELETE FROM world_pulse.visitors WHERE id=ANY($1::uuid[])',[[...createdVisitors]]);
         if(removed.rowCount!==createdVisitors.size)throw new Error('synthetic_cleanup_count_mismatch');
         await client.query('DELETE FROM world_pulse.country_snapshot_cache');
+        await client.query('DELETE FROM world_pulse.region_snapshot_cache');
         await client.query('COMMIT');
         console.log(`Staging smoke synthetic sessions cleaned: ${removed.rowCount}.`);
       }catch{await client.query('ROLLBACK');console.error('Staging smoke cleanup failed; temporary branch expires automatically.');}
@@ -41,7 +42,7 @@ try{
   const operations={...store,createVisitor:async()=>{
     const visitor=await store.createVisitor();createdVisitors.add(visitor.visitorId);return visitor;
   }};
-  const handlers=Object.fromEntries(['session','tags','select','taps','ranking','activity','history','countries'].map(kind=>['/api/'+kind,route(kind,operations)]));
+  const handlers=Object.fromEntries(['session','tags','select','taps','ranking','activity','history','countries','location','regions'].map(kind=>['/api/'+kind,route(kind,operations)]));
   vite=await createServer({server:{middlewareMode:true,hmr:false},appType:'spa'});
   https=createHttpsServer({key,cert},async(req,res)=>{
     const handler=handlers[(req.url??'').split('?')[0]];

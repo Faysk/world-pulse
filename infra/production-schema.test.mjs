@@ -24,7 +24,7 @@ test('owner only applies reviewed ordered SQL; runtime verification follows owne
     return {query:async text=>{calls.push(text);return {rows:[{acquired:true}]};},end:async()=>calls.push('closed')};
   },readMigration:async file=>file,verifyRuntime:async url=>{assert.equal(url,env.DATABASE_URL);calls.push('verified');}});
   assert.ok(calls.indexOf('ALTER ROLE world_pulse_app NOINHERIT')<calls.indexOf(productionSchemaFiles[0]));
-  assert.equal(result.applied,5);assert.deepEqual(calls.filter(x=>x.endsWith('.sql')),productionSchemaFiles);
+  assert.equal(result.applied,6);assert.deepEqual(calls.filter(x=>x.endsWith('.sql')),productionSchemaFiles);
   assert.deepEqual(calls.slice(-2),['closed','verified']);
 });
 test('disabled gate never connects; SQL failure stops further files, closes owner and never verifies success',async()=>{

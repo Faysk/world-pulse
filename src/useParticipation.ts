@@ -1,4 +1,5 @@
 import type { CountrySnapshot } from './countryTypes';
+import {useRegionalLocation} from './useRegionalLocation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ParticipationClient, ParticipationRequestError, PENDING_NOTICE_KEY, SELECTION_NOTICE_KEY, type ActiveRanking, type LiveTag, type TimeBalance } from './participationClient';
 
@@ -19,7 +20,7 @@ export function participationError(error: unknown): string {
   return messages[code] ?? 'Não foi possível sincronizar. Os taps pendentes continuam na fila para tentar novamente.';
 }
 
-export function useParticipation() {
+export function useParticipation(countryOverview=true) {
   const [client]=useState(()=>new ParticipationClient());
   const [ready,setReady]=useState(false);
   const [selecting,setSelecting]=useState(false);
@@ -35,6 +36,7 @@ export function useParticipation() {
   const [countrySnapshot,setCountrySnapshot]=useState<CountrySnapshot|null>(null);
   const [countryError,setCountryError]=useState(false);
   const [countryPreference,setCountryPreference]=useState(client.countryPreference());
+  const regional=useRegionalLocation(client,ready&&countryPreference.available);
   const [consentBusy,setConsentBusy]=useState(false);
   const [shareCountry,setShareCountry]=useState(true);
   const [deliveryNotice,setDeliveryNotice]=useState('');
@@ -94,11 +96,11 @@ export function useParticipation() {
     if(!preference.decided||preference.consent!==shareCountry){await client.setGeoConsent(shareCountry);view();}
   },[client,shareCountry,view]);
   useEffect(()=>{
-    if(!ready||!countryPreference.available)return;
+    if(!ready||!countryPreference.available||!countryOverview)return;
     void refreshCountries();
     const id=window.setInterval(()=>{if(!document.hidden)void refreshCountries();},5000);
     return()=>window.clearInterval(id);
-  },[ready,countryPreference.available,refreshCountries]);
+  },[ready,countryPreference.available,countryOverview,refreshCountries]);
   const connect=useCallback(async()=>{
     try{await client.refreshSession();view();if(mounted.current){setReady(true);setError('');}}
     catch(reason){failure(reason);}
@@ -177,6 +179,6 @@ export function useParticipation() {
     try{await client.discardOrphanedPending();await connect();}
     catch(reason){failure(reason);}
   },[client,connect,failure]);
-  return {shareCountry,deliveryNotice,countrySnapshot,countryError,countryPreference,consentBusy,setGeoConsent,ready,selecting,syncing,error,selected,balances,pending:pending+[...intents.current.values()].reduce((a,b)=>a+b,0),quarantined,ranking,rankingError,tick,persistent:client.persistsPending(),balancesLimited:client.balancesLimited(),
+  return {regional,shareCountry,deliveryNotice,countrySnapshot,countryError,countryPreference,consentBusy,setGeoConsent,ready,selecting,syncing,error,selected,balances,pending:pending+[...intents.current.values()].reduce((a,b)=>a+b,0),quarantined,ranking,rankingError,tick,persistent:client.persistsPending(),balancesLimited:client.balancesLimited(),
     remaining:(tagId:string)=>client.remainingMilliseconds(tagId)+(client.pendingForTag(tagId)+(intents.current.get(tagId)??0))*1000,connect,select,tap,sync,discard};
 }

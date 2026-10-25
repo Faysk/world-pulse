@@ -34,6 +34,7 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
   await owner.query(await readFile(new URL('../infra/sql/0004-operation-budgets.sql', import.meta.url), 'utf8'));
   await owner.query(await readFile(new URL('../infra/sql/0005-retention-rollups.sql', import.meta.url), 'utf8'));
   await owner.query(await readFile(new URL('../infra/sql/0006-country-geography.sql', import.meta.url), 'utf8'));
+  await owner.query(await readFile(new URL('../infra/sql/0007-regional-points.sql', import.meta.url), 'utf8'));
 
   await t.test('Migration preserves history without inventing live balances and is repeatable', async () => {
     const [legacy] = await getCredits(legacyVisitor);
@@ -450,6 +451,28 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
     assert.equal(geo.activeParticipants,'7');
     await findVisitor(visitors[2].token,'XX');
     assert.equal((await owner.query('SELECT country_code FROM world_pulse.visitors WHERE id=$1',[visitors[2].visitorId])).rows[0].country_code,'ZZ');
+  });
+
+  await t.test('Regional points: explicit cell, one active pair, grouping, withdrawal cache invalidation and expiry',async()=>{
+    const {setRegionCell,getRegionSnapshot}=await import('../server/store.mjs');
+    const {regionCell}=await import('../server/regionGrid.mjs');
+    const cell=regionCell(38.72,-9.14),tag=await createOrGetTag('region_'+randomUUID().slice(0,8));
+    const visitors=[await createVisitor(),await createVisitor()];
+    for(const v of visitors){await selectTag(v.visitorId,tag.id);await creditBatch(v.visitorId,{batchId:randomUUID(),tagId:tag.id,clicks:30});}
+    assert.equal((await getRegionSnapshot()).cells.filter(row=>row.tagId===tag.id).length,0,'country/session alone is not regional consent');
+    await setRegionCell(visitors[0].visitorId,cell);
+    let row=(await getRegionSnapshot()).cells.find(row=>row.tagId===tag.id);
+    assert.equal(row.participants,'1');assert.equal(row.cell,cell);
+    assert.deepEqual(Object.keys(row).sort(),['cell','color','name','participants','tagId']);
+    await setRegionCell(visitors[1].visitorId,cell);
+    assert.equal((await getRegionSnapshot()).cells.find(row=>row.tagId===tag.id).participants,'2');
+    await assert.rejects(setRegionCell(visitors[0].visitorId,'r1:999:1'));
+    await setRegionCell(visitors[0].visitorId,null);
+    assert.equal((await getRegionSnapshot()).cells.find(row=>row.tagId===tag.id).participants,'1');
+    assert.ok((await getCredits(visitors[0].visitorId))[0].remainingMs>0,'withdrawal preserves balance');
+    await owner.query("UPDATE world_pulse.visitor_tags SET expires_at=now()-interval '1 minute' WHERE visitor_id=$1",[visitors[1].visitorId]);
+    await owner.query('DELETE FROM world_pulse.region_snapshot_cache');
+    assert.equal((await getRegionSnapshot()).cells.filter(row=>row.tagId===tag.id).length,0);
   });
 
 });

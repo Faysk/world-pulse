@@ -20,6 +20,7 @@ export type GlobeProps = {
   onZoom: (zoom: number) => void;
   onFps: (fps: number) => void;
   onTap: () => void;
+  onRegionPick?: (name:string) => void;
   onCountryPick?: (countryCode:string) => void;
   onTagPick: (tag: TagId) => void;
   onFailure: (message: string) => void;
@@ -228,12 +229,12 @@ function installLights(map: MapInstance, scale: number, population?: PulseCollec
 }
 
 export function WorldGlobe({
-  scale, population, selected, cityLights, onReady, onZoom, onFps, onTap, onCountryPick, onTagPick, onFailure, ariaLabel='Globo interativo de atividade simulada'
+  scale, population, selected, cityLights, onReady, onZoom, onFps, onTap, onCountryPick, onRegionPick, onTagPick, onFailure, ariaLabel='Globo interativo de atividade simulada'
 }: GlobeProps) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapInstance | null>(null);
-  const callbacks = useRef({ onReady, onZoom, onFps, onTap, onCountryPick, onTagPick, onFailure });
-  callbacks.current = { onReady, onZoom, onFps, onTap, onCountryPick, onTagPick, onFailure };
+  const callbacks = useRef({ onReady, onZoom, onFps, onTap, onCountryPick, onRegionPick, onTagPick, onFailure });
+  callbacks.current = { onReady, onZoom, onFps, onTap, onCountryPick, onRegionPick, onTagPick, onFailure };
   const latestState = useRef({ scale, population, selected, cityLights });
   latestState.current = { scale, population, selected, cityLights };
 
@@ -267,6 +268,7 @@ export function WorldGlobe({
     const gestureGuard = new TapGestureGuard();
     const canvas = map.getCanvas();
     let countryAtPointerDown:string|null=null;
+    let regionAtPointerDown:string|null=null;
     const sample = (event: PointerEvent): PointerInput => ({
       id: event.pointerId,
       x: event.clientX,
@@ -278,7 +280,12 @@ export function WorldGlobe({
       const input=sample(event);
       if (event.isPrimary === false) gestureGuard.invalidate();
       else{
-        countryAtPointerDown=null;
+        countryAtPointerDown=null;regionAtPointerDown=null;
+        if(map.getLayer('regional-point-core')){
+          const box=canvas.getBoundingClientRect();
+          const name=map.queryRenderedFeatures([event.clientX-box.left,event.clientY-box.top],{layers:['regional-point-core']})[0]?.properties?.name;
+          if(typeof name==='string')regionAtPointerDown=name;
+        }
         if(callbacks.current.onCountryPick&&(map.getLayer('live-country-fill')||map.getLayer('personal-country-fill'))){
           const box=canvas.getBoundingClientRect();
           const country=map.queryRenderedFeatures([event.clientX-box.left,event.clientY-box.top],{layers:['live-country-fill','personal-country-fill'].filter(id=>Boolean(map.getLayer(id)))})[0]?.properties?.countryCode;
@@ -350,6 +357,12 @@ export function WorldGlobe({
       if (!original || !gestureGuard.consumeClick(
         original.clientX, original.clientY, performance.now()
       )) return;
+      const intendedRegion=regionAtPointerDown;regionAtPointerDown=null;
+      if(intendedRegion){callbacks.current.onRegionPick?.(intendedRegion);return;}
+      if(map.getLayer('regional-point-core')){
+        const name=map.queryRenderedFeatures(event.point,{layers:['regional-point-core']})[0]?.properties?.name;
+        if(typeof name==='string'){callbacks.current.onRegionPick?.(name);return;}
+      }
       const intendedCountry=countryAtPointerDown;countryAtPointerDown=null;
       if(intendedCountry&&callbacks.current.onCountryPick){callbacks.current.onCountryPick(intendedCountry);return;}
       if(map.getLayer('live-country-fill')||map.getLayer('personal-country-fill')){
