@@ -1,5 +1,9 @@
 # Operações preparadas antes da publicação
 
+> Atualização de 25/10/2026: a alpha/API foram publicadas por autorização do usuário.
+> O registro abaixo preserva preparações e verificações anteriores; o estado
+> operacional atual, flags e recibos estão em [produção](39-production-alpha-release.md).
+
 Este documento descreve código pronto para revisão e execução deliberada, não
 afirma ativação de produção. Publicação de produção está pausada; previews de
 staging foram retomados em 25/10/2026. Integrar o código do PR #31 não publica nem ativa a API.

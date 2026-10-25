@@ -1,27 +1,29 @@
 # 05 — Arquitetura real e orçamento gratuito
 
-**Atualizado em 24/10/2026.** Fonte operacional: [runbook](11-infrastructure-operations.md). Rastreio: #7, #20 e #37.
+**Atualizado em 25/10/2026.** Fonte operacional: [runbook](11-infrastructure-operations.md). Rastreio: #7, #20 e #37.
 
 ## Implantado
 
 | Componente | Responsabilidade | Limite de escopo atual |
 | --- | --- | --- |
-| React + TypeScript + Vite | Interface estática compilada | Contagens e taps da POC são locais/simulados |
-| MapLibre GL + OpenFreeMap | Globo vetorial e cartografia | As células de participantes são sintéticas |
-| Vercel Hobby | Entrega do app e HTTPS | API real ainda não integrada |
+| React + TypeScript + Vite | Interface estática compilada | Alpha pública com saldos e ranking reais |
+| MapLibre GL + OpenFreeMap | Globo vetorial e cartografia | Sem posições pessoais; fonte de país desativada |
+| Vercel Hobby | Entrega do app e HTTPS | API real integrada e ativa |
 | Cloudflare DNS | Resolver `map.faysk.dev` para a Vercel | DNS only; Cloudflare não hospeda o frontend |
-| Neon Free / PostgreSQL | Banco relacional com TLS e role runtime restrita | Conexão verificada; tabelas de participação ainda não migradas em produção |
+| Neon Free / PostgreSQL | Banco relacional com TLS e role runtime restrita | Schema 0001–0006 e runtime restrito ativos em produção |
 | Cloudflare R2 Standard | Armazenamento S3 privado | Apenas provisionamento/probes; não participa dos taps nem fornece os tiles |
 | GitHub Actions | Validar, sincronizar configuração e publicar | Environment `production`, branch `main`; sem secrets em PRs |
 | Feed Steam | Endpoint Vercel para dados externos de jogos | Publicado pelo PR #41; amostra externa independente do banco e das manchas |
 
 O navegador recebe HTML/JS/CSS da Vercel e tiles do OpenFreeMap. Não recebe credenciais PostgreSQL ou R2. O GitHub é a origem da configuração de produção; o workflow sincroniza somente a lista autorizada de variáveis server-side para a Vercel.
 
-## Em desenvolvimento, sem ativação pública
+## Participação real e gates separados
 
-O [PR #31](https://github.com/Faysk/world-pulse/pull/31) contém endpoints Vercel para sessão anônima por cookie, criação/seleção de hashtags e lotes idempotentes de taps, além de cliente isolado e migração versionada. O gate `WP_API_ENABLED` é desligado por padrão. Não há aplicação automática dessa migração no deploy.
-
-O PR #43 já alinhou histórico e `expires_at` ao [contrato de saldo](14-time-credit-contract.md), com concorrência/retries validados em PostgreSQL descartável. Antes de integrar: staging, interface, retenção e limites de abuso. Antes de publicar manchas reais: resolver agregação geográfica/privacidade (#6) e testar dois navegadores (#13). O ranking do produto (#8) ainda não tem ordenação confirmada.
+O PR #31 integra sessões, hashtags, lotes idempotentes, múltiplos saldos e ranking.
+A alpha/API foram ativadas em 25/10 pelo Actions, com migrações verificadas e
+retenção monitorada habilitada. Ranking atual conta pares sessão/hashtag com saldo
+positivo, independentemente de segundos; histórico fica separado. A fonte de país
+permanece fechada até validar a borda. [Recibo e limites](39-production-alpha-release.md).
 
 Não foi adotado serviço externo de Auth/Realtime nem WebSocket por visitante. Agregados por viewport/zoom e mecanismo de atualização permanecem em projeto; H3 é alternativa de implementação, não dependência instalada.
 

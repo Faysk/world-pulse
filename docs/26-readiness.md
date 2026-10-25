@@ -1,14 +1,16 @@
 # 26 — Estrutura real e prontidão da participação
 
-Atualizado em 24/10/2026. A presença do código de participação no repositório
-não habilita a API, a UI da alpha ou publicação no domínio público.
+Atualizado em 25/10/2026. Alpha/API de produção foram deliberadamente ativadas
+pelo Actions; fonte de país continua desligada. Código na main não publica
+automaticamente. [Estado operacional atual](39-production-alpha-release.md).
 
 ## Caminhos reais
 
 ```mermaid
 flowchart LR
-  P[Site público: demo sintética] --> T[OpenFreeMap]
-  U[Experiência com gate de build] --> H[Handlers HTTP: cookie e origem]
+  P[Site público: alpha funcional] --> T[OpenFreeMap]
+  P --> U[Experiência integrada]
+  U --> H[Handlers HTTP: cookie e origem]
   L[Laboratório DEV-only] --> H
   H --> B[Orçamento compartilhado]
   B --> D[(PostgreSQL)]
@@ -44,7 +46,7 @@ sessão na mesma transação. DELETE/CASCADE isolado perderia histórico e é pr
 
 | Ambiente | Estado |
 |---|---|
-| Produção Neon `main` | Baseline de acesso; domínio da API não migrado/ativado por este trabalho |
+| Produção Neon `main` | Schema 0001–0006 verificado; alpha/API ativas, fonte de país desligada |
 | Neon `world-pulse-staging` | Criado schema-only, sem copiar produção; fixtures de QA próprias e credenciais separadas no GitHub; 0001–0006 e timeouts transacionais no pooler verificados. Expira 31/10 às 01:15 UTC |
 | CI PostgreSQL descartável | Migrações 0001–0006; testes HTTP/duas sessões/abas e concorrência, sem secrets reais |
 | Local visual | Funciona sem secrets; teste SQL requer PostgreSQL descartável do CI ou instalação local explícita |
