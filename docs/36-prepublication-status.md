@@ -94,3 +94,18 @@ domínio, ativação ou alteração de secrets nesta rodada.
 
 A estabilização desse teste foi registrada na [issue #97](https://github.com/Faysk/world-pulse/issues/97),
 com evidência do timeout e aceite separado de medição física.
+
+## Retomada da Vercel — 25/10/2026
+
+A quota de builds foi revalidada: um preview isolado do commit
+`88fe0b4878982f137fcfeac41afedad161995272` terminou READY
+(`dpl_GwZFjWfkDFMaETa1ptUq8bSsSzTN`). HTTPS autenticado retornou 200 para o HTML;
+a proteção do preview foi mantida. Isso valida build/runtime estático, não
+conexão do aplicativo ao staging nem fonte geográfica da borda.
+
+[Check Neon 40229816651](https://github.com/Faysk/world-pulse/actions/runs/40229816651)
+e [plano preview 40229862494](https://github.com/Faysk/world-pulse/actions/runs/40229862494)
+aprovados novamente. A branch de staging foi avançada por fast-forward à main
+revisada. Token de staging separado ainda pendente; nenhum valor da secret de
+produção foi recuperado. Sync e deploy da experiência com banco continuam como
+etapas distintas. Nenhuma migração, ativação ou alteração de domínio em produção.

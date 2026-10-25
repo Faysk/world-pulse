@@ -84,3 +84,11 @@ Migração 0005 aplicada no staging via [run 40053116588](https://github.com/Fay
 Migração 0006 (consentimento de país e cache agregado) aplicada somente no staging: [40058318799](https://github.com/Faysk/world-pulse/actions/runs/40058318799). Check após migração: [40058318548](https://github.com/Faysk/world-pulse/actions/runs/40058318548). Os gates de origem geográfica continuam desligados. Fluxo preparado de [plano/sync de preview](32-prepublication-operations.md) não publica.
 
 Homologação HTTPS privada contra o Neon staging real aprovada em [40061344573](https://github.com/Faysk/world-pulse/actions/runs/40061344573): desktop/mobile, duas sessões, cookies seguros, retorno, múltiplos saldos, perda de resposta/retry e consentimento desconhecido; quatro sessões sintéticas removidas no encerramento. Tags vazias/contadores de teste podem permanecer, sem dados copiados da produção. Não comprova certificado/headers/runtime Vercel. [Método e limites](35-staging-private-https-smoke.md).
+
+## Quota revalidada — 25/10/2026
+
+Um novo preview do commit 88fe0b4 terminou READY e seu HTML respondeu 200 em HTTPS,
+com proteção preservada. O bloqueio de build não se repetiu. Check Neon
+40229816651 e plano preview 40229862494 aprovados. A validação de banco/aplicativo
+na Vercel ainda depende do token próprio do staging e sincronização deliberada;
+esse preview não usa a conexão de produção. [Registro atual](36-prepublication-status.md).
