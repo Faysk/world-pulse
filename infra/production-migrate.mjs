@@ -12,6 +12,7 @@ async function verifyRuntime(connectionString){
       (SELECT count(*)::int FROM pg_auth_members WHERE member=pg_roles.oid) AS memberships,
       has_schema_privilege(current_user,'world_pulse','CREATE') AS schema_create,
       has_schema_privilege(current_user,'public','CREATE') AS public_create FROM pg_roles WHERE rolname=current_user`);
+    console.log('Runtime permission audit: '+JSON.stringify(role)); // Role flags only; no credentials or session identifiers.
     if(role?.name!=='world_pulse_app'||Object.entries(role).some(([key,value])=>
       key==='name'?false:key==='memberships'?value!==0:value!==false))throw new Error('production_runtime_permissions_rejected');
     for(const query of ['SELECT id FROM world_pulse.tags LIMIT 0','SELECT expires_at FROM world_pulse.visitor_tags LIMIT 0',

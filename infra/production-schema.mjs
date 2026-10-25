@@ -15,6 +15,9 @@ export async function applyProductionSchema({env,connectOwner,readMigration,veri
     const {rows:[lock]}=await client.query('SELECT pg_try_advisory_lock(1867402) AS acquired');
     if(!lock?.acquired)throw new Error('production_migration_locked');
     await client.query("SET statement_timeout='30s'");await client.query("SET lock_timeout='3s'");
+    // The original dashboard-created role may retain PostgreSQL's INHERIT default.
+    // Remove inheritance; never add memberships, elevated attributes or DDL.
+    await client.query('ALTER ROLE world_pulse_app NOINHERIT');
     for(const file of productionSchemaFiles){await client.query(await readMigration(file));report(file);}
   }finally{await client.end();} // Closing the direct owner session releases its advisory lock.
   await verifyRuntime(policy.runtime);
