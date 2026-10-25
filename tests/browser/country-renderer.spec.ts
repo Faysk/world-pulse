@@ -65,6 +65,14 @@ test('Personal country preview draws with no public participants and disappears 
   await expect.poll(()=>page.evaluate(async()=>((await (window as any).testMap.getSource('personal-country').getData()).features.length))).toBe(1);
   expect(await page.evaluate(async()=>(await (window as any).testMap.getSource('live-countries').getData()).features.length)).toBe(0);
   await expect.poll(()=>page.evaluate(()=>{const map=(window as any).testMap;return map.queryRenderedFeatures(map.project([-8,39]),{layers:['personal-country-fill']}).length;})).toBeGreaterThan(0);
+  const point=await page.evaluate(()=>{const p=(window as any).testMap.project([-8,39]);return {x:p.x,y:p.y};});
+  if(info.project.name==='chromium'){
+    await page.mouse.move(point.x,point.y);
+    await expect(page.getByTestId('picked')).toHaveText('');
+    await page.mouse.click(point.x,point.y);
+  }else await page.touchscreen.tap(point.x,point.y);
+  await expect(page.getByTestId('picked')).toHaveText('PT');
+  await expect(page.getByTestId('taps')).toHaveText('0');
   await page.screenshot({path:`test-artifacts/personal-country-${info.project.name}.png`});
   await page.getByRole('button',{name:'Clear',exact:true}).click();
   await expect.poll(()=>page.evaluate(async()=>(await (window as any).testMap.getSource('personal-country').getData()).features.length)).toBe(0);

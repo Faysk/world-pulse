@@ -279,9 +279,9 @@ export function WorldGlobe({
       if (event.isPrimary === false) gestureGuard.invalidate();
       else{
         countryAtPointerDown=null;
-        if(callbacks.current.onCountryPick&&map.getLayer('live-country-fill')){
+        if(callbacks.current.onCountryPick&&(map.getLayer('live-country-fill')||map.getLayer('personal-country-fill'))){
           const box=canvas.getBoundingClientRect();
-          const country=map.queryRenderedFeatures([event.clientX-box.left,event.clientY-box.top],{layers:['live-country-fill']})[0]?.properties?.countryCode;
+          const country=map.queryRenderedFeatures([event.clientX-box.left,event.clientY-box.top],{layers:['live-country-fill','personal-country-fill'].filter(id=>Boolean(map.getLayer(id)))})[0]?.properties?.countryCode;
           if(typeof country==='string')countryAtPointerDown=country;
         }
       }
@@ -352,8 +352,8 @@ export function WorldGlobe({
       )) return;
       const intendedCountry=countryAtPointerDown;countryAtPointerDown=null;
       if(intendedCountry&&callbacks.current.onCountryPick){callbacks.current.onCountryPick(intendedCountry);return;}
-      if(map.getLayer('live-country-fill')){
-        const country=map.queryRenderedFeatures(event.point,{layers:['live-country-fill']})[0]?.properties?.countryCode;
+      if(map.getLayer('live-country-fill')||map.getLayer('personal-country-fill')){
+        const country=map.queryRenderedFeatures(event.point,{layers:['live-country-fill','personal-country-fill'].filter(id=>Boolean(map.getLayer(id)))})[0]?.properties?.countryCode;
         if(typeof country==='string'&&callbacks.current.onCountryPick){callbacks.current.onCountryPick(country);return;}
       }
       if (!map.getLayer('pulse-hit')) return;
@@ -374,9 +374,9 @@ export function WorldGlobe({
       if (hoverFrame !== null) window.cancelAnimationFrame(hoverFrame);
       hoverFrame = window.requestAnimationFrame(() => {
         hoverFrame = null;
-        if(map.getLayer('live-country-fill')){
-        const country=map.queryRenderedFeatures(event.point,{layers:['live-country-fill']})[0]?.properties?.countryCode;
-        if(typeof country==='string'&&callbacks.current.onCountryPick){callbacks.current.onCountryPick(country);return;}
+        if(map.getLayer('live-country-fill')||map.getLayer('personal-country-fill')){
+        const country=map.queryRenderedFeatures(event.point,{layers:['live-country-fill','personal-country-fill'].filter(id=>Boolean(map.getLayer(id)))})[0]?.properties?.countryCode;
+        if(typeof country==='string'&&callbacks.current.onCountryPick){map.getCanvas().style.cursor='pointer';return;}
       }
       if (!map.getLayer('pulse-hit')) return;
         if (map.isMoving()) {

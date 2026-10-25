@@ -25,8 +25,9 @@ respostas de geometria em trânsito são canceladas logicamente para não ressus
 uma prévia retirada. Source/layers são removidas no unmount, e o GeoJSON é
 compartilhado com a camada pública, sem segunda transferência.
 
-Tocar essa prévia pessoal permite manter o gesto de adicionar tempo no terreno;
-somente áreas públicas entram na inspeção agregada. A prévia é da hashtag
+Tocar essa prévia pessoal inspeciona o país, sem adicionar tempo; passar o mouse
+somente muda o cursor, sem abrir painéis. Botão +1 ou terreno sem área continuam
+adicionando tempo. A prévia é da hashtag
 selecionada, não um mapa de todas as participações pessoais simultâneas.
 
 Verificação: testes de navegador conferem polígono PT visível com source pública
