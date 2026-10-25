@@ -39,10 +39,10 @@ try{
       if(hashes.size){
         const db=await pool.connect();
         try{
-          await beginLimitedTransaction(db);await db.query('SELECT pg_advisory_xact_lock(1867401)');
+          await beginLimitedTransaction(db);await db.query('SELECT pg_advisory_xact_lock(1867401)');await db.query('SELECT pg_advisory_xact_lock(1867403)');
           const result=await db.query('DELETE FROM world_pulse.visitors WHERE session_hash::text=ANY($1::text[])',[[...hashes]]);
           if(result.rowCount!==hashes.size)throw new Error('preview_cleanup_count');
-          await db.query('DELETE FROM world_pulse.country_snapshot_cache');await db.query('COMMIT');cleaned=result.rowCount;
+          await db.query('DELETE FROM world_pulse.country_snapshot_cache');await db.query('DELETE FROM world_pulse.region_snapshot_cache');await db.query('COMMIT');cleaned=result.rowCount;
         }catch(error){await db.query('ROLLBACK');throw error;}finally{db.release();}
       }
       console.log(`Preview synthetic sessions cleaned: ${cleaned}. Empty QA tags/budget counters may remain in the expiring staging branch.`);

@@ -16,6 +16,7 @@ async function cleanup(){
       const client=await pool.connect();
       try{
         await beginLimitedTransaction(client);
+        await client.query('SELECT pg_advisory_xact_lock(1867401)');await client.query('SELECT pg_advisory_xact_lock(1867403)');
         // Only synthetic identities created by THIS process, never broad cleanup.
         const removed=await client.query('DELETE FROM world_pulse.visitors WHERE id=ANY($1::uuid[])',[[...createdVisitors]]);
         if(removed.rowCount!==createdVisitors.size)throw new Error('synthetic_cleanup_count_mismatch');
