@@ -33,5 +33,11 @@ Não é navegador para dados pessoais ou sites externos não confiáveis e não 
 runtime de produção. A decisão de validar aparelhos reais com o público continua
 vigente; Chromium/SwiftShader em container não comprovam GPU ou FPS de celulares.
 
+O teste de gesto mobile recolhe o laboratório após a preparação e direciona o
+toque nativo ao canvas com verificação de actionability. Um painel aberto pode
+interceptar a coordenada fixa usada anteriormente; isso não deve ser confundido
+com falha do reconhecedor. Continuam exigidos exatamente um crédito no tap,
+nenhum crédito por navegação e os mesmos limites de duração/movimento do produto.
+
 Fonte: [documentação oficial de Docker do Playwright](https://playwright.dev/docs/docker).
 Os recibos e tempos observados serão registrados após a execução equivalente.
