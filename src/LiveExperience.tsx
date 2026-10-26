@@ -368,7 +368,13 @@ export default function LiveExperience() {
             <span />
           </button>
         </div>
-        {live.regional.error && <p role="status">{t.locationError}</p>}
+        {live.regional.error && (
+          <p role="status">
+            {live.regional.error === "imprecise_location"
+              ? t.locationImprecise
+              : t.locationError}
+          </p>
+        )}
         <form onSubmit={select}>
           <label className="sr-only" htmlFor="live-name">
             {t.hashtag}
@@ -459,6 +465,15 @@ export default function LiveExperience() {
           <p>{t.mapHelp}</p>
           <p>{t.rankingHelp}</p>
           <p id="location-privacy">{t.privacy}</p>
+          {live.regional.accuracyMeters !== null && (
+            <p data-testid="location-accuracy">
+              {t.reportedAccuracy}:{" "}
+              {Intl.NumberFormat(locale).format(
+                Math.ceil(live.regional.accuracyMeters),
+              )}{" "}
+              m
+            </p>
+          )}
           <p>{t.withdrawal}</p>
           <p>{t.syncHelp}</p>
           <p>{t.retention}</p>

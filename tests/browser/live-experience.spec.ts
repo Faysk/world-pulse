@@ -314,3 +314,45 @@ test('Clean controls default to English; help is keyboard accessible and regiona
   await expect(page.getByRole('dialog')).toContainText('La ubicación es opcional');
   await page.getByRole('button',{name:'Cerrar',exact:true}).click();
 });
+
+test('Location requests high accuracy and rejects uncertain fixes without sending or blocking taps',async({page})=>{
+  await page.addInitScript(()=>{
+    Object.defineProperty(navigator,'geolocation',{value:{getCurrentPosition:(ok:any,_fail:any,options:any)=>{
+      (window as any).locationRequestOptions=options;
+      ok({coords:{latitude:38.72,longitude:-9.14,accuracy:(window as any).fixtureAccuracy??25000}});
+    }}});
+  });
+  const writes:any[]=[];
+  await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/,route=>route.fulfill({json:{version:8,sources:{},layers:[]}}));
+  await page.route('**/api/**',route=>{
+    const path=new URL(route.request().url()).pathname;
+    if(path==='/api/session')return route.fulfill({json:{anonymous:true,sessionFresh:false,sessionBinding:'a'.repeat(64),activeTagId:id,activeTag:{id,name:'#gta6',color:'#5d5de5'},credits:[],geoConsent:false,geoCountry:'ZZ',regionCell:null,geographyAvailable:true}});
+    if(path==='/api/location'){const body=route.request().postDataJSON();writes.push(body);return route.fulfill({json:{regionCell:body.cell,geoConsent:true,geoCountry:'PT'}});}
+    return route.fulfill({status:503,json:{error:'unavailable'}});
+  });
+  await page.goto('/?experiencePreview=1');
+  for(const accuracy of [25000,1001,NaN,-1]){
+    await page.evaluate(value=>{(window as any).fixtureAccuracy=value;},accuracy);
+    await page.getByRole('switch').click();
+    await expect(page.getByText('Location is too imprecise for your point.',{exact:false})).toBeVisible();
+    await expect(page.getByRole('switch')).toHaveAttribute('aria-checked','false');
+    await expect(page.getByRole('button',{name:'+1',exact:true})).toBeEnabled();
+    expect(writes).toEqual([]);
+    if(accuracy===25000){
+      await page.getByRole('button',{name:'How it works',exact:true}).click();
+      await expect(page.getByTestId('location-accuracy')).toHaveText('Browser-reported accuracy: 25,000 m');
+      await page.getByRole('button',{name:'Close',exact:true}).click();
+    }
+  }
+  expect(await page.evaluate(()=>(window as any).locationRequestOptions)).toEqual({enableHighAccuracy:true,maximumAge:0,timeout:20000});
+  await page.evaluate(()=>{(window as any).fixtureAccuracy=25;});await page.getByRole('switch').click();
+  await expect(page.getByRole('switch')).toHaveAttribute('aria-checked','true');
+  expect(writes).toHaveLength(1);expect(Object.keys(writes[0])).toEqual(['cell']);expect(writes[0].cell).toMatch(/^r2:/);
+  expect(JSON.stringify(writes)).not.toContain('38.72');expect(JSON.stringify(writes)).not.toContain('accuracy');
+  await page.getByRole('button',{name:'Como funciona',exact:true}).click();
+  await expect(page.getByTestId('location-accuracy')).toHaveText('Margem informada pelo navegador: 25 m');
+  await page.getByRole('button',{name:'Fechar',exact:true}).click();
+  await page.reload();await expect(page.getByRole('button',{name:'How it works',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'How it works',exact:true}).click();
+  await expect(page.getByTestId('location-accuracy')).toHaveCount(0);
+});
