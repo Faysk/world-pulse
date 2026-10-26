@@ -484,4 +484,67 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
     assert.equal((await getRegionSnapshot()).cells.filter(row=>row.tagId===tag.id).length,0);
   });
 
+  await t.test('Snapshot readers wait for one rebuild per window instead of failing on a cold cache',async()=>{
+    const {getRegionSnapshot,getCountrySnapshot}=await import('../server/store.mjs');
+    for(const [table,lock,read,marker] of [
+      ['region_snapshot_cache',1867403,getRegionSnapshot,'LIMIT 2001'],
+      ['country_snapshot_cache',1867401,getCountrySnapshot,'LIMIT 5001']]){
+      await owner.query(`DELETE FROM world_pulse.${table}`);
+      const locker=await owner.connect();let builds=0,readers;
+      useTestPool({async connect(){const client=await app.connect();return {
+        release:()=>client.release(),query:(text,values)=>{if(text.includes(marker))builds++;return client.query(text,values);}
+      };}});
+      try{
+        await locker.query('BEGIN');await locker.query('SELECT pg_advisory_xact_lock($1::bigint)',[lock]);
+        readers=Promise.allSettled(Array.from({length:20},()=>read()));
+        let waiting=false;
+        for(let i=0;i<30&&!waiting;i++){
+          const {rows:[row]}=await owner.query("SELECT count(*)::int AS n FROM pg_locks WHERE locktype='advisory' AND NOT granted AND objid=$1::oid AND database=(SELECT oid FROM pg_database WHERE datname=current_database())",[lock]);
+          waiting=row.n>0;if(!waiting)await new Promise(r=>setTimeout(r,10));
+        }
+        assert.ok(waiting,'readers must wait on the same invalidation lock');
+        await locker.query('COMMIT');
+        const results=await readers;
+        assert.ok(results.every(r=>r.status==='fulfilled'),'cold-cache contention must not become a 503');
+        assert.equal(builds,new Set(results.map(r=>r.value.asOfMs)).size,'one rebuild for each returned clock window');
+      }finally{
+        await locker.query('ROLLBACK');locker.release();if(readers)await readers;useTestPool(app);
+      }
+    }
+  });
+
+  await t.test('Snapshot lock timeout remains bounded and releases the aborted transaction',async()=>{
+    const {getRegionSnapshot,getCountrySnapshot}=await import('../server/store.mjs');
+    for(const [table,lock,read] of [['region_snapshot_cache',1867403,getRegionSnapshot],['country_snapshot_cache',1867401,getCountrySnapshot]]){
+      await owner.query(`DELETE FROM world_pulse.${table}`);const locker=await owner.connect();
+      try{
+        await locker.query('BEGIN');await locker.query('SELECT pg_advisory_xact_lock($1::bigint)',[lock]);
+        await assert.rejects(read(),error=>error.code==='geography_refreshing'&&error.status===503);
+      }finally{await locker.query('ROLLBACK');locker.release();}
+      assert.ok((await read()).validUntilMs>0,'pool remains usable after lock timeout rollback');
+    }
+  });
+
+  await t.test('Withdrawal committed between first cache lookup and rebuild cannot resurrect a regional point',async()=>{
+    const {getRegionSnapshot,setRegionCell}=await import('../server/store.mjs');
+    const visitor=await createVisitor(),tag=await createOrGetTag('race_'+randomUUID().slice(0,8));
+    await selectTag(visitor.visitorId,tag.id);await creditBatch(visitor.visitorId,{batchId:randomUUID(),tagId:tag.id,clicks:30});
+    await setRegionCell(visitor.visitorId,'r2:10000:1');
+    assert.ok((await getRegionSnapshot()).cells.some(row=>row.tagId===tag.id));
+    await owner.query('DELETE FROM world_pulse.region_snapshot_cache');
+    let entered=false,paused=false,resume;
+    const barrier=new Promise(resolve=>{resume=resolve;});
+    useTestPool({async connect(){const client=await app.connect();return {release:()=>client.release(),async query(text,values){
+      const result=await client.query(text,values);
+      if(!paused&&text.startsWith('SELECT payload FROM world_pulse.region_snapshot_cache')&&!result.rowCount){paused=true;entered=true;await barrier;}
+      return result;
+    }};}});
+    const pending=getRegionSnapshot();pending.catch(()=>{});
+    try{
+      for(let i=0;i<100&&!entered;i++)await new Promise(r=>setTimeout(r,10));
+      assert.ok(entered);await setRegionCell(visitor.visitorId,null);resume();
+      assert.ok(!(await pending).cells.some(row=>row.tagId===tag.id));
+      assert.ok((await getCredits(visitor.visitorId))[0].remainingMs>0);
+    }finally{resume();await pending.catch(()=>{});useTestPool(app);}
+  });
 });
