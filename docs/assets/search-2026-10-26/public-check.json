@@ -1,0 +1,93 @@
+{
+  "checkedAt": "2026-10-26T21:01:13.342Z",
+  "checks": [
+    {
+      "path": "/",
+      "status": 200,
+      "finalUrl": "https://map.faysk.dev/",
+      "indexable": true
+    },
+    {
+      "path": "/about/",
+      "status": 200,
+      "finalUrl": "https://map.faysk.dev/about/",
+      "indexable": true
+    },
+    {
+      "path": "/pt/sobre/",
+      "status": 200,
+      "finalUrl": "https://map.faysk.dev/pt/sobre/",
+      "indexable": true
+    },
+    {
+      "path": "/es/acerca/",
+      "status": 200,
+      "finalUrl": "https://map.faysk.dev/es/acerca/",
+      "indexable": true
+    },
+    {
+      "path": "/favicon.svg",
+      "status": 200,
+      "contentType": "image/svg+xml",
+      "bytes": 424
+    },
+    {
+      "path": "/favicon.ico",
+      "status": 200,
+      "contentType": "image/vnd.microsoft.icon",
+      "bytes": 4668
+    },
+    {
+      "path": "/icons/icon-48.png",
+      "status": 200,
+      "contentType": "image/png",
+      "bytes": 2441
+    },
+    {
+      "path": "/icons/icon-180.png",
+      "status": 200,
+      "contentType": "image/png",
+      "bytes": 10122
+    },
+    {
+      "path": "/icons/icon-192.png",
+      "status": 200,
+      "contentType": "image/png",
+      "bytes": 10686
+    },
+    {
+      "path": "/icons/icon-512.png",
+      "status": 200,
+      "contentType": "image/png",
+      "bytes": 30735
+    },
+    {
+      "path": "/icons/maskable-512.png",
+      "status": 200,
+      "contentType": "image/png",
+      "bytes": 24978
+    },
+    {
+      "path": "/social-card.png",
+      "status": 200,
+      "contentType": "image/png",
+      "bytes": 221574
+    },
+    {
+      "path": "/site.webmanifest",
+      "status": 200,
+      "contentType": "application/manifest+json; charset=utf-8",
+      "bytes": 559
+    },
+    {
+      "path": "/brand.css",
+      "status": 200,
+      "contentType": "text/css; charset=utf-8",
+      "bytes": 2779
+    }
+  ],
+  "robots": true,
+  "sitemapUrls": 4,
+  "apiNoindex": true,
+  "unknown404": true
+}
