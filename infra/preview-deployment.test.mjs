@@ -4,6 +4,7 @@ import {deployPreview} from './preview-deployment.mjs';
 import {previewProject,previewBranch} from './preview-config.mjs';
 const now=Date.parse('2026-10-25T20:00:00Z');
 const env={GITHUB_REF:'refs/heads/'+previewBranch,GITHUB_REPOSITORY:'Faysk/world-pulse',GITHUB_REPOSITORY_ID:'1431565257',GITHUB_SHA:'a'.repeat(40),WP_PREVIEW_SYNC_ENABLED:'true',VERCEL_TOKEN:'fake-token',
+  WP_PREVIEW_TOKEN_EXPIRES_AT:'2027-01-24T00:00:00Z',
   DATABASE_URL:'postgresql://world_pulse_app:disposable@ep-misty-glade-za9nxlhg-pooler.c-2.eu-west-2.aws.neon.tech/neondb?sslmode=verify-full'};
 function fixture(patch={},fail=false,transient=0){
   const calls=[];const api=async(path,opts={})=>{const body=opts.body&&JSON.parse(opts.body);calls.push({path,body});
@@ -38,6 +39,8 @@ test('transient GET status failure retries without repeating deployment creation
   assert.equal(f.calls.filter(row=>row.path==='/v13/deployments').length,1);
   assert.equal(f.calls.filter(row=>row.path==='/v13/deployments/dpl_fake').length,2);
 });
-test('expired temporary staging is rejected before any provider operation',async()=>{
-  const f=fixture();await assert.rejects(f.run({},Date.parse('2026-10-31T01:15:25Z')),/staging_expired/);assert.equal(f.calls.length,0);
+test('persistent staging remains isolated beyond its former expiration',async()=>{
+  const f=fixture();const result=await f.run({},Date.parse('2027-01-01T00:00:00Z'));
+  assert.equal(result.sha,env.GITHUB_SHA);
+  assert.ok(!f.calls.some(row=>/promote|domains/.test(row.path)));
 });

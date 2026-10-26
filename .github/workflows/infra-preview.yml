@@ -44,6 +44,7 @@ jobs:
         env:
           WP_PREVIEW_OPERATION: sync
           WP_PREVIEW_SYNC_ENABLED: ${{ vars.WP_PREVIEW_SYNC_ENABLED }}
+          WP_PREVIEW_TOKEN_EXPIRES_AT: ${{ vars.WP_PREVIEW_TOKEN_EXPIRES_AT }}
           WP_PREVIEW_GEO_COUNTRY_ENABLED: ${{ vars.WP_PREVIEW_GEO_COUNTRY_ENABLED }}
           WP_PREVIEW_GEO_DIRECT_EDGE: ${{ vars.WP_PREVIEW_GEO_DIRECT_EDGE }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -54,6 +55,7 @@ jobs:
         run: node infra/preview-deploy.mjs
         env:
           WP_PREVIEW_SYNC_ENABLED: ${{ vars.WP_PREVIEW_SYNC_ENABLED }}
+          WP_PREVIEW_TOKEN_EXPIRES_AT: ${{ vars.WP_PREVIEW_TOKEN_EXPIRES_AT }}
           WP_PREVIEW_GEO_COUNTRY_ENABLED: ${{ vars.WP_PREVIEW_GEO_COUNTRY_ENABLED }}
           WP_PREVIEW_GEO_DIRECT_EDGE: ${{ vars.WP_PREVIEW_GEO_DIRECT_EDGE }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

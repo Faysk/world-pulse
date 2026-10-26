@@ -14,7 +14,7 @@ try{
   if(process.env.GITHUB_STEP_SUMMARY)await appendFile(process.env.GITHUB_STEP_SUMMARY,message);
 }catch(error){
   const safe=['preview_operation_required','preview_token_missing','preview_target_rejected','preview_owner_forbidden',
-    'preview_sync_disabled','preview_sync_failed','staging_expired','staging_target_rejected'];
+    'preview_sync_disabled','preview_sync_failed','preview_credential_expired','preview_credential_renewal_required','staging_expired','staging_target_rejected'];
   console.error(safe.includes(error.message)?error.message:'Preview configuration failed; private provider details suppressed.');
   process.exitCode=1;
 }

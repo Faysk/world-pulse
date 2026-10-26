@@ -4,16 +4,18 @@ import pg from 'pg';
 import { beginLimitedTransaction } from '../server/databaseLimits.mjs';
 import { consolidateInactive } from '../server/retention.mjs';
 
-// Deliberately pinned to the disposable branch, never an arbitrary DATABASE_URL.
+// Pinned schema-only test branch. Provider auto-expiration removed on 2026-10-26.
+// Never accept an arbitrary DATABASE_URL or a production endpoint.
 export const stagingEndpoint = 'ep-misty-glade-za9nxlhg';
-export const stagingExpiresAt = '2026-10-31T01:15:25Z';
+export const stagingExpiresAt = null;
 export function validateStagingUrl(value, owner = false, now = Date.now()) {
-  if (now >= Date.parse(stagingExpiresAt)) throw new Error('staging_expired');
+  if (stagingExpiresAt !== null && now >= Date.parse(stagingExpiresAt)) throw new Error('staging_expired');
   const url = new URL(value);
   const host = `${stagingEndpoint}${owner ? '' : '-pooler'}.c-2.eu-west-2.aws.neon.tech`;
   if (!['postgres:', 'postgresql:'].includes(url.protocol) || url.hostname !== host ||
       url.port || url.pathname !== '/neondb' ||
       url.username !== (owner ? 'neondb_owner' : 'world_pulse_app') || !url.password ||
+      url.searchParams.getAll('sslmode').length !== 1 ||
       url.searchParams.get('sslmode') !== 'verify-full') throw new Error('staging_target_rejected');
   return url.toString();
 }

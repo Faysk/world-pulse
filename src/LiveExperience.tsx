@@ -19,7 +19,7 @@ export default function LiveExperience() {
   const [panel, setPanel] = useState<
     "ranking" | "countries" | "balances" | null
   >(null);
-  const live = useParticipation(panel === "countries");
+  const live = useParticipation(panel === "countries", panel === "ranking");
   const [map, setMap] = useState<MapInstance | null>(null),
     [mapReady, setMapReady] = useState(false),
     [mapError, setMapError] = useState(""),

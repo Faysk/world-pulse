@@ -1,6 +1,6 @@
 # 18 — Staging remoto de participação
 
-Issue [#53](https://github.com/Faysk/world-pulse/issues/53), milestone v0.3.
+Issues [#53](https://github.com/Faysk/world-pulse/issues/53) e [#134](https://github.com/Faysk/world-pulse/issues/134), milestone v0.4. Atualizado em 26/10/2026.
 
 ## Banco preparado em 24/10/2026
 
@@ -12,14 +12,15 @@ do projeto contém production, mas o staging usa uma branch própria:
 | Produção | `main` / `br-long-mountain-zaoh0284` | Não alterados por esta preparação |
 | Staging | `world-pulse-staging` / `br-empty-salad-zajkrqf8` | Schema-only, sem copiar linhas da produção |
 
-O staging expira automaticamente em **31/10/2026 às 01:15 UTC**. É um ambiente
-remoto temporário para homologação, não uma dependência permanente do produto.
-O script recusa operações após essa data; renovar/recriar exige atualizar o
-destino fixado, as credenciais e a documentação. Não houve upgrade de plano.
+Em 26/10/2026 a expiração automática foi removida pelo painel Neon. A branch
+continua isolada e schema-only; não houve cópia de dados nem upgrade de plano.
+O endpoint fixado, roles e TLS continuam obrigatórios. O antigo prazo de
+31/10/2026 não deve bloquear operações sobre uma branch que agora é persistente.
 
 Aplicadas somente no staging: `0001-runtime-access.sql`,
 `0002-participation-core.sql`, `0003-time-balances.sql`, `0004-operation-budgets.sql`,
-`0005-retention-rollups.sql` e `0006-country-geography.sql`.
+`0005-retention-rollups.sql`, `0006-country-geography.sql`, `0007-regional-points.sql`
+e `0008-one-km-regions.sql`. Produção também está na versão 0008.
 
 O runtime usa `world_pulse_app`, sem SUPERUSER, CREATEDB, CREATEROLE, INHERIT,
 BYPASSRLS ou memberships. Conexão pooled com `sslmode=verify-full`.
@@ -31,8 +32,11 @@ Foi verificada a recusa efetiva de CREATE TABLE pelo runtime (transação revert
 
 ## Fonte das credenciais
 
-GitHub Environment **staging** contém `DATABASE_URL` e
-`DATABASE_MIGRATION_URL`. Valores não entram em código, issues, screenshots,
+GitHub Environment **staging** contém `DATABASE_URL`, `DATABASE_MIGRATION_URL`
+e `VERCEL_TOKEN`. O token Vercel foi renovado em 26/10/2026, limitado ao projeto
+`world-pulse`, com vencimento em 24/01/2027. A variável
+`WP_PREVIEW_TOKEN_EXPIRES_AT` registra o prazo conservador; o check diário exige
+renovação com antecedência de sete dias. Valores secretos não entram em código, issues, screenshots,
 logs, argumentos de processos nem bundles do navegador. Todas as conexões
 salvas apontam exclusivamente ao endpoint de staging; o usuário runtime foi
 criado nessa branch. O proprietário nunca deve ir para o runtime Vercel.
@@ -43,18 +47,20 @@ O Environment permite somente `main` e a branch de preparação
 Não aplica SQL automaticamente. A operação manual `migrate` fornece o proprietário
 somente no passo deliberado; o modo `check` usa apenas runtime. Não publica produção.
 
-`infra/staging-db.mjs` fixa endpoint, banco, roles, TLS e expiração. Operações
+`infra/staging-db.mjs` fixa endpoint, banco, roles e TLS, rejeitando parâmetros
+sslmode duplicados. Operações
 exigem `WP_STAGING_OPERATION=check` ou `migrate`; o modo migrate deve receber
 as duas conexões de staging no ambiente do processo. Os erros privados dos
 drivers são suprimidos.
 
-## Ainda pendente
+## Estado da entrega
 
-- Configurar somente um preview Vercel aprovado com a conexão runtime de staging.
-- Automatizar sincronização GitHub → preview e validar sessão/retorno/retry
-  pelo HTTPS remoto em dois navegadores.
-- A experiência integrada pode ser incluída em preview por gate de build explícito; o laboratório antigo continua DEV-only.
-- `WP_API_ENABLED` continua desligado em produção; o mapa permanece sintético.
+- O workflow `infra-preview.yml` sincroniza somente runtime de staging e publica
+  preview vinculado a `codex/remote-staging`, sem promover produção.
+- Testa HTTPS/API e revoga o acesso temporário depois do smoke. O smoke de dois
+  navegadores com banco remoto é uma operação separada em `infra-staging.yml`.
+- Produção está ativa; o mapa público não contém participantes simulados.
+- A experiência integrada usa gates explícitos; o laboratório antigo continua DEV-only.
 
 O banco pronto e a checagem verde não equivalem a uma release pública da API.
 

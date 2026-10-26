@@ -11,9 +11,9 @@ Um planeta cinza que ganha cores com a participação das pessoas.
 | Interface | React 19 + TypeScript + Vite | Publicada na Vercel |
 | Globo | MapLibre GL + cartografia OpenFreeMap | Pontos regionais aproximados com halo; sem preenchimento de países |
 | Hospedagem | Vercel Hobby, projeto `world-pulse` | HTTPS em `map.faysk.dev` |
-| Banco | Neon Free / PostgreSQL, Londres | Schema 0001–0007 e runtime restrito ativos em produção |
+| Banco | Neon Free / PostgreSQL, Londres | Schema 0001–0008 e runtime restrito ativos em produção |
 | DNS | Cloudflare, zona `faysk.dev` | `map` aponta à Vercel, DNS only |
-| Objetos | Cloudflare R2, bucket privado `world-pulse-production` | Provisionado; ainda sem função no fluxo de taps |
+| Objetos | Cloudflare R2 privado | `world-pulse-production` para probes; `world-pulse-backups` separado para recuperação criptografada |
 | Configuração e entrega | GitHub Actions + Environments `production` e `staging` | Origem das secrets/configurações e deploy manual de `main` |
 | Steam LIVE | `GET /api/steam` · Steam Web API oficial | **Oculto na interface de produção**, código e endpoint preservados para desenvolvimento |
 | API de participação | [PR #31](https://github.com/Faysk/world-pulse/pull/31) | API ativa em produção; staging isolado para testes |
@@ -31,7 +31,7 @@ flowchart LR
   WEB --> API
 ```
 
-O fluxo público usa API server-side e banco de produção; testes usam PostgreSQL descartável e staging separado. O Neon staging remoto é uma branch separada, temporária, com expiração em 31/10/2026. [Staging](docs/18-remote-staging.md). Veja [arquitetura](docs/05-free-tier-architecture.md) e [operações](docs/11-infrastructure-operations.md).
+O fluxo público usa API server-side e banco de produção; testes usam PostgreSQL descartável e staging separado. O Neon staging remoto é schema-only, sem dados de produção; a expiração automática foi removida em 26/10/2026. [Staging](docs/18-remote-staging.md). Veja [arquitetura](docs/05-free-tier-architecture.md), [operações](docs/11-infrastructure-operations.md) e [backup, custos e continuidade](docs/49-operational-continuity.md).
 
 O feed da Steam foi mantido no código, mas o painel foi **ocultado da experiência pública** por não ser parte do conceito central do World Pulse. Não há consultas Steam feitas pela interface enquanto estiver oculto. [Decisão e documentação da integração](docs/16-steam-live-signals.md).
 
@@ -78,7 +78,7 @@ O app visual não exige secrets. Nunca colocar credenciais em `VITE_*` nem versi
 src/                         interface, globo, datasets sintéticos e contrato de saldo
 tests/                      testes de domínio e navegador
 infra/                       probes Neon/R2, sincronização e publicação staged
-infra/sql/                   migrações 0001–0007; domínio verificado em produção e staging
+infra/sql/                   migrações 0001–0008; domínio verificado em produção e staging
 scripts/                     benchmark dos cenários agregados
 api/steam.mjs                endpoint do feed externo Steam
 server/steam.mjs             consulta/validação do feed externo
@@ -87,7 +87,7 @@ server/geoPrivacy.mjs       país aproximado fechado por padrão; API agrega com
 docs/                        arquitetura, regras, evidências e pendências
 ```
 
-As pastas `api/` e `server/` contêm a API de participação e o feed Steam preservado e oculto. O pacote do [PR #31](https://github.com/Faysk/world-pulse/pull/31) reúne sessões, filas, saldos, ranking e geografia por país; as migrações 0001–0007 foram aplicadas/verificadas no staging. Produção foi migrada e ativada em 25/10/2026, pelo Actions e autorização do usuário. Código na main continua separado de deploy: a publicação é manual. Fonte geográfica foi verificada e ativada; migrações futuras continuam fechadas.
+As pastas `api/` e `server/` contêm a API de participação e o feed Steam preservado e oculto. O pacote do [PR #31](https://github.com/Faysk/world-pulse/pull/31) reúne sessões, filas, saldos, ranking e geografia por país; as migrações 0001–0008 foram aplicadas/verificadas no staging. Produção foi migrada e ativada em 25/10/2026, pelo Actions e autorização do usuário. Código na main continua separado de deploy: a publicação é manual. Fonte geográfica foi verificada e ativada; migrações futuras continuam fechadas.
 
 ## Documentação e próximos passos
 

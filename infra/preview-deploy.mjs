@@ -46,8 +46,8 @@ try{
           await db.query('DELETE FROM world_pulse.country_snapshot_cache');await db.query('DELETE FROM world_pulse.region_snapshot_cache');await db.query('COMMIT');cleaned=result.rowCount;
         }catch(error){await db.query('ROLLBACK');throw error;}finally{db.release();}
       }
-      console.log(`Preview synthetic sessions cleaned: ${cleaned}. Empty QA tags/budget counters may remain in the expiring staging branch.`);
-    }catch{console.error('Preview fixture cleanup failed; investigate the temporary staging branch.');process.exitCode=1;}
+      console.log(`Preview synthetic sessions cleaned: ${cleaned}. Empty QA tags/budget counters may remain in the isolated staging branch.`);
+    }catch{console.error('Preview fixture cleanup failed; investigate the isolated staging branch.');process.exitCode=1;}
     await pool.end();
   }
 }

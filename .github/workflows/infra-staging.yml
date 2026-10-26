@@ -1,5 +1,7 @@
 name: Staging database
 on:
+  schedule:
+    - cron: '43 7 * * *'
   workflow_dispatch:
     inputs:
       operation:
@@ -32,13 +34,18 @@ jobs:
           cache-dependency-path: infra/package-lock.json
       - run: npm ci --prefix infra --ignore-scripts
       - run: npm test --prefix infra
+      - name: Require preview credential renewal at least seven days before expiry
+        if: github.event_name == 'schedule'
+        run: node --input-type=module -e "import {checkPreviewCredential} from './infra/preview-config.mjs'; checkPreviewCredential(process.env); console.log('Preview credential metadata is within its renewal window.');"
+        env:
+          WP_PREVIEW_TOKEN_EXPIRES_AT: ${{ vars.WP_PREVIEW_TOKEN_EXPIRES_AT }}
       - name: Verify TLS, schema and restricted runtime access
         if: inputs.operation != 'migrate' && inputs.operation != 'maintain'
         run: node infra/staging-db.mjs
         env:
           WP_STAGING_OPERATION: check
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      - name: Apply reviewed migrations only to the pinned temporary staging branch
+      - name: Apply reviewed migrations only to the pinned schema-only staging branch
         if: inputs.operation == 'migrate'
         run: node infra/staging-db.mjs
         env:

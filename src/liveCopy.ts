@@ -69,7 +69,7 @@ export const english = {
   withdrawal:
     "Switch Location off to remove both from future readings. Copies already received cannot be recalled. Turning this switch off does not revoke the browser permission; you can do that in browser settings.",
   retention:
-    "This browser uses a pseudonymous session. After 30 days without returning, with all balances at zero, individual history is consolidated into hashtag totals and the session is removed. Clearing cookies can prevent recovery.",
+    "This browser uses a pseudonymous session. After 30 days without returning, with all balances at zero, individual history is consolidated into hashtag totals and the session is removed. Encrypted recovery copies have a 7-day retention target; failed maintenance can delay removal. Clearing cookies can prevent recovery.",
   syncHelp:
     "Taps appear immediately and synchronize automatically in the background. Displayed time may include pending taps; confirmed history updates after delivery. Closing the page before confirmation may delay delivery. Cookies and local storage keep your session and pending queue.",
   source: "Code, documentation and issues on GitHub",
@@ -150,7 +150,7 @@ const pt: Copy = {
   withdrawal:
     "Desligue Localização para retirar ambos das próximas leituras. Cópias já recebidas não podem ser apagadas. Desligar a chave não revoga a permissão do navegador; isso pode ser feito nas configurações dele.",
   retention:
-    "Este navegador usa uma sessão pseudônima. Após 30 dias sem retorno, com todos os saldos zerados, o histórico individual é consolidado nos totais por hashtag e a sessão é removida. Limpar cookies pode impedir a recuperação.",
+    "Este navegador usa uma sessão pseudônima. Após 30 dias sem retorno, com todos os saldos zerados, o histórico individual é consolidado nos totais por hashtag e a sessão é removida. Cópias criptografadas de recuperação têm retenção prevista de 7 dias; falhas na manutenção podem atrasar a remoção. Limpar cookies pode impedir a recuperação.",
   syncHelp:
     "Os taps aparecem imediatamente e sincronizam automaticamente em segundo plano. O tempo exibido pode incluir taps pendentes; o histórico confirmado muda após a entrega. Fechar a página antes da confirmação pode atrasar a entrega. Cookies e armazenamento local mantêm a sessão e a fila pendente.",
   source: "Código, documentação e issues no GitHub",
@@ -230,7 +230,7 @@ const es: Copy = {
   withdrawal:
     "Desactiva Ubicación para retirar ambos de futuras lecturas. Las copias ya recibidas no pueden retirarse. Esto no revoca el permiso del navegador; puedes hacerlo en sus ajustes.",
   retention:
-    "Este navegador usa una sesión seudónima. Tras 30 días sin volver y con todos los saldos a cero, el historial se consolida por hashtag y la sesión se elimina. Borrar cookies puede impedir su recuperación.",
+    "Este navegador usa una sesión seudónima. Tras 30 días sin volver y con todos los saldos a cero, el historial se consolida por hashtag y la sesión se elimina. Las copias cifradas de recuperación tienen una retención prevista de 7 días; fallos de mantenimiento pueden retrasar su eliminación. Borrar cookies puede impedir su recuperación.",
   syncHelp:
     "Los taps aparecen al instante y se sincronizan automáticamente. El tiempo puede incluir taps pendientes; el historial confirmado cambia tras la entrega. Cerrar antes de confirmar puede retrasar la entrega. Las cookies y el almacenamiento local conservan tu sesión y cola.",
   source: "Código, documentación e issues en GitHub",

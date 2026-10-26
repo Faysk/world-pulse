@@ -20,7 +20,7 @@ export function participationError(error: unknown): string {
   return messages[code] ?? 'Não foi possível sincronizar. Os taps pendentes continuam na fila para tentar novamente.';
 }
 
-export function useParticipation(countryOverview=true) {
+export function useParticipation(countryOverview=true,rankingOverview=true) {
   const [client]=useState(()=>new ParticipationClient());
   const [ready,setReady]=useState(false);
   const [selecting,setSelecting]=useState(false);
@@ -45,6 +45,8 @@ export function useParticipation(countryOverview=true) {
   const countryRevision=useRef(0);
   const sending=useRef(false);
   const rankingRequest=useRef<Promise<void>|null>(null);
+  const rankingVisible=useRef(rankingOverview);
+  rankingVisible.current=rankingOverview;
   const mounted=useRef(false);
 
   const view=useCallback(()=>{
@@ -61,8 +63,9 @@ export function useParticipation(countryOverview=true) {
     if(client.isQuarantined())setReady(false);
   },[client,view]);
   const refreshRanking=useCallback(async(afterMutation=false):Promise<void>=>{
+    if(!rankingVisible.current||document.hidden)return;
     if(rankingRequest.current){await rankingRequest.current;if(!afterMutation)return;}
-    if(!mounted.current)return;
+    if(!mounted.current||!rankingVisible.current||document.hidden)return;
     const task=client.ranking().then(snapshot=>{
       if(mounted.current){setRanking(snapshot);setRankingError(false);}
     }).catch(()=>{if(mounted.current)setRankingError(true);});
@@ -98,11 +101,11 @@ export function useParticipation(countryOverview=true) {
     return()=>{mounted.current=false;};
   },[connect]);
   useEffect(()=>{
-    if(!ready)return;
+    if(!ready||!rankingOverview)return;
     void refreshRanking();
     const id=window.setInterval(()=>{if(!document.hidden)void refreshRanking();},5000);
     return()=>window.clearInterval(id);
-  },[ready,refreshRanking]);
+  },[ready,rankingOverview,refreshRanking]);
   useEffect(()=>{
     const id=window.setInterval(()=>{if(!document.hidden)setTick(n=>n+1);},250);
     return()=>window.clearInterval(id);
