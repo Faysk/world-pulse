@@ -147,3 +147,21 @@ amplo. Esses aceites não significam que a API continua desligada.
 Custódia independente da chave, expiração independente e ensaio completo/RTO:
 [#138](https://github.com/Faysk/world-pulse/issues/138). Custos sob tráfego real:
 [#7](https://github.com/Faysk/world-pulse/issues/7). Não são provas de bilhões de conexões.
+
+## Validação pública em aparelhos — decisão de 26/10/2026
+
+O proprietário definiu que a matriz de vários aparelhos físicos será validada
+gradualmente com o público. Não exigir aparelhos do proprietário nem tratar
+essa matriz como bloqueio para novas entregas/publicações. Isso não transforma
+emulação ou relatos isolados em teste físico concluído. Testes automatizados,
+checagens de API/dados e verificações de publicação continuam sendo exigidos.
+
+As issues #3, #6, #12, #13 e #53 conservam as limitações ainda não comprovadas
+como acompanhamento público. Um relato deve informar, quando possível, aparelho,
+navegador, passos, resultado esperado e observado. Screenshots são opcionais e
+devem ocultar informações pessoais; não pedir coordenadas, cookies ou tokens.
+Falhas reproduzíveis viram issues específicas para correção e teste de regressão.
+Esta decisão não adiciona telemetria nem coleta automática de dados de aparelhos.
+
+As próximas frentes independentes seguem sendo custo/capacidade (#7), recuperação
+completa (#138) e evolução visual (#32), sem aguardar uma matriz física completa.
