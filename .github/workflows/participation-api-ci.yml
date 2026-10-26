@@ -126,6 +126,14 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --no-fund
+      - name: Use official Ubuntu mirrors for browser dependencies on this ephemeral runner
+        run: |
+          if test -f /etc/apt/apt-mirrors.txt; then
+            printf '%s\n' 'https://archive.ubuntu.com/ubuntu/' | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+          fi
+          if test -f /etc/apt/apt-mirrors-security.txt; then
+            printf '%s\n' 'https://security.ubuntu.com/ubuntu/' | sudo tee /etc/apt/apt-mirrors-security.txt >/dev/null
+          fi
       - run: npx playwright install chromium --with-deps
       - name: Browser to HTTP to PostgreSQL to browser
         env:
