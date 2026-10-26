@@ -121,3 +121,5 @@ O fluxo **interface → HTTPS privado no Actions → pooler Neon staging real �
 [Carregamento fluido e prévia pessoal da mancha](docs/41-loading-personal-country.md): publicados e verificados. Registro histórico: a prévia por país foi substituída pelos [pontos regionais](docs/42-regional-participation-points.md), com nova autorização explícita. O mínimo de cinco permanece somente no resumo de países.
 
 Interface pública atual e idiomas: [documentação](docs/44-clean-product-ui.md).
+
+Resolução atual da localização: [teste de aproximadamente 1 km](docs/45-one-km-location.md).

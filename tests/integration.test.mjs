@@ -35,6 +35,11 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
   await owner.query(await readFile(new URL('../infra/sql/0005-retention-rollups.sql', import.meta.url), 'utf8'));
   await owner.query(await readFile(new URL('../infra/sql/0006-country-geography.sql', import.meta.url), 'utf8'));
   await owner.query(await readFile(new URL('../infra/sql/0007-regional-points.sql', import.meta.url), 'utf8'));
+  await owner.query("UPDATE world_pulse.visitors SET region_cell='r1:257:266' WHERE id=$1",[legacyVisitor]);
+  await owner.query(await readFile(new URL('../infra/sql/0008-one-km-regions.sql', import.meta.url), 'utf8'));
+  await owner.query(await readFile(new URL('../infra/sql/0008-one-km-regions.sql', import.meta.url), 'utf8'));
+  assert.equal((await owner.query('SELECT region_cell FROM world_pulse.visitors WHERE id=$1',[legacyVisitor])).rows[0].region_cell,'r1:257:266');
+  await assert.rejects(owner.query("UPDATE world_pulse.visitors SET region_cell='r3:1:1' WHERE id=$1",[legacyVisitor]),{code:'23514'});
 
   await t.test('Migration preserves history without inventing live balances and is repeatable', async () => {
     const [legacy] = await getCredits(legacyVisitor);

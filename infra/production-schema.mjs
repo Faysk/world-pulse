@@ -1,5 +1,5 @@
 import {productionDatabaseUrl} from './production-target.mjs';
-export const productionSchemaFiles=['0002-participation-core.sql','0003-time-balances.sql','0004-operation-budgets.sql','0005-retention-rollups.sql','0006-country-geography.sql','0007-regional-points.sql'];
+export const productionSchemaFiles=['0002-participation-core.sql','0003-time-balances.sql','0004-operation-budgets.sql','0005-retention-rollups.sql','0006-country-geography.sql','0007-regional-points.sql','0008-one-km-regions.sql'];
 export function productionSchemaPolicy(env){
   if(env.WP_PRODUCTION_MIGRATIONS_ENABLED!=='true')throw new Error('production_migrations_disabled');
   if(env.GITHUB_REF!=='refs/heads/main'||env.GITHUB_REPOSITORY!=='Faysk/world-pulse')throw new Error('production_migration_target_rejected');

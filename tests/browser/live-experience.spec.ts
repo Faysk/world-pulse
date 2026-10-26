@@ -250,7 +250,7 @@ test('Browser location sends only a coarse cell; old country consent never opts 
   await page.getByRole('switch').click();await expect(page.getByRole('switch')).toHaveAttribute('aria-checked','false');
   await page.getByRole('switch').click();
   await expect(page.locator('main.live-world')).toHaveAttribute('data-regional-active','true');
-  expect(locationWrites).toHaveLength(2);expect(Object.keys(locationWrites[1])).toEqual(['cell']);expect(locationWrites[1].cell).toMatch(/^r1:\d+:\d+$/);
+  expect(locationWrites).toHaveLength(2);expect(Object.keys(locationWrites[1])).toEqual(['cell']);expect(locationWrites[1].cell).toMatch(/^r2:\d+:\d+$/);
   expect(JSON.stringify(locationWrites)).not.toContain('38.720123');expect(JSON.stringify(locationWrites)).not.toContain('-9.140456');
   await page.screenshot({path:`test-artifacts/regional-point-${info.project.name}.png`});
   remaining=0;await page.reload();await expect(page.locator('main.live-world')).toHaveAttribute('data-ready','true');
@@ -300,7 +300,7 @@ test('Clean controls default to English; help is keyboard accessible and regiona
   await page.getByRole('button',{name:'How it works',exact:true}).click();
   const dialog=page.getByRole('dialog');await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('link',{name:/GitHub/})).toHaveAttribute('href','https://github.com/Faysk/world-pulse');
-  await expect(dialog).toContainText('55 km');await expect(dialog).toContainText('30 days');
+  await expect(dialog).toContainText('1 km');await expect(dialog).toContainText('30 days');
   await page.keyboard.press('Escape');await expect(dialog).toBeHidden();
   await expect(page.getByRole('button',{name:'How it works',exact:true})).toBeFocused();
   await page.getByRole('switch').click();await expect(page.locator('html')).toHaveAttribute('lang','pt');

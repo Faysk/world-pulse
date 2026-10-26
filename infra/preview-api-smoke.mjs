@@ -53,7 +53,7 @@ export async function smokePreviewApi(origin,secret,createdHashes,fetcher=fetch,
   const retry=await first.call('/api/taps',batch);assert.equal(retry.duplicate,true);assert.equal(retry.creditedSeconds,'30');assert.equal(retry.expiresAtMs,accepted.expiresAtMs);
   assert.equal((await second.call('/api/taps',{tagId:tagA.id,batchId:randomUUID(),clicks:15})).creditedSeconds,'15');
   assert.equal(a.regionCell,null);assert.equal(b.regionCell,null);
-  const cell='r1:257:266'; // Disposable fixture region, never a production participant.
+  const cell='r2:14330:14842'; // Disposable fixture region, never a production participant.
   assert.equal((await first.call('/api/location',{cell})).geoConsent,true);assert.equal((await second.call('/api/location',{cell})).geoConsent,true);
   assert.equal((await first.call('/api/regions')).cells.find(row=>row.tagId===tagA.id)?.participants,'2');
   assert.equal((await first.call('/api/location',{cell:null})).geoConsent,false);

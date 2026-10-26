@@ -65,7 +65,7 @@ test('Regional browser permission stores only a coarse cell on real Neon; withdr
   await expect(page.locator('main.live-world')).toHaveAttribute('data-regional-active','true');
   const stored=await snapshot(page);
   expect(stored.geoConsent).toBe(true);
-  expect(stored.regionCell).toMatch(/^r1:\d+:\d+$/);
+  expect(stored.regionCell).toMatch(/^r2:\d+:\d+$/);
   expect(Object.keys(writes[0])).toEqual(['cell']);
   expect(JSON.stringify(writes)).not.toContain('38.720123');
   expect(JSON.stringify(writes)).not.toContain('-9.140456');
