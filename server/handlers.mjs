@@ -48,8 +48,10 @@ export function route(kind, operations = store) {
         // Preserve independent failure states: a regional capacity limit must
         // not hide a healthy Top 10, and ranking failure must not blank the map.
         const settle=async task=>{try{return {data:await task()};}catch{return {data:null,error:'snapshot_unavailable'};}};
-        const regional=await settle(async()=>compactRegions(await getRegionSnapshot()));
         const ranked=await settle(getActiveBalanceSnapshot);
+        // Read geography LAST: do not hold a previously fetched point while a
+        // slower ranking query runs and a withdrawal may invalidate the cache.
+        const regional=await settle(async()=>compactRegions(await getRegionSnapshot()));
         if(!regional.data&&!ranked.data)throw new ApiError(503,'snapshot_unavailable','Leituras temporariamente indisponíveis.');
         return json(res,200,{type:'pulse_snapshot_v1',regions:regional.data,ranking:ranked.data,
           ...(regional.error?{regionsError:regional.error}:{}),...(ranked.error?{rankingError:ranked.error}:{})});

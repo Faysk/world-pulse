@@ -44,7 +44,9 @@ transações curtas próprias; nenhuma espera de rede fica dentro de uma transa�
 
 O mapa mantém TTL 5 s, no-store, cap 2.000 e a mesma trava/invalidação de retirada.
 O ranking possui seu próprio `asOfMs`: os dois agregados não alegam um instante
-SQL único. Não há cache de sessão, CDN ou armazenamento de snapshots no navegador.
+SQL único. O mapa é consultado por último, para não segurar um ponto já obtido
+enquanto aguarda uma consulta lenta de ranking e uma possível retirada.
+Não há cache de sessão, CDN ou armazenamento de snapshots no navegador.
 Revisão local impede resposta anterior à retirada de repor uma região na tela.
 
 Falha em um agregado não apaga o outro: resposta parcial marca explicitamente

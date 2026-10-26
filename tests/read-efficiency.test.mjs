@@ -105,3 +105,13 @@ test('combined endpoint preserves healthy half on partial failure and rejects mi
   const invalid=new ParticipationClient(async()=>Response.json({type:'pulse_snapshot_v1',regions:null,ranking}),null);
   await assert.rejects(invalid.pulse(),/invalid_pulse_snapshot/);
 });
+
+test('a withdrawal during ranking work is reflected by the last regional lookup',async()=>{
+  process.env.WP_API_ENABLED='true';process.env.WP_GEO_PUBLIC_ENABLED='true';
+  let withdrawn=false;
+  const res={setHeader(){},status(code){this.code=code;return this;},end(body){this.body=JSON.parse(body);}};
+  await route('pulse',{consumeReadBudget:async()=>{},
+    getActiveBalanceSnapshot:async()=>{withdrawn=true;return ranking;},
+    getRegionSnapshot:async()=>withdrawn?{...region,cells:[]}:region})({method:'GET',headers:{}},res);
+  assert.equal(res.code,200);assert.deepEqual(res.body.regions.cells,[]);
+});
