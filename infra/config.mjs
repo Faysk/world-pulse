@@ -5,7 +5,10 @@ export function productionReleaseFlags(env=process.env){
   const keys=['WP_ALPHA_RELEASE','WP_API_ENABLED','WP_GEO_PUBLIC_ENABLED','WP_GEO_COUNTRY_ENABLED','WP_GEO_DIRECT_EDGE'];
   const flags=Object.fromEntries(keys.map(key=>[key,env[key]||'false']));
   if(Object.values(flags).some(value=>!['true','false'].includes(value)))throw new Error('Invalid release flag');
-  if(flags.WP_ALPHA_RELEASE==='true'&&flags.WP_API_ENABLED!=='true')throw new Error('Alpha requires API');
+  const maintenance=env.WP_MAINTENANCE==='true';
+  if(env.WP_MAINTENANCE&&!['true','false'].includes(env.WP_MAINTENANCE))throw new Error('Invalid maintenance flag');
+  if(maintenance&&[flags.WP_API_ENABLED,flags.WP_GEO_PUBLIC_ENABLED,flags.WP_GEO_COUNTRY_ENABLED,flags.WP_GEO_DIRECT_EDGE].some(value=>value!=='false'))throw new Error('Maintenance requires API and geography disabled');
+  if(flags.WP_ALPHA_RELEASE==='true'&&flags.WP_API_ENABLED!=='true'&&!maintenance)throw new Error('Alpha requires API');
   if(flags.WP_GEO_PUBLIC_ENABLED==='true'&&flags.WP_API_ENABLED!=='true')throw new Error('Geography requires API');
   if(flags.WP_GEO_COUNTRY_ENABLED==='true'&&(flags.WP_GEO_PUBLIC_ENABLED!=='true'||flags.WP_GEO_DIRECT_EDGE!=='true'))throw new Error('Country requires attested geography');
   return flags;

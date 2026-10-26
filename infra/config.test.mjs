@@ -15,6 +15,16 @@ test('release defaults closed and refuses inconsistent API, alpha and country fl
 test('rejects missing keys without revealing values', () => {
   assert.throws(() => validateRuntime({ ...valid, DATABASE_URL: '' }), /Missing configuration: DATABASE_URL/);
 });
+
+test('explicit maintenance keeps alpha visible only with API and every geography flag disabled',()=>{
+  const env={WP_MAINTENANCE:'true',WP_ALPHA_RELEASE:'true',WP_API_ENABLED:'false'};
+  const flags=productionReleaseFlags(env);
+  assert.equal(flags.WP_ALPHA_RELEASE,'true');assert.equal(flags.WP_API_ENABLED,'false');
+  assert.equal('WP_MAINTENANCE'in flags,false,'operational opt-in is not an app runtime variable');
+  for(const key of ['WP_API_ENABLED','WP_GEO_PUBLIC_ENABLED','WP_GEO_COUNTRY_ENABLED','WP_GEO_DIRECT_EDGE'])assert.throws(()=>productionReleaseFlags({...env,[key]:'true'}));
+  assert.throws(()=>productionReleaseFlags({...env,WP_MAINTENANCE:'yes'}));
+  assert.throws(()=>productionReleaseFlags({...env,WP_MAINTENANCE:'false'}));
+});
 test('rejects plaintext or unverified database TLS', () => {
   for (const mode of ['disable', 'require', 'no-verify']) {
     assert.throws(() => validateRuntime({ ...valid, DATABASE_URL: `postgresql://test:test@example.com/db?sslmode=${mode}` }));
