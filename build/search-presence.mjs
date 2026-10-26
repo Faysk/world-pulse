@@ -61,7 +61,7 @@ export function searchPresence(env){
     configureServer(server){server.middlewares.use((req,res,next)=>{
       const path=(req.url??'').split('?')[0],page=aboutPages.find(page=>page.path===path);
       const files=discoveryFiles(false),file=path.slice(1);
-      if(!page&&!(file in files))return next();
+      if(!page&&!Object.hasOwn(files,file))return next();
       res.setHeader('Content-Type',page?'text/html; charset=utf-8':file.endsWith('.xml')?'application/xml; charset=utf-8':'text/plain; charset=utf-8');
       res.setHeader('X-Robots-Tag','noindex, nofollow');res.end(page?renderAbout(page,false):files[file]);
     });}
