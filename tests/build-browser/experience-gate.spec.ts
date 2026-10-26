@@ -6,12 +6,12 @@ test('Compiled builds require separate preview or production-alpha opt-in',async
   await page.goto(info.project.name==='alpha'?'/':'/?experiencePreview=1&participationPreview=1');
   if(info.project.name==='production'){
     await expect(page.getByText('DEMO COM DADOS SIMULADOS')).toBeAttached();
-    await expect(page.getByRole('main',{name:'World Pulse participação'})).toHaveCount(0);
+    await expect(page.getByRole('main',{name:'World Pulse'})).toHaveCount(0);
     await expect(page.getByRole('region',{name:'Laboratório de participação isolada'})).toHaveCount(0);
     expect(requests).toBe(0);
   }else{
-    await expect(page.getByRole('main',{name:'World Pulse participação'})).toBeVisible();
-    await expect(page.getByRole('alert')).toContainText('ainda não está disponível');
+    await expect(page.getByRole('main',{name:'World Pulse'})).toBeVisible();
+    await expect(page.getByRole('alert')).toContainText('Connection unavailable');
     expect(requests).toBeGreaterThan(0);
   }
 });
