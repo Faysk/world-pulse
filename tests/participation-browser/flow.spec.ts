@@ -66,7 +66,7 @@ test('Two independent browsers share a color while credits, return, expiry and r
 
     await db.query("UPDATE world_pulse.visitor_tags SET expires_at=statement_timestamp()-interval '1 hour' WHERE tag_id=$1",[firstId]);
     await page.reload();
-    await expect(row(page,name).getByTestId('live-remaining')).toHaveText('0h 00m 00s');
+    await expect(row(page,name).getByTestId('live-remaining')).toHaveText('0:00:00');
     await expect(row(page,name).getByTestId('live-history')).toHaveText('6');
     await page.screenshot({path:`test-artifacts/participation-${info.project.name}-returned.png`});
     await b.screenshot({path:`test-artifacts/participation-${info.project.name}-second-browser.png`});
@@ -185,10 +185,10 @@ test('Integrated product flow credits eligible globe taps, restores the server a
   try{
     await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/,route=>route.fulfill({json:style}));
     await page.goto('/?experiencePreview=1');
-    await expect(page.getByTestId('live-connection')).toHaveText('Sessão conectada');
-    await expect(page.getByTestId('live-geography')).toContainText('Nenhuma posição é inventada');
-    await page.getByLabel('Sua hashtag',{exact:true}).fill('#'+name);
-    await page.getByRole('button',{name:'Participar',exact:true}).click();
+    await expect(page.locator('main.live-world')).toHaveAttribute('data-ready','true');
+
+    await page.getByLabel(/^(Your hashtag|Sua hashtag)$/,{exact:true}).fill('#'+name);
+    await page.getByRole('button',{name:/^(Enter|Entrar)$/,exact:true}).click();
     await expect(page.getByTestId('live-selected')).toHaveText('#'+name);
     const canvas=page.locator('.maplibregl-canvas');const rect=await canvas.boundingBox();
     expect(rect).not.toBeNull();if(!rect)return;
@@ -200,13 +200,13 @@ test('Integrated product flow credits eligible globe taps, restores the server a
       const saved=await db.query('SELECT vt.seconds::text FROM world_pulse.visitor_tags vt JOIN world_pulse.tags t ON t.id=vt.tag_id WHERE t.normalized=$1',[name]);
       return saved.rows[0]?.seconds;
     }).toBe('1');
-    await expect(page.getByTestId('live-pending')).toHaveText('0');
+    await expect(page.locator('main.live-world')).toHaveAttribute('data-pending','0');
     if(info.project.name==='desktop'){
       await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+100,y+45,{steps:10});await page.mouse.up();
-      await expect(page.getByTestId('live-pending')).toHaveText('0');
+      await expect(page.locator('main.live-world')).toHaveAttribute('data-pending','0');
     }
-    await page.getByRole('button',{name:'Meus saldos',exact:true}).click();
-    await expect(page.locator(`[data-live-tag="#${name}"]`)).toContainText('Histórico: 1 segundo');
+    await page.getByRole('button',{name:/^(My time|Meu tempo)$/,exact:true}).click();
+    await expect(page.locator(`[data-live-tag="#${name}"]`)).toContainText('History: 1s');
     await page.screenshot({path:`test-artifacts/experience-real-${info.project.name}.png`});
     await page.reload();await expect(page.getByTestId('live-selected')).toHaveText('#'+name);
     const result=await db.query('SELECT vt.seconds::text FROM world_pulse.visitor_tags vt JOIN world_pulse.tags t ON t.id=vt.tag_id WHERE t.normalized=$1',[name]);
@@ -220,8 +220,8 @@ test('A selected old hashtag restores positive time immediately with a bounded 2
   const prefix='many_'+randomUUID().slice(0,8);
   try{
     await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/,route=>route.fulfill({json:style}));
-    await page.goto('/?experiencePreview=1');await expect(page.getByTestId('live-connection')).toHaveText('Sessão conectada');
-    await page.getByLabel('Sua hashtag',{exact:true}).fill(prefix);await page.getByRole('button',{name:'Participar',exact:true}).click();
+    await page.goto('/?experiencePreview=1');await expect(page.locator('main.live-world')).toHaveAttribute('data-ready','true');
+    await page.getByLabel(/^(Your hashtag|Sua hashtag)$/,{exact:true}).fill(prefix);await page.getByRole('button',{name:/^(Enter|Entrar)$/,exact:true}).click();
     await expect(page.getByTestId('live-selected')).toHaveText('#'+prefix);
     const {rows:[visitor]}=await db.query('SELECT v.id FROM world_pulse.visitors v JOIN world_pulse.tags t ON t.id=v.active_tag_id WHERE t.normalized=$1',[prefix]);
     const {rows:tags}=await db.query(`INSERT INTO world_pulse.tags(id,normalized,color)
@@ -230,13 +230,13 @@ test('A selected old hashtag restores positive time immediately with a bounded 2
     await db.query(`INSERT INTO world_pulse.visitor_tags(visitor_id,tag_id,seconds,expires_at)
       SELECT $1,id,10,now()-interval '8 days' FROM world_pulse.tags WHERE id=ANY($2::uuid[])`,[visitor.id,tags.map(t=>t.id)]);
     await db.query("UPDATE world_pulse.visitor_tags SET seconds=3600,expires_at=now()+interval '1 hour' WHERE visitor_id=$1 AND tag_id=$2",[visitor.id,target.id]);
-    await page.getByLabel('Sua hashtag',{exact:true}).fill(target.normalized);await page.getByRole('button',{name:'Participar',exact:true}).click();
+    await page.getByLabel(/^(Your hashtag|Sua hashtag)$/,{exact:true}).fill(target.normalized);await page.getByRole('button',{name:/^(Enter|Entrar)$/,exact:true}).click();
     await expect(page.getByTestId('live-selected')).toHaveText('#'+target.normalized);
-    await expect(page.getByTestId('live-selected-balance')).not.toHaveText('0h 00m 00s');
-    await page.getByRole('button',{name:'Meus saldos',exact:true}).click();
+    await expect(page.getByTestId('live-selected-balance')).not.toHaveText('0:00:00');
+    await page.getByRole('button',{name:/^(My time|Meu tempo)$/,exact:true}).click();
     await expect(page.getByText('Mostrando até 200 saldos:',{exact:false})).toBeVisible();
-    await expect(page.locator(`[data-live-tag="#${target.normalized}"]`)).toContainText('Histórico: 3.600 segundos');
-    await expect(page.getByTestId('live-pending')).toHaveText('0');
+    await expect(page.locator(`[data-live-tag="#${target.normalized}"]`)).toContainText('History: 3,600s');
+    await expect(page.locator('main.live-world')).toHaveAttribute('data-pending','0');
     const {rows:[saved]}=await db.query('SELECT count(*)::int AS n,sum(seconds)::text AS seconds FROM world_pulse.visitor_tags WHERE visitor_id=$1 AND seconds>0',[visitor.id]);
     expect(saved.n).toBe(205);expect(saved.seconds).toBe('5640');
   }finally{await db.end();}

@@ -39,30 +39,30 @@ function nightStyle(map: MapInstance): void {
     const id = layer.id.toLowerCase();
     try {
       if (layer.type === 'background') {
-        map.setPaintProperty(layer.id, 'background-color', '#0b1119');
+        map.setPaintProperty(layer.id, 'background-color', '#101112');
       } else if (layer.type === 'fill') {
-        const fill = id.includes('water') ? '#101b28'
-          : /park|wood|forest|grass|vegetation/.test(id) ? '#293b3c'
-          : id.includes('building') ? '#414a54'
-          : id.includes('land') ? '#2c343e'
-          : '#333b46';
+        const fill = id.includes('water') ? '#141516'
+          : /park|wood|forest|grass|vegetation/.test(id) ? '#292a2b'
+          : id.includes('building') ? '#414243'
+          : id.includes('land') ? '#2c2d2e'
+          : '#333435';
         map.setPaintProperty(layer.id, 'fill-color', fill);
       } else if (layer.type === 'line') {
-        const line = /road|highway|transport/.test(id) ? '#66717e'
-          : id.includes('water') ? '#31404e'
-          : '#586372';
+        const line = /road|highway|transport/.test(id) ? '#666768'
+          : id.includes('water') ? '#313233'
+          : '#58595a';
         map.setPaintProperty(layer.id, 'line-color', line);
       } else if (layer.type === 'symbol') {
         // Keep geographic names readable but quiet at planetary zoom.
-        map.setPaintProperty(layer.id, 'text-color', '#acbac8');
-        map.setPaintProperty(layer.id, 'text-halo-color', '#111820');
+        map.setPaintProperty(layer.id, 'text-color', '#b5b5b5');
+        map.setPaintProperty(layer.id, 'text-halo-color', '#111213');
         map.setPaintProperty(layer.id, 'text-halo-width', 0.85);
         map.setPaintProperty(layer.id, 'text-opacity', [
           'interpolate', ['linear'], ['zoom'],
           0, 0.14, 3, 0.4, 5, 0.7, 9, 0.78
         ]);
       } else if (layer.type === 'circle') {
-        map.setPaintProperty(layer.id, 'circle-color', '#78828c');
+        map.setPaintProperty(layer.id, 'circle-color', '#808182');
       }
     } catch {
       // Some vendor layers have incompatible dynamic style expressions.
