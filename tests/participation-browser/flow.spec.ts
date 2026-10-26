@@ -66,7 +66,7 @@ test('Two independent browsers share a color while credits, return, expiry and r
 
     await db.query("UPDATE world_pulse.visitor_tags SET expires_at=statement_timestamp()-interval '1 hour' WHERE tag_id=$1",[firstId]);
     await page.reload();
-    await expect(row(page,name).getByTestId('live-remaining')).toHaveText('0:00:00');
+    await expect(row(page,name).getByTestId('live-remaining')).toHaveText('0h 00m 00s');
     await expect(row(page,name).getByTestId('live-history')).toHaveText('6');
     await page.screenshot({path:`test-artifacts/participation-${info.project.name}-returned.png`});
     await b.screenshot({path:`test-artifacts/participation-${info.project.name}-second-browser.png`});
@@ -234,7 +234,7 @@ test('A selected old hashtag restores positive time immediately with a bounded 2
     await expect(page.getByTestId('live-selected')).toHaveText('#'+target.normalized);
     await expect(page.getByTestId('live-selected-balance')).not.toHaveText('0:00:00');
     await page.getByRole('button',{name:/^(My time|Meu tempo)$/,exact:true}).click();
-    await expect(page.getByText('Mostrando até 200 saldos:',{exact:false})).toBeVisible();
+    await expect(page.getByText('Showing up to 200 balances.',{exact:false})).toBeVisible();
     await expect(page.locator(`[data-live-tag="#${target.normalized}"]`)).toContainText('History: 3,600s');
     await expect(page.locator('main.live-world')).toHaveAttribute('data-pending','0');
     const {rows:[saved]}=await db.query('SELECT count(*)::int AS n,sum(seconds)::text AS seconds FROM world_pulse.visitor_tags WHERE visitor_id=$1 AND seconds>0',[visitor.id]);
