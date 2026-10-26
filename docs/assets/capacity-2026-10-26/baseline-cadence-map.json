@@ -1,0 +1,369 @@
+{
+  "version": 1,
+  "sha": "1dcb60fc01a47ab64459b6bac26a2d3f6c416fae",
+  "configuration": {
+    "profile": "map",
+    "mode": "cadence"
+  },
+  "environment": {
+    "node": "v24.21.0",
+    "postgres": 180006,
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "logicalCpus": 4,
+    "memoryBytes": 16766414848,
+    "poolMax": 3
+  },
+  "dataset": {
+    "synthetic": true,
+    "visitors": 1000,
+    "tags": 10,
+    "regionTagGroups": 1000
+  },
+  "operationBudgets": {
+    "requests": [
+      [
+        "requests_minute",
+        60,
+        3000
+      ],
+      [
+        "requests_day",
+        86400,
+        50000
+      ]
+    ],
+    "reads": [
+      [
+        "reads_minute",
+        60,
+        600
+      ]
+    ],
+    "sessions": [
+      [
+        "sessions_hour",
+        3600,
+        2000
+      ]
+    ],
+    "tags": [
+      [
+        "tags_hour",
+        3600,
+        500
+      ]
+    ]
+  },
+  "results": [
+    {
+      "tabs": 1,
+      "rounds": 12,
+      "windowStart": "2026-10-26T17:09:00.250Z",
+      "completedAt": "2026-10-26T17:09:55.272Z",
+      "withinMinute": true,
+      "maxScheduleDelayMs": 4,
+      "requests": 12,
+      "statuses": {
+        "200": 12
+      },
+      "errors": {},
+      "decodedJsonBytes": 1535856,
+      "latencyMs": {
+        "p50": 16.4,
+        "p95": 22.55,
+        "p99": 22.55,
+        "max": 22.55
+      },
+      "latencyByStatus": {
+        "200": {
+          "p50": 16.4,
+          "p95": 22.55,
+          "p99": 22.55,
+          "max": 22.55
+        }
+      },
+      "sql": {
+        "sqlCalls": 156,
+        "transactions": 36,
+        "budgetMutations": 24,
+        "budgetRowsUpdated": 36,
+        "snapshotBuilds": 12,
+        "rankingBuilds": 0,
+        "cacheHits": 0,
+        "maxPoolWaiting": 1
+      },
+      "budgets": [
+        {
+          "scope": "reads_minute",
+          "used": 12
+        },
+        {
+          "scope": "requests_day",
+          "used": 12
+        },
+        {
+          "scope": "requests_minute",
+          "used": 12
+        }
+      ]
+    },
+    {
+      "tabs": 10,
+      "rounds": 12,
+      "windowStart": "2026-10-26T17:10:00.250Z",
+      "completedAt": "2026-10-26T17:10:55.284Z",
+      "withinMinute": true,
+      "maxScheduleDelayMs": 4,
+      "requests": 120,
+      "statuses": {
+        "200": 17,
+        "503": 103
+      },
+      "errors": {
+        "geography_refreshing": 103
+      },
+      "decodedJsonBytes": 2182182,
+      "latencyMs": {
+        "p50": 22.32,
+        "p95": 34.05,
+        "p99": 37.09,
+        "max": 37.18
+      },
+      "latencyByStatus": {
+        "200": {
+          "p50": 28.19,
+          "p95": 37.09,
+          "p99": 37.09,
+          "max": 37.09
+        },
+        "503": {
+          "p50": 21.37,
+          "p95": 31.02,
+          "p99": 36.24,
+          "max": 37.18
+        }
+      },
+      "sql": {
+        "sqlCalls": 1345,
+        "transactions": 360,
+        "budgetMutations": 240,
+        "budgetRowsUpdated": 360,
+        "snapshotBuilds": 14,
+        "rankingBuilds": 0,
+        "cacheHits": 3,
+        "maxPoolWaiting": 7
+      },
+      "budgets": [
+        {
+          "scope": "reads_minute",
+          "used": 120
+        },
+        {
+          "scope": "requests_day",
+          "used": 120
+        },
+        {
+          "scope": "requests_minute",
+          "used": 120
+        }
+      ]
+    },
+    {
+      "tabs": 25,
+      "rounds": 12,
+      "windowStart": "2026-10-26T17:11:00.250Z",
+      "completedAt": "2026-10-26T17:11:55.353Z",
+      "withinMinute": true,
+      "maxScheduleDelayMs": 4,
+      "requests": 300,
+      "statuses": {
+        "200": 252,
+        "503": 48
+      },
+      "errors": {
+        "geography_refreshing": 48
+      },
+      "decodedJsonBytes": 32255952,
+      "latencyMs": {
+        "p50": 58.12,
+        "p95": 93.32,
+        "p99": 100.09,
+        "max": 104.08
+      },
+      "latencyByStatus": {
+        "200": {
+          "p50": 63.86,
+          "p95": 93.97,
+          "p99": 100.16,
+          "max": 104.08
+        },
+        "503": {
+          "p50": 32.33,
+          "p95": 36.97,
+          "p99": 39.87,
+          "max": 39.87
+        }
+      },
+      "sql": {
+        "sqlCalls": 3087,
+        "transactions": 900,
+        "budgetMutations": 600,
+        "budgetRowsUpdated": 900,
+        "snapshotBuilds": 13,
+        "rankingBuilds": 0,
+        "cacheHits": 239,
+        "maxPoolWaiting": 22
+      },
+      "budgets": [
+        {
+          "scope": "reads_minute",
+          "used": 300
+        },
+        {
+          "scope": "requests_day",
+          "used": 300
+        },
+        {
+          "scope": "requests_minute",
+          "used": 300
+        }
+      ]
+    },
+    {
+      "tabs": 50,
+      "rounds": 12,
+      "windowStart": "2026-10-26T17:12:00.250Z",
+      "completedAt": "2026-10-26T17:12:55.448Z",
+      "withinMinute": true,
+      "maxScheduleDelayMs": 5,
+      "requests": 600,
+      "statuses": {
+        "200": 573,
+        "503": 27
+      },
+      "errors": {
+        "geography_refreshing": 27
+      },
+      "decodedJsonBytes": 73338798,
+      "latencyMs": {
+        "p50": 111.8,
+        "p95": 172.42,
+        "p99": 187.27,
+        "max": 194.8
+      },
+      "latencyByStatus": {
+        "200": {
+          "p50": 115.49,
+          "p95": 172.98,
+          "p99": 188.71,
+          "max": 194.8
+        },
+        "503": {
+          "p50": 44.6,
+          "p95": 58.56,
+          "p99": 60.75,
+          "max": 60.75
+        }
+      },
+      "sql": {
+        "sqlCalls": 6063,
+        "transactions": 1800,
+        "budgetMutations": 1200,
+        "budgetRowsUpdated": 1800,
+        "snapshotBuilds": 12,
+        "rankingBuilds": 0,
+        "cacheHits": 561,
+        "maxPoolWaiting": 47
+      },
+      "budgets": [
+        {
+          "scope": "reads_minute",
+          "used": 600
+        },
+        {
+          "scope": "requests_day",
+          "used": 600
+        },
+        {
+          "scope": "requests_minute",
+          "used": 600
+        }
+      ]
+    },
+    {
+      "tabs": 100,
+      "rounds": 12,
+      "windowStart": "2026-10-26T17:13:00.250Z",
+      "completedAt": "2026-10-26T17:13:55.370Z",
+      "withinMinute": true,
+      "maxScheduleDelayMs": 5,
+      "requests": 1200,
+      "statuses": {
+        "200": 585,
+        "429": 600,
+        "503": 15
+      },
+      "errors": {
+        "geography_refreshing": 15,
+        "operation_budget_exhausted": 600
+      },
+      "decodedJsonBytes": 74940510,
+      "latencyMs": {
+        "p50": 99.28,
+        "p95": 310.88,
+        "p99": 336.02,
+        "max": 354.51
+      },
+      "latencyByStatus": {
+        "200": {
+          "p50": 222.2,
+          "p95": 322.71,
+          "p99": 343.85,
+          "max": 354.51
+        },
+        "429": {
+          "p50": 79.8,
+          "p95": 101.74,
+          "p99": 105.18,
+          "max": 106.46
+        },
+        "503": {
+          "p50": 72.75,
+          "p95": 79.07,
+          "p99": 79.07,
+          "max": 79.07
+        }
+      },
+      "sql": {
+        "sqlCalls": 9633,
+        "transactions": 3000,
+        "budgetMutations": 2400,
+        "budgetRowsUpdated": 3000,
+        "snapshotBuilds": 6,
+        "rankingBuilds": 0,
+        "cacheHits": 579,
+        "maxPoolWaiting": 97
+      },
+      "budgets": [
+        {
+          "scope": "reads_minute",
+          "used": 600
+        },
+        {
+          "scope": "requests_day",
+          "used": 1200
+        },
+        {
+          "scope": "requests_minute",
+          "used": 1200
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "HTTP virtual tabs; no browser/GPU/physical device measurement",
+    "Single local Node instance and PostgreSQL; not Vercel/Neon billing, network or autoscaling",
+    "GET requests only; no session creation or taps",
+    "Decoded JSON bytes exclude gzip, headers, TLS and transport overhead"
+  ]
+}

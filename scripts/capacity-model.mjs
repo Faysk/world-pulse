@@ -21,3 +21,7 @@ export function summarizeRequests(samples){
   return {requests:samples.length,statuses,errors,decodedJsonBytes:bytes,latencyMs:latencies(samples),
     latencyByStatus:Object.fromEntries(Object.keys(statuses).map(status=>[status,latencies(samples.filter(s=>String(s.status)===status))]))};
 }
+export function assertHealthyBurst(report){
+  if(report.configuration?.mode!=='burst'||!report.results?.length||
+    report.results.some(row=>!row.requests||row.statuses?.[200]!==row.requests))throw new Error('capacity_burst_unhealthy');
+}
