@@ -1,6 +1,33 @@
 import { test,expect } from '@playwright/test';
 const id='11111111-1111-4111-8111-111111111111';
 
+test('Read overload honors Retry-After across map and panels while hashtag entry and taps remain available',async({page})=>{
+  await page.clock.install();let reads=0,blocked=true,selected=false;
+  await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/,route=>route.fulfill({json:{version:8,sources:{},layers:[{id:'bg',type:'background',paint:{'background-color':'#111'}}]}}));
+  await page.route('**/api/**',route=>{
+    const path=new URL(route.request().url()).pathname;
+    if(path==='/api/session')return route.fulfill({json:{anonymous:true,sessionFresh:false,sessionBinding:'a'.repeat(64),activeTagId:selected?id:null,activeTag:selected?{id,name:'#fixture',color:'#abcdef'}:null,credits:[],geographyAvailable:true}});
+    if(path==='/api/tags')return route.fulfill({json:{tag:{id,name:'#fixture',color:'#abcdef'}}});
+    if(path==='/api/select'){selected=true;return route.fulfill({json:{activeTagId:id}});}
+    if(route.request().method()==='GET'){
+      reads++;
+      if(blocked)return route.fulfill({status:429,headers:{'Retry-After':'60'},json:{error:'operation_budget_exhausted'}});
+      if(path==='/api/regions')return route.fulfill({json:{type:'region_compact_v1',asOfMs:Date.now(),validUntilMs:Date.now()+5000,tags:[],cells:[]}});
+      if(path==='/api/ranking')return route.fulfill({json:{type:'active',asOfMs:Date.now(),metric:'distinct_anonymous_sessions_with_positive_balance',geography:'unavailable',ranking:[]}});
+    }
+    return route.fulfill({status:404,json:{error:'not_found'}});
+  });
+  await page.goto('/?experiencePreview=1');await expect.poll(()=>reads).toBe(1);
+  await page.getByRole('button',{name:'Top 10',exact:true}).click();
+  await page.getByLabel(/^(Your hashtag|Sua hashtag)$/,{exact:true}).fill('#fixture');
+  await page.getByRole('button',{name:/^(Enter|Entrar)$/,exact:true}).click();
+  await expect(page.getByTestId('live-selected')).toHaveText('#fixture');
+  await page.getByRole('button',{name:'+1',exact:true}).click();
+  await expect(page.locator('main.live-world')).toHaveAttribute('data-pending','1');
+  await page.clock.fastForward(59000);expect(reads).toBe(1);
+  blocked=false;await page.clock.fastForward(11000);await expect.poll(()=>reads).toBeGreaterThan(1);
+});
+
 test('Closed Top 10 makes no ranking reads; opening refreshes immediately and keeps five-second updates',async({page})=>{
   await page.clock.install();let reads=0;
   await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/,route=>route.fulfill({json:{version:8,sources:{},layers:[{id:'bg',type:'background',paint:{'background-color':'#111'}}]}}));
