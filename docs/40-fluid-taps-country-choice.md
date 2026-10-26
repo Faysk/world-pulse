@@ -1,5 +1,7 @@
 # 40 — Taps imediatos e compartilhamento de país em destaque
 
+> Atualização de 26/10/2026: a autorização de localização foi unificada em [um único controle para ponto e resumos](43-unified-location.md). O registro abaixo preserva a implementação anterior; precisão e limites regionais permanecem.
+
 Solicitação do usuário em 25/10/2026; issues #106 e #107. A publicação continua
 via GitHub Actions; secrets não são copiadas para o browser.
 

@@ -31,3 +31,30 @@ cinco. A checkbox de país e o opt-in automático do fluxo de taps foram removid
 Verificação cobre ausência da checkbox, retirada de preferências antigas, taps sem
 novo consentimento, ativação/retirada unificada e persistência após reload; SQL
 confere ambos os campos alterados atomicamente e permissões continuam restritas.
+
+## Publicação e evidências — 26/10/2026
+
+PR #118 integrado em 6531e39. CI [40252425678](https://github.com/Faysk/world-pulse/actions/runs/40252425678)
+aprovou 32 testes desktop, 31 mobile e 3 de gates/build; 1 caso mobile permanece
+pulado. PostgreSQL e dois navegadores passaram em
+[40252425622](https://github.com/Faysk/world-pulse/actions/runs/40252425622).
+Build local/136 testes e infraestrutura/39 testes aprovados; SQL local é o único
+caso pulado quando não há PostgreSQL descartável configurado.
+
+[HTTPS privado com Neon](https://github.com/Faysk/world-pulse/actions/runs/40252429397)
+aprovou 4 testes desktop/mobile e limpou 6 sessões sintéticas. A
+[prévia Vercel](https://github.com/Faysk/world-pulse/actions/runs/40252840175)
+confirmou geoConsent true ao compartilhar célula e false ao retirar, além de
+contagens/retirada; acesso temporário revogado e 2 sessões sintéticas limpas.
+
+[Produção 40253038393](https://github.com/Faysk/world-pulse/actions/runs/40253038393)
+aprovou candidato, HTML/JS/CSS/API, revogação de acesso temporário e promoção.
+Deployment dpl_D8KeX1pbK8XHaYvJdaxm1TBN2ykX, source 6531e39. Sem migração ou pausa.
+Raiz, ranking, regiões e países públicos responderam 200 após a publicação.
+
+Chrome público mostrou um único bloco, sem checkbox de país, preservando sessão,
+#gta6 e fila zerada. A sessão já tinha região salva; a conferência de UI não pediu
+nova localização, não expôs coordenadas e não alterou essa preferência. A captura
+registra o estado de atualização/desativação, não uma prova de precisão física.
+
+![Controle unificado em produção, sem opção duplicada de país](assets/unified-location-production-2026-10-26.png)
