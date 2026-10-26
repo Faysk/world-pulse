@@ -16,3 +16,11 @@ Essa reprodução demonstra uma hipótese concreta de ponto legado; não comprov
 - Abrir a página ou a ajuda não solicita nova localização nem altera o ponto. A atualização ocorre somente após desligar/ligar a chave existente. Saldos e histórico não mudam.
 
 Testes: regressão com a referência pública de Cete, mantendo centro legado e verificando deslocamento da nova grade. Quatro cenários desktop/mobile cobrem diagnóstico de margem, leitura do ponto legado sem escrita, retirada explícita, nova célula r2 e resolução preservada após recarregar. `npm run check`: 138 aprovados, um SQL local ignorado, build aprovado. Sem migração ou secret nova.
+
+## Verificação publicada em 26/10/2026
+
+PR #130 integrado em `8d8652f`. Produção [40339177622](https://github.com/Faysk/world-pulse/actions/runs/40339177622) aprovada, deployment `dpl_E1faeYLNBjZi47RoDzPq4Fde4t2t`. A aba existente do Chrome do computador mostrou **Região do ponto salvo: ~55 km**, além do aviso de ponto antigo. Verificação somente de interface: sem nova leitura de localização, mudança de ponto, taps ou leitura de coordenadas/célula privada.
+
+O usuário informou que outro celular ficou mais próximo. O registro legado foi confirmado no computador; não se afirma conhecer a fonte do sensor ou a versão de grade dos outros aparelhos. A margem relatada de 1 km não deve ser confundida com a resolução salva de 55 km.
+
+PostgreSQL e 12 fluxos de participação [40338848577](https://github.com/Faysk/world-pulse/actions/runs/40338848577) aprovados; build e gates compilados aprovados; CI visual geral [40338848613](https://github.com/Faysk/world-pulse/actions/runs/40338848613) ainda em andamento na publicação. Regressões locais relevantes em desktop/mobile aprovadas conforme acima. Sem migração ou credencial nova.
