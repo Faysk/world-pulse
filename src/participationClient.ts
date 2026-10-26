@@ -5,6 +5,7 @@
 import type { CountrySnapshot } from './countryTypes';
 import type {RegionSnapshot} from './regionalTypes';
 import {regionCenter} from '../server/regionGrid.mjs';
+import {expandRegions} from '../server/regionWire.mjs';
 export type LiveTag = { id: string; name: string; color: string };
 export type PendingTapBatch = { batchId: string; tagId: string; clicks: number };
 export type TimeBalance = { tagId: string; creditedSeconds: string;
@@ -65,6 +66,9 @@ export class ParticipationClient {
   private regionCell:string|null=null;
   private geoCountry='ZZ';
   private geographyAvailable=false;
+  private readRetryAt=0;
+  private readFailures=0;
+  private readFlights=new Map<string,Promise<unknown>>();
 
   constructor(
     fetcher: FetchLike = (input, init) => fetch(input, init),
@@ -189,9 +193,27 @@ export class ParticipationClient {
   }
 
   private async request<T>(path: string, body?: unknown, binding=this.queueBinding): Promise<T> {
+    if(body!==undefined)return this.transport<T>(path,body,binding);
+    // All aggregate reads share overload backoff; focus/panel/mutation refreshes
+    // cannot bypass it. Writes and the local tap queue remain independent.
+    const remaining=this.readRetryAt-this.clock();
+    if(remaining>0)throw new ParticipationRequestError('read_backoff',remaining);
+    const existing=this.readFlights.get(path);
+    if(existing)return existing as Promise<T>;
+    const task=this.transport<T>(path).then(value=>{this.readFailures=0;return value;}).catch(error=>{
+      this.readFailures++;
+      const delay=error instanceof ParticipationRequestError?error.retryAfterMs:Math.min(60000,5000*2**Math.min(this.readFailures-1,4));
+      this.readRetryAt=Math.max(this.readRetryAt,this.clock()+delay);
+      throw error;
+    });
+    this.readFlights.set(path,task);
+    try{return await task;}finally{if(this.readFlights.get(path)===task)this.readFlights.delete(path);}
+  }
+
+  private async transport<T>(path: string, body?: unknown, binding=this.queueBinding): Promise<T> {
     const response = await this.fetcher(path, {
       method: body === undefined ? 'GET' : 'POST',
-      headers: body === undefined ? {} : {
+      headers: body === undefined ? (path==='/api/regions'?{'X-WP-Region-Format':'compact-v1'}:{}) : {
         'Content-Type': 'application/json',
         ...(['/api/taps','/api/location'].includes(path) ? { 'X-WP-Session-Binding': binding ?? '' } : {})
       },
@@ -199,7 +221,8 @@ export class ParticipationClient {
       signal: AbortSignal.timeout(10_000),
       ...(body === undefined ? {} : { body: JSON.stringify(body) })
     });
-    const payload: unknown = await response.json();
+    // Parse errors must not discard Retry-After from a proxy's non-JSON 429/503.
+    const payload: unknown = await response.json().catch(()=>null);
     if (!response.ok) {
       const code = (payload && typeof payload === 'object' && 'error' in payload) ?
         String(payload.error) : 'network_error';
@@ -208,8 +231,10 @@ export class ParticipationClient {
         this.sessionPromise = null;
         if (this.pending.length&&path!=='/api/taps') this.quarantinePending();
       }
-      const wait=Number(response.headers.get('Retry-After'));
-      throw new ParticipationRequestError(code,Number.isFinite(wait)&&wait>0?Math.min(wait*1000,300000):3000);
+      const header=response.headers.get('Retry-After');
+      const seconds=header!==null&&/^\d+(?:\.\d+)?$/.test(header.trim())?Number(header):NaN;
+      const wait=Number.isFinite(seconds)?seconds*1000:header?Date.parse(header)-Date.now():NaN;
+      throw new ParticipationRequestError(code,Number.isFinite(wait)&&wait>0?wait:body===undefined?5000:3000);
     }
     return payload as T;
   }
@@ -288,7 +313,7 @@ export class ParticipationClient {
     }));
   }
   async regions():Promise<RegionSnapshot>{
-    const value=await this.request<RegionSnapshot>('/api/regions');
+    const value=expandRegions(await this.request<unknown>('/api/regions'));
     if(!value||value.type!=='region_snapshot'||!Number.isFinite(value.asOfMs)||value.validUntilMs!==value.asOfMs+5000||!Array.isArray(value.cells)||value.cells.length>2000||value.cells.some(row=>{
       try{regionCenter(row.cell);}catch{return true;}
       return !/^[0-9a-f-]{36}$/i.test(row.tagId)||typeof row.name!=='string'||!/^#[\p{L}\p{N}_]{2,32}$/u.test(row.name)||!/^#[0-9a-f]{6}$/i.test(row.color)||typeof row.participants!=='string'||!/^\d{1,64}$/.test(row.participants)||BigInt(row.participants)<1n;

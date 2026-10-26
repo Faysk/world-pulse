@@ -49,6 +49,21 @@ export async function consumeApiBudget(category = 'requests') {
   }
 }
 
+// Commit denied attempts too: requests still count when the read budget is
+// exhausted. One bounded transaction replaces two separate pool checkouts.
+export async function consumeReadBudget(){
+  try{
+    const allowed=await transaction(async client=>{
+      if(!await chargeBudget(client,'requests'))return false;
+      return chargeBudget(client,'reads');
+    });
+    if(!allowed)throw new ApiError(429,'operation_budget_exhausted','Limite temporário da plataforma atingido. Tente mais tarde.');
+  }catch(error){
+    if(error instanceof ApiError)throw error;
+    throw new ApiError(503,'operation_budget_unavailable','Controle de capacidade indisponível. Tente mais tarde.');
+  }
+}
+
 async function transaction(fn) {
   const client = await getPool().connect();
   try {

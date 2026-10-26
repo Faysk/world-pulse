@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 import pg from 'pg';
 import {
   useTestPool, createVisitor, findVisitor, createOrGetTag, selectTag,
-  creditBatch, getCredits, getRanking, pruneExpiredSessionBatches, getActiveBalanceSnapshot
+  creditBatch, getCredits, getRanking, pruneExpiredSessionBatches, getActiveBalanceSnapshot,consumeReadBudget
 } from '../server/store.mjs';
 
 test('PostgreSQL: anonymous participation and transaction invariants', {
@@ -308,6 +308,16 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
 
   await t.test('Runtime role cannot create tables in isolated schema', async () => {
     await assert.rejects(app.query('CREATE TABLE world_pulse.unauthorized (id int)'), /permission denied/);
+  });
+  await t.test('Combined read budgets preserve denied-attempt accounting and concurrent limits',async()=>{
+    await owner.query('TRUNCATE world_pulse.operation_budgets');
+    await owner.query("INSERT INTO world_pulse.operation_budgets VALUES ('reads_minute',date_trunc('minute',statement_timestamp()),597)");
+    const results=await Promise.allSettled(Array.from({length:20},()=>consumeReadBudget()));
+    assert.equal(results.filter(r=>r.status==='fulfilled').length,3);
+    for(const result of results.filter(r=>r.status==='rejected'))assert.equal(result.reason.status,429);
+    const {rows}=await owner.query('SELECT scope,used FROM world_pulse.operation_budgets ORDER BY scope');
+    assert.deepEqual(Object.fromEntries(rows.map(r=>[r.scope,Number(r.used)])),{reads_minute:600,requests_day:20,requests_minute:20});
+    await owner.query('TRUNCATE world_pulse.operation_budgets');
   });
   await t.test('Global budgets are atomic across independent pools, reset windows, and bound row count', async () => {
     const {chargeBudget}=await import('../server/costPolicy.mjs');

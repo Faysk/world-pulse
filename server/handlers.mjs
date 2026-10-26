@@ -5,6 +5,7 @@ import {
 import * as store from './store.mjs';
 import { countryEstimateForRequest } from './geoPrivacy.mjs';
 import {regionCenter} from './regionGrid.mjs';
+import {compactRegions} from './regionWire.mjs';
 
 function setSessionCookie(res, token, expiresAt) {
   const base=2592000;
@@ -19,6 +20,7 @@ export function route(kind, operations = store) {
     findVisitor, createVisitor, requireVisitor, createOrGetTag,
     selectTag, creditBatch, getCredits, getRanking, getActiveBalanceSnapshot, consumeApiBudget,setCountryConsent,getCountrySnapshot,setRegionCell,getRegionSnapshot
   } = operations;
+  const readBudget=operations.consumeReadBudget??(async()=>{await consumeApiBudget();await consumeApiBudget('reads');});
   return async function handler(req, res) {
     try {
       // Default OFF even after the code lands in main. Enable only after
@@ -28,27 +30,26 @@ export function route(kind, operations = store) {
       }
       if (kind === 'history') {
         onlyMethod(req, 'GET');
-        await consumeApiBudget();
-        await consumeApiBudget('reads');
+        await readBudget();
         const ranking = await getRanking();
         return json(res, 200, { type: 'historical', ranking });
       }
       if(kind==='countries'){
         onlyMethod(req,'GET');
         if(process.env.WP_GEO_PUBLIC_ENABLED!=='true')throw new ApiError(503,'geography_disabled','Origem geográfica ainda não liberada.');
-        await consumeApiBudget();await consumeApiBudget('reads');
+        await readBudget();
         return json(res,200,await getCountrySnapshot());
       }
       if(kind==='regions'){
         onlyMethod(req,'GET');
         if(process.env.WP_GEO_PUBLIC_ENABLED!=='true')throw new ApiError(503,'geography_disabled','Mapa regional indisponível.');
-        await consumeApiBudget();await consumeApiBudget('reads');
-        return json(res,200,await getRegionSnapshot());
+        await readBudget();
+        const snapshot=await getRegionSnapshot();
+        return json(res,200,req.headers?.['x-wp-region-format']==='compact-v1'?compactRegions(snapshot):snapshot);
       }
       if (kind === 'activity' || kind === 'ranking') {
         onlyMethod(req, 'GET');
-        await consumeApiBudget();
-        await consumeApiBudget('reads');
+        await readBudget();
         // Public aggregate contains no individual session identifiers or
         // coordinates. Remains disabled by WP_API_ENABLED by default.
         return json(res, 200, await getActiveBalanceSnapshot());

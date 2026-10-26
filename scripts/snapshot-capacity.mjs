@@ -33,7 +33,7 @@ async function waitUntil(at){while(Date.now()<at)await new Promise(r=>setTimeout
 async function request(path){
   const start=performance.now();
   try{
-    const response=await fetch(origin+path,{signal:AbortSignal.timeout(15000)}),body=await response.text();
+    const response=await fetch(origin+path,{signal:AbortSignal.timeout(15000),headers:configuration.profile.endsWith('-compact')?{'X-WP-Region-Format':'compact-v1'}:{}}),body=await response.text();
     const value=JSON.parse(body);
     if(response.ok&&(path==='/api/regions'?value.cells?.length!==1000:value.ranking?.length!==10))throw new Error('capacity_payload_invalid');
     const safe=['operation_budget_exhausted','operation_budget_unavailable','geography_refreshing','geography_capacity','internal_error'];
