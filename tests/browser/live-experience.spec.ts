@@ -14,24 +14,31 @@ test('Map and open Top 10 share one five-second update; closing the panel stops 
     const ranking={type:'active',asOfMs:Date.now(),metric:'distinct_anonymous_sessions_with_positive_balance',geography:'unavailable',ranking:[]};
     if(path==='/api/regions'){reads.regions++;return route.fulfill({json:regions});}
     if(path==='/api/ranking'){reads.ranking++;return route.fulfill({json:ranking});}
-    if(path==='/api/pulse'){reads.pulse++;return route.fulfill({json:{type:'pulse_snapshot_v1',regions,ranking}});}
+    if(path==='/api/pulse'){
+      reads.pulse++;
+      return route.fulfill({json:{type:'pulse_snapshot_v1',regions,ranking:{...ranking,ranking:[{id,name:'#fixture',color:'#abcdef',activeParticipants:String(reads.pulse),historicalParticipants:'1',creditedSeconds:'1'}]}}});
+    }
     return route.fulfill({status:404,json:{error:'not_found'}});
   });
   await page.goto('/?experiencePreview=1');await expect.poll(()=>reads.regions).toBe(1);
   await page.clock.pauseAt(new Date(await page.evaluate(()=>Date.now())+1000));
   await page.getByRole('button',{name:'Top 10',exact:true}).click();await expect.poll(()=>reads.pulse).toBe(1);
+  const renderedCount=page.locator('#live-ranking li strong');await expect(renderedCount).toHaveText('1');
   for(let i=0;i<12;i++){
     await page.clock.fastForward(5001);await expect.poll(()=>reads.pulse).toBe(i+2);
+    await expect(renderedCount).toHaveText(String(i+2));
   }
   expect(reads).toEqual({regions:1,ranking:0,pulse:13});
   await page.getByRole('button',{name:'Top 10',exact:true}).click();
   await page.clock.fastForward(5001);await expect.poll(()=>reads.regions).toBe(2);
   expect(reads.pulse).toBe(13);expect(reads.ranking).toBe(0);
   await page.getByRole('button',{name:'Top 10',exact:true}).click();await expect.poll(()=>reads.pulse).toBe(14);
+  await expect(renderedCount).toHaveText('14');
   await page.evaluate(()=>Object.defineProperty(document,'hidden',{configurable:true,get:()=>true}));
   await page.clock.fastForward(10001);expect(reads).toEqual({regions:2,ranking:0,pulse:14});
   await page.evaluate(()=>{delete (document as any).hidden;document.dispatchEvent(new Event('visibilitychange'));});
   await expect.poll(()=>reads.pulse).toBe(15);
+  await expect(renderedCount).toHaveText('15');
   await page.getByLabel(/^(Your hashtag|Sua hashtag)$/,{exact:true}).fill('#fixture');
   await page.getByRole('button',{name:/^(Enter|Entrar)$/,exact:true}).click();
   await expect.poll(()=>reads.ranking).toBe(1);
