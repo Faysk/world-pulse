@@ -340,7 +340,7 @@ test('Location requests high accuracy and rejects uncertain fixes without sendin
     expect(writes).toEqual([]);
     if(accuracy===25000){
       await page.getByRole('button',{name:'How it works',exact:true}).click();
-      await expect(page.getByTestId('location-accuracy')).toHaveText('Browser-reported accuracy: 25,000 m');
+      await expect(page.getByTestId('location-accuracy')).toHaveText('25,000 m');
       await page.getByRole('button',{name:'Close',exact:true}).click();
     }
   }
@@ -350,14 +350,14 @@ test('Location requests high accuracy and rejects uncertain fixes without sendin
   expect(writes).toHaveLength(1);expect(Object.keys(writes[0])).toEqual(['cell']);expect(writes[0].cell).toMatch(/^r2:/);
   expect(JSON.stringify(writes)).not.toContain('38.72');expect(JSON.stringify(writes)).not.toContain('accuracy');
   await page.getByRole('button',{name:'Como funciona',exact:true}).click();
-  await expect(page.getByTestId('location-accuracy')).toHaveText('Margem informada pelo navegador: 25 m');
+  await expect(page.getByTestId('location-accuracy')).toHaveText('25 m');
   await page.getByRole('button',{name:'Fechar',exact:true}).click();
   await page.reload();await expect(page.getByRole('button',{name:'How it works',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'How it works',exact:true}).click();
   await expect(page.getByTestId('location-accuracy')).toHaveCount(0);
 });
 
-test('Saved legacy resolution is disclosed and moves to one km only after explicit off/on',async({page,context})=>{
+test('Saved legacy resolution is disclosed and moves to one km only after explicit off/on',async({page,context},info)=>{
   await context.grantPermissions(['geolocation']);await context.setGeolocation({latitude:41.1826,longitude:-8.3649,accuracy:25});
   let cell:string|null='r1:262:257';const writes:any[]=[];
   await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/,route=>route.fulfill({json:{version:8,sources:{},layers:[]}}));
@@ -370,17 +370,29 @@ test('Saved legacy resolution is disclosed and moves to one km only after explic
   });
   await page.goto('/?experiencePreview=1');await expect(page.getByTestId('legacy-location-notice')).toContainText('55 km');
   expect(writes).toEqual([]);await page.getByRole('button',{name:'Como funciona',exact:true}).click();
-  await expect(page.getByTestId('saved-region-size')).toHaveText('Região do ponto salvo: ~55 km');
+  await expect(page.getByTestId('saved-region-size')).toHaveText('~55 km');
   await expect(page.getByTestId('location-accuracy')).toHaveCount(0);
+  await expect(page.getByTestId('saved-region-size')).toHaveCSS('font-size',info.project.name==='chromium'?'32px':'30px');
+  await expect(page.getByText('Sem leitura nesta aba',{exact:true})).toBeVisible();
+  await expect(page.locator('.world-loading')).toBeHidden();
+  await page.screenshot({path:`test-artifacts/help-organized-${info.project.name}.png`});
+  await page.getByRole('dialog').screenshot({path:`test-artifacts/help-organized-dialog-${info.project.name}.png`});
+  const headerBefore=await page.locator('.live-help-header').boundingBox();
+  await page.getByText('Como a localização é estimada',{exact:true}).click();
+  await expect(page.getByText('O navegador escolhe GPS, Wi-Fi ou dados de rede; o app não consegue identificar a fonte.',{exact:false})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Fechar',exact:true})).toBeVisible();
+  const headerAfter=await page.locator('.live-help-header').boundingBox();
+  expect(Math.abs(headerBefore!.y-headerAfter!.y)).toBeLessThan(1);
+  expect(await page.locator('dialog').evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
   await page.getByRole('button',{name:'Fechar',exact:true}).click();
   await page.getByRole('switch').click();await expect(page.getByRole('switch')).toHaveAttribute('aria-checked','false');
   await expect(page.getByTestId('legacy-location-notice')).toHaveCount(0);
   await page.getByRole('switch').click();await expect(page.getByRole('switch')).toHaveAttribute('aria-checked','true');
   expect(writes).toHaveLength(2);expect(writes[0]).toEqual({cell:null});expect(writes[1].cell).toMatch(/^r2:/);expect(Object.keys(writes[1])).toEqual(['cell']);
   await page.getByRole('button',{name:'Como funciona',exact:true}).click();
-  await expect(page.getByTestId('saved-region-size')).toHaveText('Região do ponto salvo: ~1 km');
-  await expect(page.getByTestId('location-accuracy')).toHaveText('Margem informada pelo navegador: 25 m');
+  await expect(page.getByTestId('saved-region-size')).toHaveText('~1 km');
+  await expect(page.getByTestId('location-accuracy')).toHaveText('25 m');
   await page.reload();await page.getByRole('button',{name:'Como funciona',exact:true}).click();
-  await expect(page.getByTestId('saved-region-size')).toHaveText('Região do ponto salvo: ~1 km');
+  await expect(page.getByTestId('saved-region-size')).toHaveText('~1 km');
   expect(writes).toHaveLength(2);
 });

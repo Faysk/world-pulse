@@ -1,4 +1,22 @@
 export const english = {
+  helpIntro: "Your current data first. Explore the explanations below.",
+  yourLocation: "Your location",
+  sharingOn: "On",
+  sharingOff: "Off",
+  regionHint: "Size of the region used for your public point.",
+  accuracyHint:
+    "Margin reported for this reading, before rounding. It can still be wrong.",
+  noSavedPoint: "No saved point",
+  noCurrentReading: "No reading in this tab",
+  participationHeading: "Participating and ranking",
+  globeHeading: "Exploring the globe",
+  privacyHeading: "Location and privacy",
+  providerHeading: "How location is estimated",
+  sessionHeading: "Session, time and synchronization",
+  providerHelp:
+    "The browser chooses GPS, Wi-Fi or network data; the app cannot identify the source. We request high accuracy and reject a reported margin above 1 km, but the provider can still be wrong.",
+  countryHelp:
+    "Country summaries use an estimate from the connection, which can be wrong with VPNs. Groups smaller than five sessions are combined.",
   limited:
     "Showing up to 200 balances. Select a hashtag to restore older time.",
   invalid: "Use 2–32 letters, numbers or _ in your hashtag.",
@@ -47,7 +65,7 @@ export const english = {
   rankingHelp:
     "The ranking counts one active session per hashtag, regardless of the seconds added. When its time runs out, that participation leaves the ranking and map. Updates can take about five seconds.",
   privacy:
-    "Location is optional. Switching it on requests browser permission for a public regional point and country summaries. Coordinates are rounded on your device to a cell roughly 1 km across before sending; exact coordinates and your name are not published. The browser chooses GPS, Wi-Fi or network data; the app cannot tell which. We request high accuracy and reject a reported margin above 1 km, but the provider can still be wrong. A region can still reveal information about you, especially in sparsely populated areas. Previously saved points keep their older resolution; switch Location off and on to update. Country is estimated from the connection and can be wrong with VPNs. Country summaries group fewer than five sessions.",
+    "Location is optional. When enabled, it shares a public regional point and country summaries. Coordinates are rounded on your device to a region roughly 1 km across before sending; exact coordinates and your name are not published. The region can still reveal information about you, especially in sparsely populated areas.",
   withdrawal:
     "Switch Location off to remove both from future readings. Copies already received cannot be recalled. Turning this switch off does not revoke the browser permission; you can do that in browser settings.",
   retention:
@@ -63,6 +81,24 @@ export const english = {
 export type Copy = typeof english;
 const pt: Copy = {
   ...english,
+  helpIntro: "Os dados atuais primeiro. Explore as explicações abaixo.",
+  yourLocation: "Sua localização",
+  sharingOn: "Ligada",
+  sharingOff: "Desligada",
+  regionHint: "Tamanho da região usada para exibir seu ponto público.",
+  accuracyHint:
+    "Margem informada nesta leitura, antes do arredondamento. Ela ainda pode estar errada.",
+  noSavedPoint: "Nenhum ponto salvo",
+  noCurrentReading: "Sem leitura nesta aba",
+  participationHeading: "Participação e ranking",
+  globeHeading: "Explorando o globo",
+  privacyHeading: "Localização e privacidade",
+  providerHeading: "Como a localização é estimada",
+  sessionHeading: "Sessão, tempo e sincronização",
+  providerHelp:
+    "O navegador escolhe GPS, Wi-Fi ou dados de rede; o app não consegue identificar a fonte. Pedimos alta precisão e recusamos uma margem informada acima de 1 km, mas o provedor ainda pode errar.",
+  countryHelp:
+    "Os resumos por país usam uma estimativa da conexão, que pode estar errada com VPNs. Grupos menores que cinco sessões são reunidos.",
   savedRegion: "Região do ponto salvo",
   legacyLocation:
     "Seu ponto ainda usa a região antiga (~55 km). Desligue e ligue Localização para atualizar.",
@@ -110,7 +146,7 @@ const pt: Copy = {
   rankingHelp:
     "O ranking conta uma sessão ativa por hashtag, independentemente dos segundos adicionados. Quando o saldo zera, essa participação sai do ranking e do mapa. As atualizações podem levar cerca de cinco segundos.",
   privacy:
-    "Localização é opcional. Ao ligar, o navegador pede permissão para um ponto regional público e os resumos por país. As coordenadas são arredondadas no seu dispositivo para uma célula de cerca de 1 km antes do envio; coordenadas exatas e seu nome não são publicados. O navegador escolhe GPS, Wi-Fi ou dados de rede; o app não consegue distinguir a fonte. Pedimos alta precisão e recusamos uma margem informada acima de 1 km, mas o provedor ainda pode errar. A região ainda pode revelar informações sobre você, principalmente em áreas pouco povoadas. Pontos já salvos mantêm a resolução anterior; desligue e ligue Localização para atualizar. O país é estimado pela conexão e pode estar errado com VPNs. Resumos por país agrupam menos de cinco sessões.",
+    "Localização é opcional. Ao ligar, você compartilha um ponto regional público e os resumos por país. As coordenadas são arredondadas no seu dispositivo para uma região de cerca de 1 km antes do envio; coordenadas exatas e seu nome não são publicados. A região ainda pode revelar informações sobre você, principalmente em áreas pouco povoadas.",
   withdrawal:
     "Desligue Localização para retirar ambos das próximas leituras. Cópias já recebidas não podem ser apagadas. Desligar a chave não revoga a permissão do navegador; isso pode ser feito nas configurações dele.",
   retention:
@@ -125,6 +161,24 @@ const pt: Copy = {
 };
 const es: Copy = {
   ...english,
+  helpIntro: "Tus datos actuales primero. Explora las explicaciones abajo.",
+  yourLocation: "Tu ubicación",
+  sharingOn: "Activada",
+  sharingOff: "Desactivada",
+  regionHint: "Tamaño de la región usada para mostrar tu punto público.",
+  accuracyHint:
+    "Margen informado en esta lectura, antes del redondeo. Aún puede ser incorrecto.",
+  noSavedPoint: "Ningún punto guardado",
+  noCurrentReading: "Sin lectura en esta pestaña",
+  participationHeading: "Participación y ranking",
+  globeHeading: "Explorar el globo",
+  privacyHeading: "Ubicación y privacidad",
+  providerHeading: "Cómo se estima la ubicación",
+  sessionHeading: "Sesión, tiempo y sincronización",
+  providerHelp:
+    "El navegador elige GPS, Wi-Fi o datos de red; la app no puede identificar la fuente. Pedimos alta precisión y rechazamos un margen informado superior a 1 km, pero el proveedor aún puede equivocarse.",
+  countryHelp:
+    "Los resúmenes por país usan una estimación de la conexión, que puede ser incorrecta con VPN. Los grupos de menos de cinco sesiones se combinan.",
   savedRegion: "Región del punto guardado",
   legacyLocation:
     "Tu punto aún usa la región anterior (~55 km). Desactiva y activa Ubicación para actualizar.",
@@ -172,7 +226,7 @@ const es: Copy = {
   rankingHelp:
     "El ranking cuenta una sesión activa por hashtag, independientemente de los segundos añadidos. Al agotarse el tiempo, la participación sale del ranking y del mapa. Las actualizaciones pueden tardar unos cinco segundos.",
   privacy:
-    "La ubicación es opcional. Al activarla, el navegador pide permiso para un punto regional público y resúmenes por país. Las coordenadas se redondean en tu dispositivo a una celda de unos 1 km antes de enviarse; no se publican coordenadas exactas ni tu nombre. El navegador elige GPS, Wi-Fi o datos de red; la app no puede distinguir la fuente. Pedimos alta precisión y rechazamos un margen informado superior a 1 km, pero el proveedor aún puede equivocarse. La región aún puede revelar información sobre ti, especialmente en zonas poco pobladas. Los puntos guardados conservan su resolución anterior; desactiva y activa Ubicación para actualizar. El país se estima por la conexión y puede ser incorrecto con VPN. Los resúmenes agrupan menos de cinco sesiones.",
+    "La ubicación es opcional. Al activarla, compartes un punto regional público y resúmenes por país. Las coordenadas se redondean en tu dispositivo a una región de aproximadamente 1 km antes de enviarse; no se publican coordenadas exactas ni tu nombre. La región aún puede revelar información sobre ti, especialmente en zonas poco pobladas.",
   withdrawal:
     "Desactiva Ubicación para retirar ambos de futuras lecturas. Las copias ya recibidas no pueden retirarse. Esto no revoca el permiso del navegador; puedes hacerlo en sus ajustes.",
   retention:

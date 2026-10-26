@@ -127,3 +127,5 @@ Resolução atual da localização: [teste de aproximadamente 1 km](docs/45-one-
 Qualidade da leitura do navegador: [alta precisão e verificação local](docs/46-location-quality.md).
 
 Ponto antigo e margem do navegador: [como distinguir](docs/47-saved-location-resolution.md).
+
+Organização da ajuda e dos dados atuais: [interface e verificação](docs/48-readable-help.md).
