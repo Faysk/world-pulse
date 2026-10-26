@@ -70,15 +70,21 @@ test('Regional browser permission stores only a coarse cell on real Neon; withdr
   expect(JSON.stringify(writes)).not.toContain('38.720123');
   expect(JSON.stringify(writes)).not.toContain('-9.140456');
   await expect.poll(async()=>{
-    const response=await page.request.get('/api/regions'),payload=await response.json();
-    return payload.cells?.find((row:any)=>row.tagId===stored.activeTag.id)?.participants;
+    const response=await page.request.get('/api/regions');
+    if(response.status()===503)return null; // A temporary cache lock is retried, never treated as zero.
+    expect(response.status()).toBe(200);const payload=await response.json();
+    expect(Array.isArray(payload.cells)).toBe(true);
+    return payload.cells.find((row:any)=>row.tagId===stored.activeTag.id)?.participants;
   }).toBe('1');
   await page.getByRole('switch',{name:/^(Location|Localização)$/,exact:true}).click();
   await expect.poll(async()=>(await snapshot(page)).regionCell).toBe(null);
   const after=await snapshot(page);expect(after.geoConsent).toBe(false);expect(after.geoCountry).toBe('ZZ');
   expect(after.credits.find((row:any)=>row.tagId===stored.activeTag.id).creditedSeconds).toBe('30');
   await expect.poll(async()=>{
-    const payload=await (await page.request.get('/api/regions')).json();
+    const response=await page.request.get('/api/regions');
+    if(response.status()===503)return null;
+    expect(response.status()).toBe(200);const payload=await response.json();
+    expect(Array.isArray(payload.cells)).toBe(true);
     return payload.cells.filter((row:any)=>row.tagId===stored.activeTag.id).length;
   }).toBe(0);
 });
