@@ -22,7 +22,9 @@ Secrets adicionais em GitHub Environment `production`:
 `R2_BACKUP_ACCESS_KEY_ID`, `R2_BACKUP_SECRET_ACCESS_KEY`,
 `WP_BACKUP_ENCRYPTION_KEY` (32 bytes aleatórios, base64). Variável de environment
 `R2_BACKUP_BUCKET_NAME=world-pulse-backups`; gate de repositório
-`WP_BACKUP_ENABLED=true` somente após revisão/testes. Nenhuma dessas três secrets
+`WP_BACKUP_ENABLED=true` para a agenda somente após o primeiro teste real.
+A execução manual deliberada permite produzir essa primeira prova com a agenda
+desligada. Nenhuma dessas três secrets
 é sincronizada para a Vercel ou enviada ao navegador. A chave de criptografia
 não pode ser relida no GitHub: não a substituir durante um incidente, pois isso
 inutilizaria cópias anteriores. Uma futura custódia offline independente precisa

@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   backup:
-    if: github.ref == 'refs/heads/main' && vars.WP_BACKUP_ENABLED == 'true'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || vars.WP_BACKUP_ENABLED == 'true')
     environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -27,7 +27,7 @@ jobs:
       - name: Export read-only consistent production snapshot and upload only encrypted archive
         run: node infra/backup-export.mjs
         env:
-          WP_BACKUP_ENABLED: ${{ vars.WP_BACKUP_ENABLED }}
+          WP_BACKUP_ENABLED: ${{ github.event_name == 'workflow_dispatch' && 'true' || vars.WP_BACKUP_ENABLED }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
           R2_BACKUP_BUCKET_NAME: ${{ vars.R2_BACKUP_BUCKET_NAME }}
@@ -37,7 +37,7 @@ jobs:
       - name: Read back R2 object and restore into isolated disposable PostgreSQL; no production DB credentials
         run: node infra/backup-verify.mjs
         env:
-          WP_BACKUP_ENABLED: ${{ vars.WP_BACKUP_ENABLED }}
+          WP_BACKUP_ENABLED: ${{ github.event_name == 'workflow_dispatch' && 'true' || vars.WP_BACKUP_ENABLED }}
           R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
           R2_BACKUP_BUCKET_NAME: ${{ vars.R2_BACKUP_BUCKET_NAME }}
           R2_BACKUP_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
