@@ -35,6 +35,13 @@ export default function LiveExperience() {
       ? countryLanguage(live.countryPreference.country)
       : language;
   const t = languages[locale];
+  const locationStatus = !live.ready
+    ? live.error
+      ? t.unavailable
+      : t.loading
+    : live.regional.shared
+      ? t.sharingOn
+      : t.sharingOff;
   const savedRegionKm = live.regional.cell?.startsWith("r1:")
     ? 55
     : live.regional.cell?.startsWith("r2:")
@@ -465,52 +472,119 @@ export default function LiveExperience() {
         }}
       >
         <div className="live-help-content">
-          <div className="live-panel-title">
-            <h2 id="help-title">{t.help}</h2>
+          <header className="live-help-header">
+            <div>
+              <h2 id="help-title">{t.help}</h2>
+              <p>{t.helpIntro}</p>
+            </div>
             <button aria-label={t.close} onClick={() => help.current?.close()}>
               ×
             </button>
-          </div>
-          <p>{t.intro}</p>
-          <p>{t.mapHelp}</p>
-          <p>{t.rankingHelp}</p>
-          <p id="location-privacy">{t.privacy}</p>
-          {savedRegionKm !== null && (
-            <p data-testid="saved-region-size">
-              {t.savedRegion}: ~{savedRegionKm} km
-            </p>
-          )}
-          {live.regional.accuracyMeters !== null && (
-            <p data-testid="location-accuracy">
-              {t.reportedAccuracy}:{" "}
-              {Intl.NumberFormat(locale).format(
-                Math.ceil(live.regional.accuracyMeters),
-              )}{" "}
-              m
-            </p>
-          )}
-          <p>{t.withdrawal}</p>
-          <p>{t.syncHelp}</p>
-          <p>{t.retention}</p>
-          <a
-            href="https://github.com/Faysk/world-pulse"
-            target="_blank"
-            rel="noreferrer"
+          </header>
+          <section
+            className="live-help-section live-help-location"
+            aria-labelledby="help-location-title"
           >
-            {t.source} ↗
-          </a>
-          <p>{t.languageHelp}</p>
-          <label htmlFor="live-language">{t.language}</label>
-          <select
-            id="live-language"
-            value={language}
-            onChange={(e) => setLanguage(e.target.value as Language | "auto")}
-          >
-            <option value="auto">{t.auto}</option>
-            <option value="en">English</option>
-            <option value="pt">Português</option>
-            <option value="es">Español</option>
-          </select>
+            <div className="live-help-section-title">
+              <h3 id="help-location-title">{t.yourLocation}</h3>
+              <span className="live-help-status">{locationStatus}</span>
+            </div>
+            <dl className="live-help-metrics">
+              <div
+                className="live-help-metric"
+                data-legacy={savedRegionKm === 55}
+              >
+                <dt>{t.savedRegion}</dt>
+                <dd>
+                  {savedRegionKm !== null ? (
+                    <strong data-testid="saved-region-size">
+                      ~{savedRegionKm} km
+                    </strong>
+                  ) : (
+                    <strong className="live-help-empty">
+                      {live.ready ? t.noSavedPoint : t.loading}
+                    </strong>
+                  )}
+                  <small>{t.regionHint}</small>
+                </dd>
+              </div>
+              <div className="live-help-metric">
+                <dt>{t.reportedAccuracy}</dt>
+                <dd>
+                  {live.regional.accuracyMeters !== null ? (
+                    <strong data-testid="location-accuracy">
+                      {Intl.NumberFormat(locale).format(
+                        Math.ceil(live.regional.accuracyMeters),
+                      )}{" "}
+                      m
+                    </strong>
+                  ) : (
+                    <strong className="live-help-empty">
+                      {t.noCurrentReading}
+                    </strong>
+                  )}
+                  <small>{t.accuracyHint}</small>
+                </dd>
+              </div>
+            </dl>
+            {savedRegionKm === 55 && (
+              <p className="live-help-legacy">{t.legacyLocation}</p>
+            )}
+          </section>
+          <section className="live-help-section">
+            <h3>{t.participationHeading}</h3>
+            <p>{t.intro}</p>
+            <p>{t.rankingHelp}</p>
+          </section>
+          <section className="live-help-section">
+            <h3>{t.globeHeading}</h3>
+            <p>{t.mapHelp}</p>
+          </section>
+          <section className="live-help-section">
+            <h3>{t.privacyHeading}</h3>
+            <p id="location-privacy">{t.privacy}</p>
+            <p>{t.withdrawal}</p>
+            <details className="live-help-details">
+              <summary>{t.providerHeading}</summary>
+              <p>{t.providerHelp}</p>
+              <p>{t.countryHelp}</p>
+            </details>
+          </section>
+          <section className="live-help-section">
+            <details className="live-help-details">
+              <summary>{t.sessionHeading}</summary>
+              <p>{t.syncHelp}</p>
+              <p>{t.retention}</p>
+            </details>
+          </section>
+          <footer className="live-help-section live-help-footer">
+            <div>
+              <div className="live-help-language">
+                <label htmlFor="live-language">{t.language}</label>
+                <select
+                  id="live-language"
+                  value={language}
+                  onChange={(e) =>
+                    setLanguage(e.target.value as Language | "auto")
+                  }
+                >
+                  <option value="auto">{t.auto}</option>
+                  <option value="en">English</option>
+                  <option value="pt">Português</option>
+                  <option value="es">Español</option>
+                </select>
+              </div>
+              <p>{t.languageHelp}</p>
+            </div>
+            <a
+              href="https://github.com/Faysk/world-pulse"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {t.source}
+              <span aria-hidden="true">↗</span>
+            </a>
+          </footer>
         </div>
       </dialog>
     </main>
