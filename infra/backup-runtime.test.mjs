@@ -1,6 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {waitForPostgres} from './backup-runtime.mjs';
+import {waitForPostgres,commandFailureCode,postgresCaMount} from './backup-runtime.mjs';
+test('CLI diagnostics expose only fixed categories, never private driver text',()=>{
+  assert.equal(commandFailureCode('root certificate file missing: private-path'),'tls');
+  assert.equal(commandFailureCode('password authentication failed: private-user'),'authentication');
+  assert.equal(commandFailureCode('permission denied: private-table'),'permission');
+  assert.equal(commandFailureCode('unexpected private-secret'),'unclassified');
+  assert.match(postgresCaMount,/source=\/etc\/ssl\/certs\/ca-certificates.crt/);
+  assert.ok(postgresCaMount.endsWith(',readonly'));
+});
 test('readiness ignores the socket-only initialization phase and waits for final TCP listener',async()=>{
   let attempts=0,pauses=0;
   const run=args=>{

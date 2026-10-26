@@ -42,7 +42,7 @@ export function backupContext(env){
 export function backupDatabase(value){
   const url=new URL(productionDatabaseUrl(value,backupHost));
   url.hostname=url.hostname.replace('-pooler.','.');
-  return {PGHOST:url.hostname,PGUSER:'world_pulse_app',PGPASSWORD:decodeURIComponent(url.password),PGDATABASE:'neondb',PGSSLMODE:'verify-full',PGSSLROOTCERT:'/etc/ssl/certs/ca-certificates.crt',PGCONNECT_TIMEOUT:'15',PGOPTIONS:'-c statement_timeout=180000 -c lock_timeout=5000 -c timezone=UTC'};
+  return {PGHOST:url.hostname,PGUSER:'world_pulse_app',PGPASSWORD:decodeURIComponent(url.password),PGDATABASE:'neondb',PGSSLMODE:'verify-full',PGSSLROOTCERT:'/etc/ssl/certs/ca-certificates.crt',PGCONNECT_TIMEOUT:'15',PGOPTIONS:'-c statement_timeout=180000 -c lock_timeout=5000 -c timezone=UTC -c default_transaction_read_only=on'};
 }
 export function fingerprintSql(table){
   if(!durableTables.includes(table))throw new Error('backup_table_rejected');
