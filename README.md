@@ -26,7 +26,7 @@ flowchart LR
   WEB --> TILES[OpenFreeMap: cartografia]
   GH[GitHub Actions + production secrets] --> WEB
   GH --> DB[(Neon PostgreSQL: conectividade)]
-  GH --> R2[Cloudflare R2 privado: probes]
+  GH --> R2[Cloudflare R2 privado: probes e backups criptografados]
   API[API de participação: sessão e lotes] --> DB
   WEB --> API
 ```
