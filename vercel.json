@@ -4,6 +4,7 @@
     "deploymentEnabled": false
   },
   "framework": "vite",
+  "headers": [{"source":"/api/:path*","headers":[{"key":"X-Robots-Tag","value":"noindex, nofollow"}]}],
   "installCommand": "npm ci --no-fund",
   "buildCommand": "npm run build",
   "outputDirectory": "dist"

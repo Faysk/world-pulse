@@ -73,6 +73,7 @@ export const english = {
   syncHelp:
     "Taps appear immediately and synchronize automatically in the background. Displayed time may include pending taps; confirmed history updates after delivery. Closing the page before confirmation may delay delivery. Cookies and local storage keep your session and pending queue.",
   source: "Code, documentation and issues on GitHub",
+  about: "About World Pulse",
   languageHelp:
     "Language follows the identified country when supported. Without location, English is used. You can change it here.",
   language: "Language",
@@ -154,6 +155,7 @@ const pt: Copy = {
   syncHelp:
     "Os taps aparecem imediatamente e sincronizam automaticamente em segundo plano. O tempo exibido pode incluir taps pendentes; o histórico confirmado muda após a entrega. Fechar a página antes da confirmação pode atrasar a entrega. Cookies e armazenamento local mantêm a sessão e a fila pendente.",
   source: "Código, documentação e issues no GitHub",
+  about: "Sobre o World Pulse",
   languageHelp:
     "O idioma segue o país identificado quando disponível. Sem localização, usamos inglês. Você pode alterar aqui.",
   language: "Idioma",
@@ -234,6 +236,7 @@ const es: Copy = {
   syncHelp:
     "Los taps aparecen al instante y se sincronizan automáticamente. El tiempo puede incluir taps pendientes; el historial confirmado cambia tras la entrega. Cerrar antes de confirmar puede retrasar la entrega. Las cookies y el almacenamiento local conservan tu sesión y cola.",
   source: "Código, documentación e issues en GitHub",
+  about: "Acerca de World Pulse",
   languageHelp:
     "El idioma sigue el país identificado cuando está disponible. Sin ubicación se usa inglés. Puedes cambiarlo aquí.",
   language: "Idioma",

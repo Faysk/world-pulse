@@ -27,6 +27,7 @@
   pointer-events: none;
 }
 .live-brand {
+  margin: 0;
   font-weight: 850;
   letter-spacing: 0.09em;
   font-size: 23px;
