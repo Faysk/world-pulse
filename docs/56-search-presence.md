@@ -65,8 +65,8 @@ O host já devolve 404 real em caminhos desconhecidos; essa topologia foi preser
 Testes verificam gate de produção/preview, canonical único, JSON-LD, links de idioma,
 sitemap, tamanho real dos PNGs e entradas ICO. Navegadores desktop/mobile com JS
 desligado percorrem as três apresentações e verificam ausência de overflow.
-Arte e página mobile foram inspecionadas visualmente. CI e recibo de publicação
-serão registrados ao concluir a entrega.
+Arte e página mobile foram inspecionadas visualmente. Recibos de CI e publicação
+estão registrados abaixo.
 
 Indexável não significa indexado ou bem posicionado: a decisão e o prazo são dos
 buscadores. Search Console/sitemap e inspeção de URL ajudam a acompanhar quando
@@ -77,3 +77,44 @@ Fontes oficiais consultadas em 26/10/2026:
 [JavaScript SEO](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics),
 [favicon](https://developers.google.com/search/docs/appearance/favicon-in-search)
 e [robots.txt](https://developers.google.com/search/docs/crawling-indexing/robots/intro).
+
+## Recibos da entrega
+
+PR [#161](https://github.com/Faysk/world-pulse/pull/161), main `a757549`.
+CI completo: [visual/desktop/mobile 40399327639](https://github.com/Faysk/world-pulse/actions/runs/40399327639)
+e [API/SQL 40399327524](https://github.com/Faysk/world-pulse/actions/runs/40399327524).
+Local: 150 testes aprovados, um SQL ignorado localmente e executado no CI; build
+normal noindex, build alpha público index/follow e navegação sem JS EN/PT/ES nos
+dois projetos de navegador aprovados.
+
+Produção: [40400508206](https://github.com/Faysk/world-pulse/actions/runs/40400508206),
+deployment `dpl_BT7RLPR2yj9fUq2LY87GQVsGthZb`, candidato testado antes da promoção.
+Em 26/10 às 21:01 UTC, as quatro páginas responderam 200 diretamente em suas URLs
+canônicas, sem redirect; HTML com index/follow e sem header noindex. Robots/sitemap,
+SVG/ICO/PNGs, imagem social e manifest responderam 200 com tipos apropriados.
+PNG social conferido em 1200×630; API com X-Robots-Tag noindex; caminho inexistente
+com 404 real. [Relatório público sem dados pessoais](assets/search-2026-10-26/public-check.json).
+
+Search Console já tinha a propriedade de domínio verificada; não foi necessário
+criar credencial, aceitar termo ou modificar DNS. A inspeção inicial informou
+“O Google não reconhece o URL” e nenhum sitemap de referência para map.faysk.dev.
+Isso é o estado anterior do índice, não bloqueio de acesso do site publicado.
+
+O sitemap https://map.faysk.dev/sitemap.xml foi enviado à propriedade existente
+e o Search Console confirmou **“O sitemap foi processado”**, última leitura
+26/10/2026, **quatro páginas encontradas**. Não foram criadas permissões novas
+ou alterados os sitemaps dos outros projetos. O estado inicial de fetch pendente
+foi rechecado até confirmar processamento; envio aceito sozinho não era essa prova.
+Processamento do sitemap não comprova que as quatro URLs já aparecem na busca.
+
+Teste em tempo real do Search Console em 26/10/2026 às 21:06: **“O URL está
+disponível para o Google”** e **“É possível indexar a página”**. O índice passou
+a registrar a raiz como detectada, ainda sem indexação concluída. A primeira
+solicitação prioritária falhou na conexão com o serviço reCAPTCHA; após uma
+recarga normal e o teste público aprovado, a nova tentativa foi aceita:
+**“Indexação solicitada”**, com o URL adicionado à **fila de rastreamento prioritário**.
+Nenhum desafio CAPTCHA foi resolvido ou contornado pelo agente. Não reenviar
+repetidamente: a confirmação do Google informa que isso não melhora a prioridade.
+Acompanhar o resultado efetivo em
+[#162](https://github.com/Faysk/world-pulse/issues/162). Não confundir elegibilidade,
+descoberta via sitemap, pedido de prioridade e presença final nos resultados.
