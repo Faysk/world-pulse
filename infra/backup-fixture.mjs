@@ -2,12 +2,14 @@
 import {readFile} from 'node:fs/promises';
 import {randomBytes} from 'node:crypto';
 import assert from 'node:assert/strict';
-import {command,postgresImage,waitForPostgres} from './backup-runtime.mjs';
+import {command,postgresImage,postgresCaMount,waitForPostgres} from './backup-runtime.mjs';
 import {restoreArchive} from './backup-restore.mjs';
 import {durableTables,transientTables,fingerprintSql,sealBackup,openBackup,maxArchiveBytes} from './backup-core.mjs';
 const container='world-pulse-backup-fixture';let started=false,stage='startup';
 const local={POSTGRES_PASSWORD:randomBytes(32).toString('hex'),PGOPTIONS:'-c timezone=UTC'};
 try{
+  stage='client_ca_bundle';command(['run','--rm','--network','none','--mount',postgresCaMount,postgresImage,'test','-s','/etc/ssl/certs/ca-certificates.crt']);
+  stage='startup';
   command(['run','--detach','--name',container,'--network','none','--log-driver','none','--tmpfs','/var/lib/postgresql:rw,noexec,nosuid,size=512m','-e','POSTGRES_PASSWORD',postgresImage],{env:local});started=true;
   await waitForPostgres(container);stage='schema';
   const sql=query=>command(['exec','-i','-e','PGOPTIONS',container,'psql','-X','-qAt','-v','ON_ERROR_STOP=1','-U','postgres','-d','postgres'],{input:query,env:local}).toString().trim();

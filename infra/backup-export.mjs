@@ -3,7 +3,7 @@ import {randomUUID} from 'node:crypto';
 import {writeFile,mkdir,chmod} from 'node:fs/promises';
 import {PutObjectCommand,ListObjectsV2Command} from '@aws-sdk/client-s3';
 import {backupContext,backupDatabase,durableTables,transientTables,fingerprintSql,maxArchiveBytes,sealBackup} from './backup-core.mjs';
-import {command,storage,object,postgresImage} from './backup-runtime.mjs';
+import {command,storage,object,postgresImage,postgresCaMount} from './backup-runtime.mjs';
 let db,s3,stage='configuration';
 try{
   const env=process.env;backupContext(env);
@@ -22,7 +22,7 @@ try{
   if(inventory.map(r=>r.tablename).join()!==[...durableTables,...transientTables].sort().join())throw new Error('backup_schema_inventory_rejected');
   stage='fingerprints';const tables={};
   for(const table of durableTables){const {rows:[r]}=await db.query(fingerprintSql(table));tables[table]=r.fingerprint;}
-  const args=['run','--rm','--network','host'];
+  const args=['run','--rm','--network','host','--mount',postgresCaMount];
   for(const name of Object.keys(libpq))args.push('-e',name);
   args.push(postgresImage,'pg_dump','--format=custom','--schema=world_pulse','--no-acl','--no-owner','--lock-wait-timeout=5s','--snapshot='+row.snapshot);
   for(const table of transientTables)args.push('--exclude-table-data=world_pulse.'+table);
@@ -37,5 +37,8 @@ try{
   const dir=env.RUNNER_TEMP+'/world-pulse-backup';await mkdir(dir,{recursive:true,mode:0o700});await chmod(dir,0o700);
   await writeFile(dir+'/object-key',key,{mode:0o600});
   console.log(`Encrypted logical backup uploaded (${encrypted.length} bytes); restoration still pending.`);
-}catch{console.error(`Backup export failed at ${stage}; provider/driver details suppressed.`);process.exitCode=1;}
+}catch(error){
+  const code=['tls','authentication','permission','version','snapshot','timeout','connection','unclassified'].includes(error.safeCode)?error.safeCode:'not_subprocess';
+  console.error(`Backup export failed at ${stage} (${code}); provider/driver details suppressed.`);process.exitCode=1;
+}
 finally{await db?.end().catch(()=>{});s3?.destroy();}
