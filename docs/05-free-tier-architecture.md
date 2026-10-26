@@ -7,11 +7,11 @@
 | Componente | Responsabilidade | Limite de escopo atual |
 | --- | --- | --- |
 | React + TypeScript + Vite | Interface estática compilada | Alpha pública com saldos e ranking reais |
-| MapLibre GL + OpenFreeMap | Globo vetorial e cartografia | Pontos em células regionais (~55 km); nunca posição exata |
+| MapLibre GL + OpenFreeMap | Globo vetorial e cartografia | Novos pontos em células ~1 km; legado r1 ~55 km exige atualização explícita |
 | Vercel Hobby | Entrega do app e HTTPS | API real integrada e ativa |
 | Cloudflare DNS | Resolver `map.faysk.dev` para a Vercel | DNS only; Cloudflare não hospeda o frontend |
-| Neon Free / PostgreSQL | Banco relacional com TLS e role runtime restrita | Schema 0001–0007 e runtime restrito ativos em produção |
-| Cloudflare R2 Standard | Armazenamento S3 privado | Apenas provisionamento/probes; não participa dos taps nem fornece os tiles |
+| Neon Free / PostgreSQL | Banco relacional com TLS e role runtime restrita | Schema 0001–0008 e runtime restrito ativos em produção |
+| Cloudflare R2 Standard | Armazenamento S3 privado | Buckets separados para probes e backup criptografado; não fornece tiles nem participa dos taps |
 | GitHub Actions | Validar, sincronizar configuração e publicar | Environment `production`, branch `main`; sem secrets em PRs |
 | Feed Steam | Endpoint Vercel para dados externos de jogos | Publicado pelo PR #41; amostra externa independente do banco e das manchas |
 

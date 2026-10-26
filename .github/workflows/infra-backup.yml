@@ -1,0 +1,50 @@
+name: Encrypted database backup
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 4 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: world-pulse-production-backup
+  cancel-in-progress: false
+jobs:
+  backup:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || vars.WP_BACKUP_ENABLED == 'true')
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - run: npm ci --prefix infra --ignore-scripts
+      - run: npm test --prefix infra
+      - run: docker pull postgres:18@sha256:edb0c08dc33befd0262ab3b5cf1c4f3f8cfd8b09e88c05b45adee29d6761ddb6
+      - name: Export read-only consistent production snapshot and upload only encrypted archive
+        run: node infra/backup-export.mjs
+        env:
+          WP_BACKUP_ENABLED: ${{ github.event_name == 'workflow_dispatch' && 'true' || vars.WP_BACKUP_ENABLED }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
+          R2_BACKUP_BUCKET_NAME: ${{ vars.R2_BACKUP_BUCKET_NAME }}
+          R2_BACKUP_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+          R2_BACKUP_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+          WP_BACKUP_ENCRYPTION_KEY: ${{ secrets.WP_BACKUP_ENCRYPTION_KEY }}
+      - name: Read back R2 object and restore into isolated disposable PostgreSQL; no production DB credentials
+        run: node infra/backup-verify.mjs
+        env:
+          WP_BACKUP_ENABLED: ${{ github.event_name == 'workflow_dispatch' && 'true' || vars.WP_BACKUP_ENABLED }}
+          R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
+          R2_BACKUP_BUCKET_NAME: ${{ vars.R2_BACKUP_BUCKET_NAME }}
+          R2_BACKUP_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+          R2_BACKUP_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+          WP_BACKUP_ENCRYPTION_KEY: ${{ secrets.WP_BACKUP_ENCRYPTION_KEY }}
+      - name: Always dispose ephemeral restore data
+        if: always()
+        run: |
+          docker rm --force world-pulse-backup-restore 2>/dev/null || true
+          rm -f -- "$RUNNER_TEMP/world-pulse-backup/object-key"

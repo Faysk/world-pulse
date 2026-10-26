@@ -2,6 +2,9 @@
 
 **Atualizado em 26/10/2026.** Rastreio: #7, #15, #16, #17 e #18.
 
+Continuidade do staging, renovação de token, consultas por painel e backup com
+restauração: [runbook atual](49-operational-continuity.md), issues #134–#136.
+
 ## Serviços e estado real
 
 | Componente | Recurso | Estado |
@@ -21,7 +24,7 @@ aprovada. [Primeira alpha](39-production-alpha-release.md) e [taps/país: estado
 
 Neon Free fornece PostgreSQL separado em Londres. A aplicação acessa o banco por
 API server-side com role runtime restrita; a credencial de migração permanece
-separada. Não usamos serviços externos de Auth/Realtime. Migrações 0001–0007 foram aplicadas/verificadas em produção; futuras mudanças
+separada. Não usamos serviços externos de Auth/Realtime. Migrações 0001–0008 foram aplicadas/verificadas em produção; futuras mudanças
 continuam manuais e separadas do deploy.
 
 Planos/quotas devem ser conferidos nos painéis e nas fontes oficiais: [Neon](https://neon.com/pricing),

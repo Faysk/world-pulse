@@ -1,5 +1,25 @@
 import { test,expect } from '@playwright/test';
 const id='11111111-1111-4111-8111-111111111111';
+
+test('Closed Top 10 makes no ranking reads; opening refreshes immediately and keeps five-second updates',async({page})=>{
+  await page.clock.install();let reads=0;
+  await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/,route=>route.fulfill({json:{version:8,sources:{},layers:[{id:'bg',type:'background',paint:{'background-color':'#111'}}]}}));
+  await page.route('**/api/**',route=>{
+    const path=new URL(route.request().url()).pathname;
+    if(path==='/api/session')return route.fulfill({json:{anonymous:true,sessionFresh:false,sessionBinding:'a'.repeat(64),activeTagId:null,activeTag:null,credits:[]}});
+    if(path==='/api/ranking'){reads++;return route.fulfill({json:{type:'active',asOfMs:Date.now(),ranking:[]}});}
+    return route.fulfill({status:404,json:{error:'not_found'}});
+  });
+  await page.goto('/?experiencePreview=1');
+  await expect(page.locator('main.live-world')).toHaveAttribute('data-ready','true');
+  await page.clock.fastForward(20000);expect(reads).toBe(0);
+  await page.getByRole('button',{name:'Top 10',exact:true}).click();
+  await expect.poll(()=>reads).toBe(1);
+  await page.clock.fastForward(6000);await expect.poll(()=>reads).toBe(2);
+  await page.getByRole('button',{name:'Top 10',exact:true}).click();
+  await page.clock.fastForward(20000);expect(reads).toBe(2);
+  await page.getByRole('button',{name:'Top 10',exact:true}).click();await expect.poll(()=>reads).toBe(3);
+});
 test('Integrated experience preserves queue, restores balances and never shows synthetic participants',async({page},info)=>{
   await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/,route=>route.fulfill({json:{version:8,sources:{},layers:[{id:'bg',type:'background',paint:{'background-color':'#14222e'}}]}}));
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));

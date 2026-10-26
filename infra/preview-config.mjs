@@ -2,6 +2,11 @@ import {validateStagingUrl} from './staging-db.mjs';
 export const previewBranch='codex/remote-staging';
 export const previewProject='prj_m2bOqJyrOCGfnKTHd5GsZydNy2ET';
 export const previewTeam='team_9wuTfarCQ3L63xtufPKUDzi0';
+export function checkPreviewCredential(env,now=Date.now()){
+  const expiry=Date.parse(env.WP_PREVIEW_TOKEN_EXPIRES_AT??'');
+  if(!Number.isFinite(expiry)||expiry<=now)throw new Error('preview_credential_expired');
+  if(expiry-now<7*86400000)throw new Error('preview_credential_renewal_required');
+}
 
 export function previewConfiguration(env,now=Date.now()){
   if(env.GITHUB_REF!==`refs/heads/${previewBranch}`||env.GITHUB_REPOSITORY!=='Faysk/world-pulse')throw new Error('preview_target_rejected');
@@ -18,6 +23,7 @@ export function previewConfiguration(env,now=Date.now()){
 export async function syncPreviewConfiguration(api,env,now=Date.now()){
   const config=previewConfiguration(env,now);
   if(env.WP_PREVIEW_SYNC_ENABLED!=='true')throw new Error('preview_sync_disabled');
+  checkPreviewCredential(env,now);
   const result=await api(`/v10/projects/${previewProject}/env?upsert=true`,{method:'POST',body:JSON.stringify(config)});
   if(result.failed?.length)throw new Error('preview_sync_failed');
   return {keys:config.map(item=>item.key),branch:previewBranch,target:'preview'};
