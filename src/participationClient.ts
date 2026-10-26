@@ -35,7 +35,7 @@ const QUEUE_LOCK = 'world-pulse-pending-writer-v1';
 const memoryWriters = new WeakMap<StoreLike, Promise<unknown>>();
 const memorySenders = new WeakMap<StoreLike, Promise<unknown>>();
 const SENDER_LOCK='world-pulse-pending-sender-v1';
-export class ParticipationRequestError extends Error {retryAfterMs:number;constructor(code:string,retryAfterMs:number){super(code);this.retryAfterMs=retryAfterMs;}}
+export class ParticipationRequestError extends Error {retryAfterMs:number;status:number;constructor(code:string,retryAfterMs:number,status=0){super(code);this.retryAfterMs=retryAfterMs;this.status=status;}}
 function defaultStorage(): StoreLike | null {
   try { return typeof window === 'undefined' ? null : window.localStorage; }
   catch { return null; }
@@ -69,6 +69,7 @@ export class ParticipationClient {
   private readRetryAt=0;
   private readFailures=0;
   private readFlights=new Map<string,Promise<unknown>>();
+  private pulseUnsupported=false;
 
   constructor(
     fetcher: FetchLike = (input, init) => fetch(input, init),
@@ -211,6 +212,10 @@ export class ParticipationClient {
   }
 
   private async transport<T>(path: string, body?: unknown, binding=this.queueBinding): Promise<T> {
+    if(path==='/api/pulse'&&this.pulseUnsupported){
+      const [regions,ranking]=await Promise.all([this.transport('/api/regions'),this.transport('/api/ranking')]);
+      return {type:'pulse_snapshot_v1',regions,ranking} as T;
+    }
     const response = await this.fetcher(path, {
       method: body === undefined ? 'GET' : 'POST',
       headers: body === undefined ? (path==='/api/regions'?{'X-WP-Region-Format':'compact-v1'}:{}) : {
@@ -224,6 +229,11 @@ export class ParticipationClient {
     // Parse errors must not discard Retry-After from a proxy's non-JSON 429/503.
     const payload: unknown = await response.json().catch(()=>null);
     if (!response.ok) {
+      // Rolling deploy/rollback: fall back only when this endpoint does not
+      // exist. Never bypass overload, maintenance, authentication or geo gates.
+      if(path==='/api/pulse'&&[404,405].includes(response.status)){
+        this.pulseUnsupported=true;return this.transport<T>(path);
+      }
       const code = (payload && typeof payload === 'object' && 'error' in payload) ?
         String(payload.error) : 'network_error';
       if ((response.status === 401 && code === 'session_expired') ||
@@ -234,7 +244,7 @@ export class ParticipationClient {
       const header=response.headers.get('Retry-After');
       const seconds=header!==null&&/^\d+(?:\.\d+)?$/.test(header.trim())?Number(header):NaN;
       const wait=Number.isFinite(seconds)?seconds*1000:header?Date.parse(header)-Date.now():NaN;
-      throw new ParticipationRequestError(code,Number.isFinite(wait)&&wait>0?wait:body===undefined?5000:3000);
+      throw new ParticipationRequestError(code,Number.isFinite(wait)&&wait>0?wait:body===undefined?5000:3000,response.status);
     }
     return payload as T;
   }
@@ -313,13 +323,23 @@ export class ParticipationClient {
     }));
   }
   async regions():Promise<RegionSnapshot>{
-    const value=expandRegions(await this.request<unknown>('/api/regions'));
+    return this.parseRegions(await this.request<unknown>('/api/regions'));
+  }
+  private parseRegions(input:unknown):RegionSnapshot{
+    const value=expandRegions(input);
     if(!value||value.type!=='region_snapshot'||!Number.isFinite(value.asOfMs)||value.validUntilMs!==value.asOfMs+5000||!Array.isArray(value.cells)||value.cells.length>2000||value.cells.some(row=>{
       try{regionCenter(row.cell);}catch{return true;}
       return !/^[0-9a-f-]{36}$/i.test(row.tagId)||typeof row.name!=='string'||!/^#[\p{L}\p{N}_]{2,32}$/u.test(row.name)||!/^#[0-9a-f]{6}$/i.test(row.color)||typeof row.participants!=='string'||!/^\d{1,64}$/.test(row.participants)||BigInt(row.participants)<1n;
     }))throw new Error('invalid_region_snapshot');
     if(new Set(value.cells.map(row=>row.cell+row.tagId)).size!==value.cells.length)throw new Error('invalid_region_snapshot');
     return value;
+  }
+  async pulse():Promise<{regions:RegionSnapshot|null;ranking:ActiveRanking|null}>{
+    const value=await this.request<{type:string;regions:unknown;ranking:ActiveRanking|null;regionsError?:string;rankingError?:string}>('/api/pulse');
+    if(!value||value.type!=='pulse_snapshot_v1'||(!value.regions&&!value.ranking)||
+      (value.regions===null&&value.regionsError!=='snapshot_unavailable')||
+      (value.ranking===null&&value.rankingError!=='snapshot_unavailable'))throw new Error('invalid_pulse_snapshot');
+    return {regions:value.regions===null?null:this.parseRegions(value.regions),ranking:value.ranking===null?null:this.parseRanking(value.ranking)};
   }
   setGeoConsent(allowed:boolean):Promise<void>{
     return this.enqueueSelection(()=>this.withWriter(async()=>{
@@ -468,7 +488,9 @@ export class ParticipationClient {
   }
 
   async ranking(): Promise<ActiveRanking> {
-    const snapshot=await this.request<ActiveRanking>('/api/ranking');
+    return this.parseRanking(await this.request<ActiveRanking>('/api/ranking'));
+  }
+  private parseRanking(snapshot:ActiveRanking):ActiveRanking{
     const decimal=(value:unknown)=>typeof value==='string'&&/^\d{1,64}$/.test(value);
     if(!snapshot||snapshot.type!=='active'||snapshot.metric!=='distinct_anonymous_sessions_with_positive_balance'||
       snapshot.geography!=='unavailable'||!Number.isFinite(snapshot.asOfMs)||snapshot.asOfMs<0||snapshot.asOfMs>8.64e15||

@@ -1,21 +1,33 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
-import type {ParticipationClient} from './participationClient';
+import type {ParticipationClient,ActiveRanking} from './participationClient';
 import type {RegionSnapshot} from './regionalTypes';
 import {regionCell} from '../server/regionGrid.mjs';
 
-export function useRegionalLocation(client:ParticipationClient,enabled:boolean){
+export function useRegionalLocation(client:ParticipationClient,enabled:boolean,rankingEnabled=false,onRanking?:(snapshot:ActiveRanking|null)=>void){
   const [snapshot,setSnapshot]=useState<RegionSnapshot|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState('');
   const [,render]=useState(0);
   const [accuracyMeters,setAccuracyMeters]=useState<number|null>(null);
   const [readError,setReadError]=useState(false);
   const allowed=useRef(enabled);allowed.current=enabled;
   const mounted=useRef(false),revision=useRef(0),request=useRef<Promise<void>|null>(null);
-  const refresh=useCallback(async()=>{
-    if(request.current)return request.current;
+  const includeRanking=useRef(rankingEnabled),rankingResult=useRef(onRanking),requestRanking=useRef(false);
+  includeRanking.current=rankingEnabled;rankingResult.current=onRanking;
+  const refresh=useCallback(async(afterMutation=false)=>{
+    if(request.current){
+      const followup=afterMutation||(includeRanking.current&&!requestRanking.current);
+      await request.current;
+      if(!followup)return;
+      if(request.current)return request.current;
+    }
     if(!mounted.current||!allowed.current)return;
     const version=revision.current;
-    const task=client.regions().then(value=>{if(mounted.current&&allowed.current&&version===revision.current){setSnapshot(value);setReadError(false);}})
-      .catch(()=>{if(mounted.current&&allowed.current&&version===revision.current){setSnapshot(null);setReadError(true);}});
+    const combined=includeRanking.current;requestRanking.current=combined;
+    const task=(combined?client.pulse():client.regions().then(regions=>({regions,ranking:null}))).then(value=>{
+      if(mounted.current&&allowed.current&&version===revision.current){
+        setSnapshot(value.regions);setReadError(value.regions===null);
+        if(combined)rankingResult.current?.(value.ranking);
+      }
+    }).catch(()=>{if(mounted.current&&allowed.current&&version===revision.current){setSnapshot(null);setReadError(true);if(combined)rankingResult.current?.(null);}});
     request.current=task;try{await task;}finally{if(request.current===task)request.current=null;}
   },[client]);
   useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;revision.current++;};},[]);

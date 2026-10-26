@@ -20,7 +20,7 @@ export function route(kind, operations = store) {
     findVisitor, createVisitor, requireVisitor, createOrGetTag,
     selectTag, creditBatch, getCredits, getRanking, getActiveBalanceSnapshot, consumeApiBudget,setCountryConsent,getCountrySnapshot,setRegionCell,getRegionSnapshot
   } = operations;
-  const readBudget=operations.consumeReadBudget??(async()=>{await consumeApiBudget();await consumeApiBudget('reads');});
+  const readBudget=operations.consumeReadBudget??(async(reads=1)=>{await consumeApiBudget();for(let i=0;i<reads;i++)await consumeApiBudget('reads');});
   return async function handler(req, res) {
     try {
       // Default OFF even after the code lands in main. Enable only after
@@ -39,6 +39,22 @@ export function route(kind, operations = store) {
         if(process.env.WP_GEO_PUBLIC_ENABLED!=='true')throw new ApiError(503,'geography_disabled','Origem geográfica ainda não liberada.');
         await readBudget();
         return json(res,200,await getCountrySnapshot());
+      }
+      if(kind==='pulse'){
+        onlyMethod(req,'GET');
+        if(process.env.WP_GEO_PUBLIC_ENABLED!=='true')throw new ApiError(503,'geography_disabled','Mapa regional indisponível.');
+        // Fixed two aggregate reads; callers cannot choose a cheaper weight.
+        await readBudget(2);
+        // Preserve independent failure states: a regional capacity limit must
+        // not hide a healthy Top 10, and ranking failure must not blank the map.
+        const settle=async task=>{try{return {data:await task()};}catch{return {data:null,error:'snapshot_unavailable'};}};
+        const ranked=await settle(getActiveBalanceSnapshot);
+        // Read geography LAST: do not hold a previously fetched point while a
+        // slower ranking query runs and a withdrawal may invalidate the cache.
+        const regional=await settle(async()=>compactRegions(await getRegionSnapshot()));
+        if(!regional.data&&!ranked.data)throw new ApiError(503,'snapshot_unavailable','Leituras temporariamente indisponíveis.');
+        return json(res,200,{type:'pulse_snapshot_v1',regions:regional.data,ranking:ranked.data,
+          ...(regional.error?{regionsError:regional.error}:{}),...(ranked.error?{rankingError:ranked.error}:{})});
       }
       if(kind==='regions'){
         onlyMethod(req,'GET');

@@ -36,7 +36,6 @@ export function useParticipation(countryOverview=true,rankingOverview=true) {
   const [countrySnapshot,setCountrySnapshot]=useState<CountrySnapshot|null>(null);
   const [countryError,setCountryError]=useState(false);
   const [countryPreference,setCountryPreference]=useState(client.countryPreference());
-  const regional=useRegionalLocation(client,ready&&countryPreference.available);
   const [deliveryNotice,setDeliveryNotice]=useState('');
   const intents=useRef(new Map<string,number>());
   const retryAt=useRef(0);
@@ -48,6 +47,11 @@ export function useParticipation(countryOverview=true,rankingOverview=true) {
   const rankingVisible=useRef(rankingOverview);
   rankingVisible.current=rankingOverview;
   const mounted=useRef(false);
+  const receiveRanking=useCallback((snapshot:ActiveRanking|null)=>{
+    if(!mounted.current||!rankingVisible.current)return;
+    if(snapshot){setRanking(current=>current&&current.asOfMs>snapshot.asOfMs?current:snapshot);setRankingError(false);}else setRankingError(true);
+  },[]);
+  const regional=useRegionalLocation(client,ready&&countryPreference.available,rankingOverview,receiveRanking);
 
   const view=useCallback(()=>{
     if(!mounted.current)return;
@@ -64,14 +68,16 @@ export function useParticipation(countryOverview=true,rankingOverview=true) {
   },[client,view]);
   const refreshRanking=useCallback(async(afterMutation=false):Promise<void>=>{
     if(!rankingVisible.current||document.hidden)return;
+    // The map owns the sole five-second timer when geography is available.
+    if(client.countryPreference().available&&!afterMutation){await regional.refresh();return;}
     if(rankingRequest.current){await rankingRequest.current;if(!afterMutation)return;}
     if(!mounted.current||!rankingVisible.current||document.hidden)return;
     const task=client.ranking().then(snapshot=>{
-      if(mounted.current){setRanking(snapshot);setRankingError(false);}
+      if(mounted.current){setRanking(current=>current&&current.asOfMs>snapshot.asOfMs?current:snapshot);setRankingError(false);}
     }).catch(()=>{if(mounted.current)setRankingError(true);});
     rankingRequest.current=task;
     try{await task;}finally{if(rankingRequest.current===task)rankingRequest.current=null;}
-  },[client]);
+  },[client,regional.refresh]);
   const refreshCountries=useCallback(async(afterMutation=false):Promise<void>=>{
     if(countryRequest.current){await countryRequest.current;if(!afterMutation)return;}
     if(!mounted.current||!client.countryPreference().available)return;
@@ -103,9 +109,10 @@ export function useParticipation(countryOverview=true,rankingOverview=true) {
   useEffect(()=>{
     if(!ready||!rankingOverview)return;
     void refreshRanking();
+    if(countryPreference.available)return;
     const id=window.setInterval(()=>{if(!document.hidden)void refreshRanking();},5000);
     return()=>window.clearInterval(id);
-  },[ready,rankingOverview,refreshRanking]);
+  },[ready,rankingOverview,countryPreference.available,refreshRanking]);
   useEffect(()=>{
     const id=window.setInterval(()=>{if(!document.hidden)setTick(n=>n+1);},250);
     return()=>window.clearInterval(id);

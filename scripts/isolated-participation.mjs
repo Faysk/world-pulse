@@ -23,7 +23,7 @@ useTestPool(app);
 process.env.NODE_ENV='development'; // HTTP/cookies accepted only in this loopback harness.
 process.env.WP_API_ENABLED='true';
 process.env.WP_GEO_PUBLIC_ENABLED='true'; // Local aggregate UI tests only. Edge metadata stays untrusted.
-const handlers = Object.fromEntries(['session','tags','select','taps','ranking','activity','history','countries','location','regions'].map(kind=>['/api/'+kind,route(kind)]));
+const handlers = Object.fromEntries(['session','tags','select','taps','ranking','activity','history','countries','location','regions','pulse'].map(kind=>['/api/'+kind,route(kind)]));
 
 const server = await createServer({
   server:{host:'127.0.0.1',port:4174,strictPort:true},
