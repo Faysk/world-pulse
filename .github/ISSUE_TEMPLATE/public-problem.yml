@@ -1,0 +1,47 @@
+name: Problema no World Pulse / Report a problem
+description: Relate algo que falhou no mapa, nos taps ou na localização.
+title: "[Relato público] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por testar map.faysk.dev. Pode escrever em português, inglês ou espanhol.
+        Este relato é público. Não envie coordenadas/endereço, localização exata,
+        cookies, tokens, senhas ou conteúdo do armazenamento do navegador.
+        Não é necessário testar em outro aparelho. Screenshots são opcionais e devem ocultar dados pessoais.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Onde ocorreu? / Area
+      options:
+        - Mapa ou manchas / Map
+        - Localização aproximada / Approximate location
+        - Taps ou saldo / Taps and balance
+        - Ranking
+        - Carregamento ou interface / Loading or interface
+        - Outro / Other
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: O que você fez? / Steps
+      description: Descreva os passos para reproduzir, sem informar sua posição exata.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: O que aconteceu e o que esperava? / Actual and expected result
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Aparelho e navegador / Device and browser (opcional)
+      description: Exemplo Samsung + Chrome ou Windows + Firefox. Não precisa de número de série, IP ou identificador.
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexto adicional / Extra context (opcional)
+      description: Por exemplo se ocorre sempre, ao voltar à aba ou após perder a conexão. Não envie logs que contenham dados pessoais.

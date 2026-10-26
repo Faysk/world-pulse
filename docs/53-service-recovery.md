@@ -22,6 +22,17 @@ cloud e só admite nomes de bancos e endereço loopback fixos. Não executa em N
 nem sobrescreve produção. Os tempos acumulados são **ensaio local sintético**,
 não RTO de Vercel, DNS, conta perdida, operador ou dados maiores.
 
+Ensaio aprovado na PR #154:
+[40387623855](https://github.com/Faysk/world-pulse/actions/runs/40387623855),
+também aprovado na main em [40387871323](https://github.com/Faysk/world-pulse/actions/runs/40387871323).
+Fixture pequeno: origem HTTP conferida em 117 ms, export criptografado em 253 ms,
+restore/sanitização em 539 ms e serviço recuperado conferido em 768 ms acumulados.
+O [JSON agregado](assets/operations-2026-10-26/recovery-service.json) conserva checks
+e limitações. O backup **real** com chave atual também passou readback R2,
+descriptografia e cinco fingerprints em
+[40388219471](https://github.com/Faysk/world-pulse/actions/runs/40388219471),
+sem trocar chave ou conexão de produção.
+
 ## Corte real, quando necessário
 
 1. Declarar incidente e suspender writes/publicação antes de trocar destino.
@@ -95,3 +106,11 @@ Antes de ativar uma regra destrutiva no provedor, confrontar esses dois objetivo
 e medir o comportamento no bucket de teste. Não declarar lifecycle independente
 ativo sem ler/aplicar/verificar a configuração real. A custódia externa, o corte
 cloud/DNS e essa decisão permanecem rastreados em #138.
+
+Segundo a [documentação R2 verificada em 26/10](https://developers.cloudflare.com/r2/buckets/object-lifecycles/),
+remoção por lifecycle tipicamente ocorre em até 24 h da expiração, com possível
+atraso na aplicação a objetos existentes. A regra padrão de multipart incompleto
+não é expiração dos backups completos. Configurar lifecycle é permissão de bucket;
+não ampliar o token de objetos do backup só para isso. Nesta sessão o dashboard
+Cloudflare ficou no carregamento, inclusive após uma recarga: não houve prova de
+configuração, métricas de bucket nem ativação de regra independente.

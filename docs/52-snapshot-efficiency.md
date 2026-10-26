@@ -42,6 +42,29 @@ de requests vem de não repetir leituras durante falhas e deduplicar concorrênc
 não de prometer multiplicar o orçamento de 600 reads/min. Cenários saudáveis
 com 100 abas ainda podem esgotá-lo. Recibos reais de CI serão anexados à issue.
 
+### Resultado com PostgreSQL real
+
+[Carga 40386972797](https://github.com/Faysk/world-pulse/actions/runs/40386972797):
+os quatro perfis passaram todas as rajadas frias de 1/10/25/50/100 abas, com três
+repetições e sem falhas. No mesmo dataset padrão de 1.000 grupos/dez hashtags,
+o snapshot original teve 127.988 bytes e o compacto 22.649 bytes (82,3% menos).
+Uma leitura regional fria usou 13 chamadas SQL e duas transações; antes desta
+entrega eram 15 chamadas e três transações, com a mesma reconstrução. As duas
+mutações de budget e três linhas cobradas são preservadas. Não comparar latência
+entre runners distintos como ganho causal nem converter bytes JSON em fatura.
+
+SQL real e fluxo com dois navegadores:
+[40386973159](https://github.com/Faysk/world-pulse/actions/runs/40386973159).
+Interface completa desktop/mobile:
+[40386972699](https://github.com/Faysk/world-pulse/actions/runs/40386972699).
+Os quatro relatórios agregados estão em [operations-2026-10-26](assets/operations-2026-10-26/).
+
+Publicado na main `1af76ec` pelo [40388511548](https://github.com/Faysk/world-pulse/actions/runs/40388511548),
+deployment `dpl_D4wfC5zPqVHqWz4y2Hcg7zC2v2oZ`, com candidato testado antes de
+promover e acesso temporário revogado. Conferência pública adicional dos formatos
+antigo/compacto: ambos HTTP 200, no-store e TTL 5.000 ms; zero grupos ativos no
+momento. Não foram inseridas participações ou executada carga em produção.
+
 ## Próxima decisão de transporte
 
 | Alternativa | Benefício | Custo/condição antes de adotar |

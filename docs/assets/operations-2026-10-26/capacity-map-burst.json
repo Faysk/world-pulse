@@ -1,0 +1,860 @@
+{
+  "version": 1,
+  "sha": "212d5c7326e5dd3d9c3346596b62f750ce388e25",
+  "configuration": {
+    "profile": "map",
+    "mode": "burst"
+  },
+  "environment": {
+    "node": "v24.21.0",
+    "postgres": 180006,
+    "cpu": "AMD EPYC 7763 64-Core Processor",
+    "logicalCpus": 4,
+    "memoryBytes": 16766414848,
+    "poolMax": 3
+  },
+  "dataset": {
+    "synthetic": true,
+    "visitors": 1000,
+    "tags": 10,
+    "regionTagGroups": 1000
+  },
+  "operationBudgets": {
+    "requests": [
+      [
+        "requests_minute",
+        60,
+        3000
+      ],
+      [
+        "requests_day",
+        86400,
+        50000
+      ]
+    ],
+    "reads": [
+      [
+        "reads_minute",
+        60,
+        600
+      ]
+    ],
+    "sessions": [
+      [
+        "sessions_hour",
+        3600,
+        2000
+      ]
+    ],
+    "tags": [
+      [
+        "tags_hour",
+        3600,
+        500
+      ]
+    ]
+  },
+  "results": [
+    {
+      "tabs": 1,
+      "repeat": 1,
+      "rounds": 1,
+      "windowStart": "2026-10-26T19:28:19.652Z",
+      "completedAt": "2026-10-26T19:28:19.696Z",
+      "withinMinute": true,
+      "maxScheduleDelayMs": 4,
+      "requests": 1,
+      "statuses": {
+        "200": 1
+      },
+      "errors": {},
+      "decodedJsonBytes": 127988,
+      "latencyMs": {
+        "p50": 39.71,
+        "p95": 39.71,
+        "p99": 39.71,
+        "max": 39.71
+      },
+      "latencyByStatus": {
+        "200": {
+          "p50": 39.71,
+          "p95": 39.71,
+          "p99": 39.71,
+          "max": 39.71
+        }
+      },
+      "sql": {
+        "sqlCalls": 13,
+        "transactions": 2,
+        "budgetMutations": 2,
+        "budgetRowsUpdated": 3,
+        "snapshotBuilds": 1,
+        "rankingBuilds": 0,
+        "cacheHits": 0,
+        "maxPoolWaiting": 1
+      },
+      "budgets": [
+        {
+          "scope": "reads_minute",
+          "used": 1
+        },
+        {
+          "scope": "requests_day",
+          "used": 1
+        },
+        {
+          "scope": "requests_minute",
+          "used": 1
+        }
+      ]
+    },
+    {
+      "tabs": 1,
+      "repeat": 2,
+      "rounds": 1,
+      "windowStart": "2026-10-26T19:28:19.697Z",
+      "completedAt": "2026-10-26T19:28:19.720Z",
+      "withinMinute": true,
+      "maxScheduleDelayMs": 3,
+      "requests": 1,
+      "statuses": {
+        "200": 1
+      },
+      "errors": {},
+      "decodedJsonBytes": 127988,
+      "latencyMs": {
+        "p50": 18.89,
+        "p95": 18.89,
+        "p99": 18.89,
+        "max": 18.89
+      },
+      "latencyByStatus": {
+        "200": {
+          "p50": 18.89,
+          "p95": 18.89,
+          "p99": 18.89,
+          "max": 18.89
+        }
+      },
+      "sql": {
+        "sqlCalls": 13,
+        "transactions": 2,
+        "budgetMutations": 2,
+        "budgetRowsUpdated": 3,
+        "snapshotBuilds": 1,
+        "rankingBuilds": 0,
+        "cacheHits": 0,
+        "maxPoolWaiting": 1
+      },
+      "budgets": [
+        {
+          "scope": "reads_minute",
+          "used": 1
+        },
+        {
+          "scope": "requests_day",
+          "used": 1
+        },
+        {
+          "scope": "requests_minute",
+          "used": 1
+        }
+      ]
+    },
+    {
+      "tabs": 1,
+      "repeat": 3,
+      "rounds": 1,
+      "windowStart": "2026-10-26T19:28:19.720Z",
+      "completedAt": "2026-10-26T19:28:19.747Z",
+      "withinMinute": true,
+      "maxScheduleDelayMs": 2,
+      "requests": 1,
+      "statuses": {
+        "200": 1
+      },
+      "errors": {},
+      "decodedJsonBytes": 127988,
+      "latencyMs": {
+        "p50": 24.57,
+        "p95": 24.57,
+        "p99": 24.57,
+        "max": 24.57
+      },
+      "latencyByStatus": {
+        "200": {
+          "p50": 24.57,
+          "p95": 24.57,
+          "p99": 24.57,
+          "max": 24.57
+        }
+      },
+      "sql": {
+        "sqlCalls": 13,
+        "transactions": 2,
+        "budgetMutations": 2,
+        "budgetRowsUpdated": 3,
+        "snapshotBuilds": 1,
+        "rankingBuilds": 0,
+        "cacheHits": 0,
+        "maxPoolWaiting": 1
+      },
+      "budgets": [
+        {
+          "scope": "reads_minute",
+          "used": 1
+        },
+        {
+          "scope": "requests_day",
+          "used": 1
+        },
+        {
+          "scope": "requests_minute",
+          "used": 1
+        }
+      ]
+    },
+    {
+      "tabs": 10,
+      "repeat": 1,
+      "rounds": 1,
+      "windowStart": "2026-10-26T19:28:19.747Z",
+      "completedAt": "2026-10-26T19:28:19.847Z",
+      "withinMinute": true,
+      "maxScheduleDelayMs": 3,
+      "requests": 10,
+      "statuses": {
+        "200": 10
+      },
+      "errors": {},
+      "decodedJsonBytes": 1279880,
+      "latencyMs": {
+        "p50": 77.87,
+        "p95": 92.7,
+        "p99": 92.7,
+        "max": 92.7
+      },
+      "latencyByStatus": {
+        "200": {
+          "p50": 77.87,
+          "p95": 92.7,
+          "p99": 92.7,
+          "max": 92.7
+        }
+      },
+      "sql": {
+        "sqlCalls": 91,
+        "transactions": 20,
+        "budgetMutations": 20,
+        "budgetRowsUpdated": 30,
+        "snapshotBuilds": 1,
+        "rankingBuilds": 0,
+        "cacheHits": 9,
+        "maxPoolWaiting": 7
+      },
+      "budgets": [
+        {
+          "scope": "reads_minute",
+          "used": 10
+        },
+        {
+          "scope": "requests_day",
+          "used": 10
+        },
+        {
+          "scope": "requests_minute",
+          "used": 10
+        }
+      ]
+    },
+    {
+      "tabs": 10,
+      "repeat": 2,
+      "rounds": 1,
+      "windowStart": "2026-10-26T19:28:19.847Z",
+      "completedAt": "2026-10-26T19:28:19.907Z",
+      "withinMinute": true,
+      "maxScheduleDelayMs": 2,
+      "requests": 10,
+      "statuses": {
+        "200": 10
+      },
+      "errors": {},
+      "decodedJsonBytes": 1279880,
+      "latencyMs": {
+        "p50": 44.26,
+        "p95": 56.83,
+        "p99": 56.83,
+        "max": 56.83
+      },
+      "latencyByStatus": {
+        "200": {
+          "p50": 44.26,
+          "p95": 56.83,
+          "p99": 56.83,
+          "max": 56.83
+        }
+      },
+      "sql": {
+        "sqlCalls": 91,
+        "transactions": 20,
+        "budgetMutations": 20,
+        "budgetRowsUpdated": 30,
+        "snapshotBuilds": 1,
+        "rankingBuilds": 0,
+        "cacheHits": 9,
+        "maxPoolWaiting": 7
+      },
+      "budgets": [
+        {
+          "scope": "reads_minute",
+          "used": 10
+        },
+        {
+          "scope": "requests_day",
+          "used": 10
+        },
+        {
+          "scope": "requests_minute",
+          "used": 10
+        }
+      ]
+    },
+    {
+      "tabs": 10,
+      "repeat": 3,
+      "rounds": 1,
+      "windowStart": "2026-10-26T19:28:19.908Z",
+      "completedAt": "2026-10-26T19:28:19.964Z",
+      "withinMinute": true,
+      "maxScheduleDelayMs": 2,
+      "requests": 10,
+      "statuses": {
+        "200": 10
+      },
+      "errors": {},
+      "decodedJsonBytes": 1279880,
+      "latencyMs": {
+        "p50": 39.05,
+        "p95": 52.8,
+        "p99": 52.8,
+        "max": 52.8
+      },
+      "latencyByStatus": {
+        "200": {
+          "p50": 39.05,
+          "p95": 52.8,
+          "p99": 52.8,
+          "max": 52.8
+        }
+      },
+      "sql": {
+        "sqlCalls": 91,
+        "transactions": 20,
+        "budgetMutations": 20,
+        "budgetRowsUpdated": 30,
+        "snapshotBuilds": 1,
+        "rankingBuilds": 0,
+        "cacheHits": 9,
+        "maxPoolWaiting": 7
+      },
+      "budgets": [
+        {
+          "scope": "reads_minute",
+          "used": 10
+        },
+        {
+          "scope": "requests_day",
+          "used": 10
+        },
+        {
+          "scope": "requests_minute",
+          "used": 10
+        }
+      ]
+    },
+    {
+      "tabs": 25,
+      "repeat": 1,
+      "rounds": 1,
+      "windowStart": "2026-10-26T19:28:19.964Z",
+      "completedAt": "2026-10-26T19:28:20.089Z",
+      "withinMinute": true,
+      "maxScheduleDelayMs": 3,
+      "requests": 25,
+      "statuses": {
+        "200": 25
+      },
+      "errors": {},
+      "decodedJsonBytes": 3199700,
+      "latencyMs": {
+        "p50": 83.79,
+        "p95": 111.39,
+        "p99": 117.84,
+        "max": 117.84
+      },
+      "latencyByStatus": {
+        "200": {
+          "p50": 83.79,
+          "p95": 111.39,
+          "p99": 117.84,
+          "max": 117.84
+        }
+      },
+      "sql": {
+        "sqlCalls": 211,
+        "transactions": 50,
+        "budgetMutations": 50,
+        "budgetRowsUpdated": 75,
+        "snapshotBuilds": 1,
+        "rankingBuilds": 0,
+        "cacheHits": 24,
+        "maxPoolWaiting": 22
+      },
+      "budgets": [
+        {
+          "scope": "reads_minute",
+          "used": 25
+        },
+        {
+          "scope": "requests_day",
+          "used": 25
+        },
+        {
+          "scope": "requests_minute",
+          "used": 25
+        }
+      ]
+    },
+    {
+      "tabs": 25,
+      "repeat": 2,
+      "rounds": 1,
+      "windowStart": "2026-10-26T19:28:20.089Z",
+      "completedAt": "2026-10-26T19:28:20.204Z",
+      "withinMinute": true,
+      "maxScheduleDelayMs": 5,
+      "requests": 25,
+      "statuses": {
+        "200": 25
+      },
+      "errors": {},
+      "decodedJsonBytes": 3199700,
+      "latencyMs": {
+        "p50": 73.37,
+        "p95": 105.76,
+        "p99": 107.49,
+        "max": 107.49
+      },
+      "latencyByStatus": {
+        "200": {
+          "p50": 73.37,
+          "p95": 105.76,
+          "p99": 107.49,
+          "max": 107.49
+        }
+      },
+      "sql": {
+        "sqlCalls": 211,
+        "transactions": 50,
+        "budgetMutations": 50,
+        "budgetRowsUpdated": 75,
+        "snapshotBuilds": 1,
+        "rankingBuilds": 0,
+        "cacheHits": 24,
+        "maxPoolWaiting": 22
+      },
+      "budgets": [
+        {
+          "scope": "reads_minute",
+          "used": 25
+        },
+        {
+          "scope": "requests_day",
+          "used": 25
+        },
+        {
+          "scope": "requests_minute",
+          "used": 25
+        }
+      ]
+    },
+    {
+      "tabs": 25,
+      "repeat": 3,
+      "rounds": 1,
+      "windowStart": "2026-10-26T19:28:20.204Z",
+      "completedAt": "2026-10-26T19:28:20.318Z",
+      "withinMinute": true,
+      "maxScheduleDelayMs": 3,
+      "requests": 25,
+      "statuses": {
+        "200": 25
+      },
+      "errors": {},
+      "decodedJsonBytes": 3199700,
+      "latencyMs": {
+        "p50": 76.95,
+        "p95": 106.7,
+        "p99": 107.71,
+        "max": 107.71
+      },
+      "latencyByStatus": {
+        "200": {
+          "p50": 76.95,
+          "p95": 106.7,
+          "p99": 107.71,
+          "max": 107.71
+        }
+      },
+      "sql": {
+        "sqlCalls": 211,
+        "transactions": 50,
+        "budgetMutations": 50,
+        "budgetRowsUpdated": 75,
+        "snapshotBuilds": 1,
+        "rankingBuilds": 0,
+        "cacheHits": 24,
+        "maxPoolWaiting": 22
+      },
+      "budgets": [
+        {
+          "scope": "reads_minute",
+          "used": 25
+        },
+        {
+          "scope": "requests_day",
+          "used": 25
+        },
+        {
+          "scope": "requests_minute",
+          "used": 25
+        }
+      ]
+    },
+    {
+      "tabs": 50,
+      "repeat": 1,
+      "rounds": 1,
+      "windowStart": "2026-10-26T19:28:20.318Z",
+      "completedAt": "2026-10-26T19:28:20.523Z",
+      "withinMinute": true,
+      "maxScheduleDelayMs": 3,
+      "requests": 50,
+      "statuses": {
+        "200": 50
+      },
+      "errors": {},
+      "decodedJsonBytes": 6399400,
+      "latencyMs": {
+        "p50": 134.84,
+        "p95": 189.65,
+        "p99": 195.82,
+        "max": 195.82
+      },
+      "latencyByStatus": {
+        "200": {
+          "p50": 134.84,
+          "p95": 189.65,
+          "p99": 195.82,
+          "max": 195.82
+        }
+      },
+      "sql": {
+        "sqlCalls": 408,
+        "transactions": 100,
+        "budgetMutations": 100,
+        "budgetRowsUpdated": 150,
+        "snapshotBuilds": 1,
+        "rankingBuilds": 0,
+        "cacheHits": 49,
+        "maxPoolWaiting": 47
+      },
+      "budgets": [
+        {
+          "scope": "reads_minute",
+          "used": 50
+        },
+        {
+          "scope": "requests_day",
+          "used": 50
+        },
+        {
+          "scope": "requests_minute",
+          "used": 50
+        }
+      ]
+    },
+    {
+      "tabs": 50,
+      "repeat": 2,
+      "rounds": 1,
+      "windowStart": "2026-10-26T19:28:20.523Z",
+      "completedAt": "2026-10-26T19:28:20.734Z",
+      "withinMinute": true,
+      "maxScheduleDelayMs": 4,
+      "requests": 50,
+      "statuses": {
+        "200": 50
+      },
+      "errors": {},
+      "decodedJsonBytes": 6399400,
+      "latencyMs": {
+        "p50": 125.56,
+        "p95": 196.8,
+        "p99": 198.97,
+        "max": 198.97
+      },
+      "latencyByStatus": {
+        "200": {
+          "p50": 125.56,
+          "p95": 196.8,
+          "p99": 198.97,
+          "max": 198.97
+        }
+      },
+      "sql": {
+        "sqlCalls": 411,
+        "transactions": 100,
+        "budgetMutations": 100,
+        "budgetRowsUpdated": 150,
+        "snapshotBuilds": 1,
+        "rankingBuilds": 0,
+        "cacheHits": 49,
+        "maxPoolWaiting": 47
+      },
+      "budgets": [
+        {
+          "scope": "reads_minute",
+          "used": 50
+        },
+        {
+          "scope": "requests_day",
+          "used": 50
+        },
+        {
+          "scope": "requests_minute",
+          "used": 50
+        }
+      ]
+    },
+    {
+      "tabs": 50,
+      "repeat": 3,
+      "rounds": 1,
+      "windowStart": "2026-10-26T19:28:20.734Z",
+      "completedAt": "2026-10-26T19:28:20.937Z",
+      "withinMinute": true,
+      "maxScheduleDelayMs": 3,
+      "requests": 50,
+      "statuses": {
+        "200": 50
+      },
+      "errors": {},
+      "decodedJsonBytes": 6399400,
+      "latencyMs": {
+        "p50": 134.8,
+        "p95": 193.82,
+        "p99": 196.23,
+        "max": 196.23
+      },
+      "latencyByStatus": {
+        "200": {
+          "p50": 134.8,
+          "p95": 193.82,
+          "p99": 196.23,
+          "max": 196.23
+        }
+      },
+      "sql": {
+        "sqlCalls": 411,
+        "transactions": 100,
+        "budgetMutations": 100,
+        "budgetRowsUpdated": 150,
+        "snapshotBuilds": 1,
+        "rankingBuilds": 0,
+        "cacheHits": 49,
+        "maxPoolWaiting": 47
+      },
+      "budgets": [
+        {
+          "scope": "reads_minute",
+          "used": 50
+        },
+        {
+          "scope": "requests_day",
+          "used": 50
+        },
+        {
+          "scope": "requests_minute",
+          "used": 50
+        }
+      ]
+    },
+    {
+      "tabs": 100,
+      "repeat": 1,
+      "rounds": 1,
+      "windowStart": "2026-10-26T19:28:20.937Z",
+      "completedAt": "2026-10-26T19:28:21.361Z",
+      "withinMinute": true,
+      "maxScheduleDelayMs": 3,
+      "requests": 100,
+      "statuses": {
+        "200": 100
+      },
+      "errors": {},
+      "decodedJsonBytes": 12798800,
+      "latencyMs": {
+        "p50": 296.74,
+        "p95": 400.87,
+        "p99": 410.83,
+        "max": 412.22
+      },
+      "latencyByStatus": {
+        "200": {
+          "p50": 296.74,
+          "p95": 400.87,
+          "p99": 410.83,
+          "max": 412.22
+        }
+      },
+      "sql": {
+        "sqlCalls": 808,
+        "transactions": 200,
+        "budgetMutations": 200,
+        "budgetRowsUpdated": 300,
+        "snapshotBuilds": 1,
+        "rankingBuilds": 0,
+        "cacheHits": 99,
+        "maxPoolWaiting": 97
+      },
+      "budgets": [
+        {
+          "scope": "reads_minute",
+          "used": 100
+        },
+        {
+          "scope": "requests_day",
+          "used": 100
+        },
+        {
+          "scope": "requests_minute",
+          "used": 100
+        }
+      ]
+    },
+    {
+      "tabs": 100,
+      "repeat": 2,
+      "rounds": 1,
+      "windowStart": "2026-10-26T19:28:21.361Z",
+      "completedAt": "2026-10-26T19:28:21.741Z",
+      "withinMinute": true,
+      "maxScheduleDelayMs": 3,
+      "requests": 100,
+      "statuses": {
+        "200": 100
+      },
+      "errors": {},
+      "decodedJsonBytes": 12798800,
+      "latencyMs": {
+        "p50": 256.72,
+        "p95": 359.03,
+        "p99": 371.22,
+        "max": 372.12
+      },
+      "latencyByStatus": {
+        "200": {
+          "p50": 256.72,
+          "p95": 359.03,
+          "p99": 371.22,
+          "max": 372.12
+        }
+      },
+      "sql": {
+        "sqlCalls": 811,
+        "transactions": 200,
+        "budgetMutations": 200,
+        "budgetRowsUpdated": 300,
+        "snapshotBuilds": 1,
+        "rankingBuilds": 0,
+        "cacheHits": 99,
+        "maxPoolWaiting": 97
+      },
+      "budgets": [
+        {
+          "scope": "reads_minute",
+          "used": 100
+        },
+        {
+          "scope": "requests_day",
+          "used": 100
+        },
+        {
+          "scope": "requests_minute",
+          "used": 100
+        }
+      ]
+    },
+    {
+      "tabs": 100,
+      "repeat": 3,
+      "rounds": 1,
+      "windowStart": "2026-10-26T19:28:21.742Z",
+      "completedAt": "2026-10-26T19:28:22.103Z",
+      "withinMinute": true,
+      "maxScheduleDelayMs": 2,
+      "requests": 100,
+      "statuses": {
+        "200": 100
+      },
+      "errors": {},
+      "decodedJsonBytes": 12798800,
+      "latencyMs": {
+        "p50": 234.17,
+        "p95": 339.11,
+        "p99": 346.42,
+        "max": 348.12
+      },
+      "latencyByStatus": {
+        "200": {
+          "p50": 234.17,
+          "p95": 339.11,
+          "p99": 346.42,
+          "max": 348.12
+        }
+      },
+      "sql": {
+        "sqlCalls": 811,
+        "transactions": 200,
+        "budgetMutations": 200,
+        "budgetRowsUpdated": 300,
+        "snapshotBuilds": 1,
+        "rankingBuilds": 0,
+        "cacheHits": 99,
+        "maxPoolWaiting": 97
+      },
+      "budgets": [
+        {
+          "scope": "reads_minute",
+          "used": 100
+        },
+        {
+          "scope": "requests_day",
+          "used": 100
+        },
+        {
+          "scope": "requests_minute",
+          "used": 100
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "HTTP virtual tabs; no browser/GPU/physical device measurement",
+    "Single local Node instance and PostgreSQL; not Vercel/Neon billing, network or autoscaling",
+    "GET requests only; no session creation or taps",
+    "Decoded JSON bytes exclude gzip, headers, TLS and transport overhead"
+  ]
+}

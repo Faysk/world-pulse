@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "sha": "a9c10cd5bae738bd926fd78e9f4228b6f1a75f8f",
+  "synthetic": true,
+  "timings": {
+    "sourceServiceVerifiedMs": 117,
+    "encryptedExportMs": 253,
+    "restoredAndSanitizedMs": 539,
+    "recoveredServiceVerifiedMs": 768
+  },
+  "encryptedBytes": 22509,
+  "checks": [
+    "durable_fingerprints",
+    "geography_reset",
+    "runtime_no_ddl",
+    "source_removed",
+    "http_session_ranking_taps",
+    "replay_idempotency",
+    "expired_balance_stays_expired",
+    "explicit_location_and_withdrawal"
+  ],
+  "limitations": [
+    "Local disposable database and HTTP service, not cloud/DNS/browser cutover RTO",
+    "No real backup, customer data, credentials or independent key custody tested",
+    "RPO depends on last verified real backup; acknowledged post-backup writes may be lost"
+  ]
+}

@@ -174,3 +174,18 @@ reconstruções concorrentes, preservando retirada, TTL, no-store e budgets.
 O orçamento de 600 leituras/min continua limitando a cadência; a correção não é
 prova de capacidade geral para 100 pessoas nem medição de fatura. A próxima
 mudança no transporte/payload está rastreada em #147.
+
+## Avanços de 26/10 — eficiência e recuperação
+
+[52 — Eficiência](52-snapshot-efficiency.md): formato compacto compatível,
+cooldown de leituras e uma transação de budget a menos por GET; quotas/TTL/no-store
+preservados. [53 — Recuperação](53-service-recovery.md): ensaio sintético de serviço
+após perda da origem, limpeza de geografia e troca de chave em duas fases.
+[54 — Consumo dos provedores](54-provider-usage-baseline.md) separa Vercel por
+projeto, Neon com suas duas branches e orçamento SQL de fatura/carga representativa.
+
+O formulário [Relato público](https://github.com/Faysk/world-pulse/issues/new?template=public-problem.yml)
+pede passos, resultado e aparelho opcional; não exige vários dispositivos nem
+coordenadas/cookies. Na triagem, vincular os relatos à milestone v0.4 e a #13;
+falhas reproduzíveis recebem correção e teste específicos. Um formulário publicado
+facilita feedback, mas não significa que a matriz de aparelhos foi validada.
