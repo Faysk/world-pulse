@@ -35,7 +35,7 @@ async function request(path){
   try{
     const response=await fetch(origin+path,{signal:AbortSignal.timeout(15000),headers:configuration.profile.endsWith('-compact')?{'X-WP-Region-Format':'compact-v1'}:{}}),body=await response.text();
     const value=JSON.parse(body);
-    if(response.ok&&(path==='/api/regions'?value.cells?.length!==1000:value.ranking?.length!==10))throw new Error('capacity_payload_invalid');
+    if(response.ok&&(path==='/api/pulse'?(value.regions?.cells?.length!==1000||value.ranking?.ranking?.length!==10):path==='/api/regions'?value.cells?.length!==1000:value.ranking?.length!==10))throw new Error('capacity_payload_invalid');
     const safe=['operation_budget_exhausted','operation_budget_unavailable','geography_refreshing','geography_capacity','internal_error'];
     return {ms:performance.now()-start,status:response.status,bytes:Buffer.byteLength(body),error:response.ok?undefined:safe.includes(value.error)?value.error:'unexpected_response'};
   }catch{return {ms:performance.now()-start,status:0,bytes:0,error:'transport_or_contract_failure'};}
@@ -51,7 +51,7 @@ try{
   stage='seed_balances';await owner.query("INSERT INTO world_pulse.visitor_tags(visitor_id,tag_id,seconds,expires_at) SELECT id,($2::uuid[])[((n-1)%10)+1],3600,now()+interval '1 hour' FROM unnest($1::uuid[]) WITH ORDINALITY AS seed(id,n)",[visitors,tags]);
   await owner.query('ANALYZE world_pulse.tags; ANALYZE world_pulse.visitors; ANALYZE world_pulse.visitor_tags');
   process.env.NODE_ENV='test';store.useTestPool(instrumented);process.env.WP_API_ENABLED='true';process.env.WP_GEO_PUBLIC_ENABLED='true';
-  const handlers=Object.fromEntries(['regions','ranking'].map(kind=>['/api/'+kind,route(kind)]));
+  const handlers=Object.fromEntries(['regions','ranking','pulse'].map(kind=>['/api/'+kind,route(kind)]));
   server=createServer(async(req,res)=>{
     const handler=handlers[req.url];if(!handler){res.statusCode=404;res.end();return;}
     await handler(req,{setHeader:(...args)=>res.setHeader(...args),status(code){res.statusCode=code;return this;},end:value=>res.end(value)});

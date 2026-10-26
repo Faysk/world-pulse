@@ -1,8 +1,46 @@
 import { test,expect } from '@playwright/test';
 const id='11111111-1111-4111-8111-111111111111';
 
+test('Map and open Top 10 share one five-second update; closing the panel stops combined reads',async({page})=>{
+  await page.clock.install();
+  const reads={regions:0,ranking:0,pulse:0};let selected=false;
+  await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/,route=>route.fulfill({json:{version:8,sources:{},layers:[{id:'bg',type:'background',paint:{'background-color':'#111'}}]}}));
+  await page.route('**/api/**',route=>{
+    const path=new URL(route.request().url()).pathname;
+    if(path==='/api/session')return route.fulfill({json:{anonymous:true,sessionFresh:false,sessionBinding:'a'.repeat(64),activeTagId:selected?id:null,activeTag:selected?{id,name:'#fixture',color:'#abcdef'}:null,credits:[],geographyAvailable:true}});
+    if(path==='/api/tags')return route.fulfill({json:{tag:{id,name:'#fixture',color:'#abcdef'}}});
+    if(path==='/api/select'){selected=true;return route.fulfill({json:{activeTagId:id}});}
+    const regions={type:'region_compact_v1',asOfMs:Date.now(),validUntilMs:Date.now()+5000,tags:[],cells:[]};
+    const ranking={type:'active',asOfMs:Date.now(),metric:'distinct_anonymous_sessions_with_positive_balance',geography:'unavailable',ranking:[]};
+    if(path==='/api/regions'){reads.regions++;return route.fulfill({json:regions});}
+    if(path==='/api/ranking'){reads.ranking++;return route.fulfill({json:ranking});}
+    if(path==='/api/pulse'){reads.pulse++;return route.fulfill({json:{type:'pulse_snapshot_v1',regions,ranking}});}
+    return route.fulfill({status:404,json:{error:'not_found'}});
+  });
+  await page.goto('/?experiencePreview=1');await expect.poll(()=>reads.regions).toBe(1);
+  await page.clock.pauseAt(new Date(await page.evaluate(()=>Date.now())+1000));
+  await page.getByRole('button',{name:'Top 10',exact:true}).click();await expect.poll(()=>reads.pulse).toBe(1);
+  for(let i=0;i<12;i++){
+    await page.clock.fastForward(5001);await expect.poll(()=>reads.pulse).toBe(i+2);
+  }
+  expect(reads).toEqual({regions:1,ranking:0,pulse:13});
+  await page.getByRole('button',{name:'Top 10',exact:true}).click();
+  await page.clock.fastForward(5001);await expect.poll(()=>reads.regions).toBe(2);
+  expect(reads.pulse).toBe(13);expect(reads.ranking).toBe(0);
+  await page.getByRole('button',{name:'Top 10',exact:true}).click();await expect.poll(()=>reads.pulse).toBe(14);
+  await page.evaluate(()=>Object.defineProperty(document,'hidden',{configurable:true,get:()=>true}));
+  await page.clock.fastForward(10001);expect(reads).toEqual({regions:2,ranking:0,pulse:14});
+  await page.evaluate(()=>{delete (document as any).hidden;document.dispatchEvent(new Event('visibilitychange'));});
+  await expect.poll(()=>reads.pulse).toBe(15);
+  await page.getByLabel(/^(Your hashtag|Sua hashtag)$/,{exact:true}).fill('#fixture');
+  await page.getByRole('button',{name:/^(Enter|Entrar)$/,exact:true}).click();
+  await expect.poll(()=>reads.ranking).toBe(1);
+  expect(reads.pulse).toBe(15); // Mutation refreshes ranking alone, not an extra map.
+});
+
 test('Read overload honors Retry-After across map and panels while hashtag entry and taps remain available',async({page})=>{
-  await page.clock.install();let reads=0,blocked=true,selected=false;
+  await page.clock.install();
+  let reads=0,blocked=true,selected=false;
   await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/,route=>route.fulfill({json:{version:8,sources:{},layers:[{id:'bg',type:'background',paint:{'background-color':'#111'}}]}}));
   await page.route('**/api/**',route=>{
     const path=new URL(route.request().url()).pathname;
@@ -18,14 +56,15 @@ test('Read overload honors Retry-After across map and panels while hashtag entry
     return route.fulfill({status:404,json:{error:'not_found'}});
   });
   await page.goto('/?experiencePreview=1');await expect.poll(()=>reads).toBe(1);
+  await page.clock.pauseAt(new Date(await page.evaluate(()=>Date.now())+1000));
   await page.getByRole('button',{name:'Top 10',exact:true}).click();
   await page.getByLabel(/^(Your hashtag|Sua hashtag)$/,{exact:true}).fill('#fixture');
   await page.getByRole('button',{name:/^(Enter|Entrar)$/,exact:true}).click();
   await expect(page.getByTestId('live-selected')).toHaveText('#fixture');
   await page.getByRole('button',{name:'+1',exact:true}).click();
   await expect(page.locator('main.live-world')).toHaveAttribute('data-pending','1');
-  await page.clock.fastForward(59000);expect(reads).toBe(1);
-  blocked=false;await page.clock.fastForward(11000);await expect.poll(()=>reads).toBeGreaterThan(1);
+  await page.clock.fastForward(55000);expect(reads).toBe(1);
+  blocked=false;await page.clock.fastForward(15000);await expect.poll(()=>reads).toBeGreaterThan(1);
 });
 
 test('Closed Top 10 makes no ranking reads; opening refreshes immediately and keeps five-second updates',async({page})=>{

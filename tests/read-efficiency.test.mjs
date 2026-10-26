@@ -61,3 +61,47 @@ test('compact wire format is opt-in and all responses remain no-store',async()=>
     assert.deepEqual(res.body,format?compactRegions(region):region,'old client still gets original shape');
   }
 });
+
+test('combined pulse charges two logical reads and returns validated compact map plus ranking',async()=>{
+  process.env.WP_API_ENABLED='true';process.env.WP_GEO_PUBLIC_ENABLED='true';
+  const weights=[];const res={headers:{},setHeader(k,v){this.headers[k]=v;},status(code){this.code=code;return this;},end(body){this.body=JSON.parse(body);}};
+  await route('pulse',{consumeReadBudget:async weight=>weights.push(weight),getRegionSnapshot:async()=>region,getActiveBalanceSnapshot:async()=>ranking})({method:'GET',headers:{}},res);
+  assert.equal(res.code,200);assert.equal(res.headers['Cache-Control'],'no-store');assert.deepEqual(weights,[2]);
+  const client=new ParticipationClient(async()=>Response.json(res.body),null);
+  assert.deepEqual(await client.pulse(),{regions:region,ranking});
+});
+
+test('rolling server fallback is sticky only for missing routes and never bypasses overload or geography gates',async()=>{
+  const calls=[];
+  const client=new ParticipationClient(async path=>{
+    calls.push(path);
+    if(path==='/api/pulse')return Response.json({error:'not_found'},{status:404});
+    return Response.json(path==='/api/regions'?region:ranking);
+  },null);
+  for(let i=0;i<2;i++)assert.deepEqual(await client.pulse(),{regions:region,ranking});
+  assert.equal(calls.filter(path=>path==='/api/pulse').length,1);
+  assert.equal(calls.filter(path=>path==='/api/regions').length,2);
+  for(const status of [429,503,401]){
+    const attempts=[];
+    const limited=new ParticipationClient(async path=>{attempts.push(path);return Response.json({error:'limited'},{status});},null);
+    await assert.rejects(limited.pulse());assert.deepEqual(attempts,['/api/pulse']);
+  }
+  const malformed=new ParticipationClient(async()=>Response.json({type:'pulse_snapshot_v1',regions:compactRegions(region),ranking:{...ranking,metric:'invented'}}),null);
+  await assert.rejects(malformed.pulse(),/invalid_ranking_snapshot/);
+});
+
+test('combined endpoint preserves healthy half on partial failure and rejects missing halves without error marker',async()=>{
+  process.env.WP_API_ENABLED='true';process.env.WP_GEO_PUBLIC_ENABLED='true';
+  for(const failing of ['regions','ranking','both']){
+    const res={setHeader(){},status(code){this.code=code;return this;},end(body){this.body=JSON.parse(body);}};
+    await route('pulse',{consumeReadBudget:async()=>{},getRegionSnapshot:async()=>{if(failing!=='ranking')throw new Error('private driver detail');return region;},getActiveBalanceSnapshot:async()=>{if(failing!=='regions')throw new Error('private driver detail');return ranking;}})({method:'GET',headers:{}},res);
+    assert.ok(!JSON.stringify(res.body).includes('private'));
+    assert.equal(res.code,failing==='both'?503:200);
+    if(failing!=='both'){
+      const client=new ParticipationClient(async()=>Response.json(res.body),null);
+      assert.deepEqual(await client.pulse(),{regions:failing==='regions'?null:region,ranking:failing==='ranking'?null:ranking});
+    }
+  }
+  const invalid=new ParticipationClient(async()=>Response.json({type:'pulse_snapshot_v1',regions:null,ranking}),null);
+  await assert.rejects(invalid.pulse(),/invalid_pulse_snapshot/);
+});

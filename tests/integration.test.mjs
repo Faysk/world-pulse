@@ -319,6 +319,16 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
     assert.deepEqual(Object.fromEntries(rows.map(r=>[r.scope,Number(r.used)])),{reads_minute:600,requests_day:20,requests_minute:20});
     await owner.query('TRUNCATE world_pulse.operation_budgets');
   });
+  await t.test('Pulse charges both dataset reads even with one HTTP request; no quota expansion at a boundary',async()=>{
+    await owner.query('TRUNCATE world_pulse.operation_budgets');
+    await owner.query("INSERT INTO world_pulse.operation_budgets VALUES ('reads_minute',date_trunc('minute',statement_timestamp()),597)");
+    const results=await Promise.allSettled(Array.from({length:20},()=>consumeReadBudget(2)));
+    assert.equal(results.filter(r=>r.status==='fulfilled').length,1);
+    const {rows}=await owner.query('SELECT scope,used FROM world_pulse.operation_budgets ORDER BY scope');
+    assert.deepEqual(Object.fromEntries(rows.map(r=>[r.scope,Number(r.used)])),{reads_minute:600,requests_day:20,requests_minute:20});
+    await assert.rejects(()=>consumeReadBudget(0),RangeError);
+    await owner.query('TRUNCATE world_pulse.operation_budgets');
+  });
   await t.test('Global budgets are atomic across independent pools, reset windows, and bound row count', async () => {
     const {chargeBudget}=await import('../server/costPolicy.mjs');
     await owner.query(`INSERT INTO world_pulse.operation_budgets(scope,window_start,used)

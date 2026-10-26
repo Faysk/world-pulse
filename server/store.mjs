@@ -51,11 +51,13 @@ export async function consumeApiBudget(category = 'requests') {
 
 // Commit denied attempts too: requests still count when the read budget is
 // exhausted. One bounded transaction replaces two separate pool checkouts.
-export async function consumeReadBudget(){
+export async function consumeReadBudget(reads=1){
+  if(![1,2].includes(reads))throw new RangeError('Invalid aggregate read weight');
   try{
     const allowed=await transaction(async client=>{
       if(!await chargeBudget(client,'requests'))return false;
-      return chargeBudget(client,'reads');
+      for(let i=0;i<reads;i++)if(!await chargeBudget(client,'reads'))return false;
+      return true;
     });
     if(!allowed)throw new ApiError(429,'operation_budget_exhausted','Limite temporário da plataforma atingido. Tente mais tarde.');
   }catch(error){

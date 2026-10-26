@@ -2,6 +2,7 @@ export const tabCounts=Object.freeze([1,10,25,50,100]);
 export const pathsFor=profile=>{
   if(profile==='map'||profile==='map-compact')return ['/api/regions'];
   if(profile==='map-ranking'||profile==='map-ranking-compact')return ['/api/regions','/api/ranking'];
+  if(profile==='map-ranking-combined')return ['/api/pulse'];
   throw new Error('capacity_profile_rejected');
 };
 export function capacityConfiguration(env){
