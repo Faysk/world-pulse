@@ -19,7 +19,11 @@ com saldo positivo. Não representa localização, dispositivo ou pessoa real.
 - Dois perfis separados: somente mapa e mapa com Top 10 aberto. Cada perfil usa
   seu próprio runner/banco. Requests públicos GET; não inclui taps/sessões novas.
 
-Artefatos JSON registram SHA, ambiente, latência p50/p95/p99, status/erros, bytes
+Rodadas são sincronizadas: um estresse de chegada simultânea, não uma distribuição
+orgânica de visitas. Estatísticas do dataset são analisadas antes dos cenários.
+
+Artefatos JSON registram SHA, ambiente, latência p50/p95/p99 total e por status (para
+não confundir 429 rápido com sucesso rápido), status/erros, bytes
 de JSON decodificado, chamadas SQL do app, transações, atualizações de budgets,
 reconstruções/hits do cache regional, consultas de ranking e fila máxima do pool.
 Consultas de setup/medição do administrador não entram nos contadores SQL do app.

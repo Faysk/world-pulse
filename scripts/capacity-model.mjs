@@ -11,9 +11,13 @@ export function capacityConfiguration(env){
   return {profile,mode};
 }
 export function summarizeRequests(samples){
-  const sorted=samples.map(s=>s.ms).sort((a,b)=>a-b);
-  const percentile=p=>sorted.length?Number(sorted[Math.max(0,Math.ceil(sorted.length*p)-1)].toFixed(2)):null;
+  const latencies=rows=>{
+    const sorted=rows.map(s=>s.ms).sort((a,b)=>a-b);
+    const percentile=p=>sorted.length?Number(sorted[Math.max(0,Math.ceil(sorted.length*p)-1)].toFixed(2)):null;
+    return {p50:percentile(.5),p95:percentile(.95),p99:percentile(.99),max:sorted.length?Number(sorted.at(-1).toFixed(2)):null};
+  };
   const statuses={},errors={};let bytes=0;
   for(const s of samples){statuses[s.status]=(statuses[s.status]??0)+1;bytes+=s.bytes;if(s.error)errors[s.error]=(errors[s.error]??0)+1;}
-  return {requests:samples.length,statuses,errors,decodedJsonBytes:bytes,latencyMs:{p50:percentile(.5),p95:percentile(.95),p99:percentile(.99),max:sorted.length?Number(sorted.at(-1).toFixed(2)):null}};
+  return {requests:samples.length,statuses,errors,decodedJsonBytes:bytes,latencyMs:latencies(samples),
+    latencyByStatus:Object.fromEntries(Object.keys(statuses).map(status=>[status,latencies(samples.filter(s=>String(s.status)===status))]))};
 }

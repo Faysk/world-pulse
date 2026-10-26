@@ -9,6 +9,8 @@ test('capacity harness refuses remote credentials and unknown workloads',()=>{
 });
 test('latencies use nearest rank and errors remain separate from successful reads',()=>{
   const result=summarizeRequests([{ms:9,status:200,bytes:100},{ms:1,status:429,error:'operation_budget_exhausted',bytes:20},{ms:4,status:503,error:'geography_refreshing',bytes:30}]);
-  assert.deepEqual(result,{requests:3,statuses:{200:1,429:1,503:1},errors:{operation_budget_exhausted:1,geography_refreshing:1},decodedJsonBytes:150,latencyMs:{p50:4,p95:9,p99:9,max:9}});
+  const {latencyByStatus,...overall}=result;
+  assert.deepEqual(overall,{requests:3,statuses:{200:1,429:1,503:1},errors:{operation_budget_exhausted:1,geography_refreshing:1},decodedJsonBytes:150,latencyMs:{p50:4,p95:9,p99:9,max:9}});
+  assert.equal(latencyByStatus[200].p95,9);assert.equal(latencyByStatus[429].p95,1);assert.equal(latencyByStatus[503].p95,4);
   assert.equal(summarizeRequests([]).latencyMs.p95,null);
 });

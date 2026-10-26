@@ -49,6 +49,7 @@ try{
   stage='seed_tags';await owner.query("INSERT INTO world_pulse.tags(id,normalized,color) SELECT id,'capacity_'||(n-1),'#abcdef' FROM unnest($1::uuid[]) WITH ORDINALITY AS seed(id,n)",[tags]);
   stage='seed_visitors';await owner.query("INSERT INTO world_pulse.visitors(id,session_hash,expires_at,country_consent,country_consent_at,region_cell,region_shared_at) SELECT id,md5(id::text)||md5(id::text),now()+interval '1 day',true,now(),'r2:10000:'||floor((n-1)/10),now() FROM unnest($1::uuid[]) WITH ORDINALITY AS seed(id,n)",[visitors]);
   stage='seed_balances';await owner.query("INSERT INTO world_pulse.visitor_tags(visitor_id,tag_id,seconds,expires_at) SELECT id,($2::uuid[])[((n-1)%10)+1],3600,now()+interval '1 hour' FROM unnest($1::uuid[]) WITH ORDINALITY AS seed(id,n)",[visitors,tags]);
+  await owner.query('ANALYZE world_pulse.tags; ANALYZE world_pulse.visitors; ANALYZE world_pulse.visitor_tags');
   process.env.NODE_ENV='test';store.useTestPool(instrumented);process.env.WP_API_ENABLED='true';process.env.WP_GEO_PUBLIC_ENABLED='true';
   const handlers=Object.fromEntries(['regions','ranking'].map(kind=>['/api/'+kind,route(kind)]));
   server=createServer(async(req,res)=>{
