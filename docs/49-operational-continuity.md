@@ -40,6 +40,8 @@ de migrations não entra nesse workflow.
 1. Transação read-only com snapshot exportado. `pg_dump` custom da imagem oficial
    postgres:18, fixada por digest, usa o mesmo snapshot; aceita servidor 14–18. O inventário de oito
    tabelas é conferido e alterações de schema desconhecidas exigem revisão.
+   O cliente monta o bundle público de CAs do runner como somente leitura: a
+   imagem mínima remove seus certificados de build. `verify-full` é preservado.
 2. Preserva tags, sessões, saldos, lotes idempotentes e totais históricos.
    Exclui apenas os dados de caches regionais/países e budgets temporários;
    suas tabelas continuam no arquivo.
@@ -48,6 +50,8 @@ de migrations não entra nesse workflow.
 4. Outro passo, sem DATABASE_URL, baixa o objeto remoto, autentica/descriptografa
    e executa pg_restore num PostgreSQL descartável, sem rede, sem porta publicada,
    dados em tmpfs e logs de container desativados.
+   A prontidão é verificada por TCP no loopback interno, evitando o servidor
+   temporário de inicialização que aceita apenas Unix sockets e depois reinicia.
 5. Confere contagens e fingerprints de todas as cinco tabelas duráveis no mesmo
    snapshot, constraints validadas e caches/budgets vazios. MD5 ordenado serve
    apenas à comparação de conteúdo; GCM/SHA-256 fazem a autenticação/integridade.
@@ -88,6 +92,15 @@ se ficar visível 24h). Com feed regional ativo, baseline teórico cai de 24 par
 Abas ocultas suspendem polling. O teste de navegador conta requests reais
 interceptados e verifica fechar/reabrir no desktop e mobile.
 
+Os limites atuais em `server/costPolicy.mjs` continuam conservadores:
+600 leituras/min e 50.000 requests/dia. Um feed de mapa a cada 5s consome 12
+leituras/min: 50 abas visíveis já esgotariam teoricamente o budget de leitura,
+sem qualquer margem para ranking ou outras operações. O limite diário equivale
+a cerca de 69,4 horas de aba com esse feed, antes de taps/sessões/outros usos.
+São contas de orçamento, não teste de carga nem limite de pessoas comprovadas.
+O polling atual exige rever transporte/cache e medir custo antes de ampliar
+o público; não aumentar esses budgets só para esconder o problema. Rastreio #7.
+
 `infra-usage.yml` gera relatório manual read-only: versão/tamanho do banco,
 estimativas por tabela e contadores globais de budget. Nunca publica IDs de
 sessão, células, coordenadas ou linhas pessoais. Contadores de budget não são
@@ -104,8 +117,51 @@ Fontes: [Neon branches](https://neon.com/docs/manage/branches),
 
 ## Recibos
 
-Fixture SQL real aprovada no [Actions 40353610499](https://github.com/Faysk/world-pulse/actions/runs/40353610499).
-44 testes de infraestrutura e 28 cenários locais da experiência desktop/mobile aprovados.
-Os links dos testes remotos e da primeira cópia verificada serão registrados
-neste documento antes de encerrar #134–#136. Recursos provisionados ou testes
-unitários não bastam para declarar restauração de produção verificada.
+| Prova | Recibo |
+| --- | --- |
+| Staging: TLS, schema 0008, grants/timeouts e negação de DDL | [40354036673](https://github.com/Faysk/world-pulse/actions/runs/40354036673) |
+| Staging Neon real, HTTPS privado desktop/mobile: quatro testes, seis fixtures removidas | [40354037823](https://github.com/Faysk/world-pulse/actions/runs/40354037823) |
+| Vercel preview com token renovado: HTTPS/assets, duas sessões API, retry/retorno, acesso revogado e fixtures removidas | [40354861402](https://github.com/Faysk/world-pulse/actions/runs/40354861402) |
+| CI completo da interface/API na main, incluindo navegadores desktop/mobile e SQL real | [40356229788](https://github.com/Faysk/world-pulse/actions/runs/40356229788), [40356229633](https://github.com/Faysk/world-pulse/actions/runs/40356229633) |
+| Produção publicada e HTTPS/assets/API verificados, app ef9de3b, deployment dpl_9ux7mynrz2kMbDjPmmnURPgwCNvC | [40356230808](https://github.com/Faysk/world-pulse/actions/runs/40356230808) |
+| Relatório agregado real em 26/10 às 16:08:52 UTC | [40356236281](https://github.com/Faysk/world-pulse/actions/runs/40356236281) |
+| CI final: 47 testes e três ciclos reais com schema/dados sintéticos; cliente com CA montada | [40357892137](https://github.com/Faysk/world-pulse/actions/runs/40357892137), [40358155228](https://github.com/Faysk/world-pulse/actions/runs/40358155228) |
+| Primeiro backup real com readback R2, descriptografia e restauração isolada; cinco tabelas duráveis conferidas | [40358158804](https://github.com/Faysk/world-pulse/actions/runs/40358158804) |
+
+Backup real: 38.107 bytes criptografados, exportação concluída às 16:20:58 UTC,
+restauração conferida às 16:21:02 UTC. Isso mede esse teste pequeno, não o RTO
+completo do serviço. A agenda foi habilitada somente depois dessa prova.
+O snapshot do relatório agregou PostgreSQL 18.6, `pg_database_size` de 8.519.680
+bytes (8,125 MiB) e budget diário utilizado de 5.344. Contadores por minuto podem
+estar numa janela já vencida; o relatório conserva os timestamps e não os
+converte em taxa, CU ou fatura. Tamanho SQL não é a mesma métrica de armazenamento
+mostrada pelo provedor.
+
+PRs #137, #139 e #140 integrados; issues #134–#136 concluídas. Foram corrigidas
+a corrida de inicialização descartável e a ausência de CA do cliente antes de
+habilitar a agenda. Os 28 cenários locais da experiência também passaram.
+As entregas core #4 (hashtags), #5 (persistência) e #8 (Top 10/origem) foram
+encerradas com os recibos públicos. #3/#6/#7/#13/#53 foram atualizadas para o
+estado real, preservando em aberto seus testes físicos, de rede, custo e aceite
+amplo. Esses aceites não significam que a API continua desligada.
+Custódia independente da chave, expiração independente e ensaio completo/RTO:
+[#138](https://github.com/Faysk/world-pulse/issues/138). Custos sob tráfego real:
+[#7](https://github.com/Faysk/world-pulse/issues/7). Não são provas de bilhões de conexões.
+
+## Validação pública em aparelhos — decisão de 26/10/2026
+
+O proprietário definiu que a matriz de vários aparelhos físicos será validada
+gradualmente com o público. Não exigir aparelhos do proprietário nem tratar
+essa matriz como bloqueio para novas entregas/publicações. Isso não transforma
+emulação ou relatos isolados em teste físico concluído. Testes automatizados,
+checagens de API/dados e verificações de publicação continuam sendo exigidos.
+
+As issues #3, #6, #12, #13 e #53 conservam as limitações ainda não comprovadas
+como acompanhamento público. Um relato deve informar, quando possível, aparelho,
+navegador, passos, resultado esperado e observado. Screenshots são opcionais e
+devem ocultar informações pessoais; não pedir coordenadas, cookies ou tokens.
+Falhas reproduzíveis viram issues específicas para correção e teste de regressão.
+Esta decisão não adiciona telemetria nem coleta automática de dados de aparelhos.
+
+As próximas frentes independentes seguem sendo custo/capacidade (#7), recuperação
+completa (#138) e evolução visual (#32), sem aguardar uma matriz física completa.

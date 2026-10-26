@@ -7,6 +7,7 @@ import { consolidateInactive } from './retention.mjs';
 import { normalizeCountry } from './countryCodes.mjs';
 import { countrySnapshot } from './countrySnapshot.mjs';
 import {regionCenter} from './regionGrid.mjs';
+import {readSnapshotCache} from './snapshotCache.mjs';
 
 let pool;
 
@@ -100,13 +101,7 @@ export async function setRegionCell(visitorId,cell,country='ZZ'){
 }
 
 export async function getRegionSnapshot(){
-  return transaction(async client=>{
-    const {rows:[clock]}=await client.query('SELECT floor(extract(epoch FROM statement_timestamp())/5)*5000 AS ms');
-    const asOfMs=Number(clock.ms);
-    const cached=await client.query('SELECT payload FROM world_pulse.region_snapshot_cache WHERE key=true AND window_start=to_timestamp($1/1000.0)',[asOfMs]);
-    if(cached.rows.length)return cached.rows[0].payload;
-    const {rows:[lock]}=await client.query('SELECT pg_try_advisory_xact_lock(1867403) AS acquired');
-    if(!lock.acquired)throw new ApiError(503,'geography_refreshing','Mapa atualizando.');
+  return transaction(client=>readSnapshotCache(client,'regions',async asOfMs=>{
     const {rows}=await client.query(`SELECT v.region_cell AS cell,t.id AS "tagId",'#'||t.normalized AS name,t.color,count(*)::text AS participants
       FROM world_pulse.visitor_tags vt JOIN world_pulse.visitors v ON v.id=vt.visitor_id JOIN world_pulse.tags t ON t.id=vt.tag_id
       WHERE vt.expires_at>statement_timestamp() AND v.region_cell IS NOT NULL
@@ -116,7 +111,7 @@ export async function getRegionSnapshot(){
     await client.query(`INSERT INTO world_pulse.region_snapshot_cache(key,window_start,payload) VALUES(true,to_timestamp($1/1000.0),$2::jsonb)
       ON CONFLICT(key) DO UPDATE SET window_start=EXCLUDED.window_start,payload=EXCLUDED.payload`,[asOfMs,JSON.stringify(payload)]);
     return payload;
-  });
+  }));
 }
 
 export async function createVisitor() {
@@ -149,13 +144,7 @@ export async function setCountryConsent(visitorId,allowed,country='ZZ') {
 }
 
 export async function getCountrySnapshot() {
-  return transaction(async client=>{
-    const {rows:[clock]}=await client.query("SELECT floor(extract(epoch FROM statement_timestamp())/5)*5000 AS ms");
-    const asOfMs=Number(clock.ms);
-    const cached=await client.query('SELECT payload FROM world_pulse.country_snapshot_cache WHERE key=true AND window_start=to_timestamp($1/1000.0)',[asOfMs]);
-    if(cached.rows.length)return cached.rows[0].payload;
-    const {rows:[lock]}=await client.query('SELECT pg_try_advisory_xact_lock(1867401) AS acquired');
-    if(!lock.acquired)throw new ApiError(503,'geography_refreshing','Origem geográfica sendo atualizada.');
+  return transaction(client=>readSnapshotCache(client,'countries',async asOfMs=>{
     const {rows}=await client.query(`SELECT t.id AS tag_id,t.normalized,t.color,
       CASE WHEN v.country_consent THEN v.country_code ELSE 'ZZ' END AS country_code,
       count(*)::text AS participants
@@ -169,7 +158,7 @@ export async function getCountrySnapshot() {
     await client.query(`INSERT INTO world_pulse.country_snapshot_cache(key,window_start,payload)
       VALUES(true,to_timestamp($1/1000.0),$2::jsonb) ON CONFLICT(key) DO UPDATE SET window_start=EXCLUDED.window_start,payload=EXCLUDED.payload`,[asOfMs,JSON.stringify(payload)]);
     return payload;
-  });
+  }));
 }
 
 export async function createOrGetTag(rawName) {
