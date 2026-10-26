@@ -45,11 +45,9 @@ test('Private HTTPS to real Neon pooler preserves cookies, independent sessions,
     const restored=await snapshot(page);
     expect(restored.credits.find((row:any)=>row.name==='#'+name).creditedSeconds).toBe('31');
     expect(restored.credits.find((row:any)=>row.name==='#'+another).creditedSeconds).toBe('2');
-    await page.getByText('Como funciona e privacidade',{exact:true}).click();
-    const sharing=page.getByRole('checkbox',{name:'Compartilhar meu país aproximado'});
-    await expect(sharing).toBeChecked();
+    await expect(page.getByRole('checkbox')).toHaveCount(0);
+    expect((await snapshot(page)).geoConsent).toBe(false);
     expect((await snapshot(page)).geoCountry).toBe('ZZ');
-    await sharing.click();await expect(sharing).not.toBeChecked();await expect.poll(async()=>(await snapshot(page)).geoConsent).toBe(false);
     await page.screenshot({path:`test-artifacts/staging-smoke-${info.project.name}.png`});
   }finally{await second.close();}
 });
@@ -62,9 +60,10 @@ test('Regional browser permission stores only a coarse cell on real Neon; withdr
   page.on('request',req=>{if(new URL(req.url()).pathname==='/api/location')writes.push(req.postDataJSON());});
   await open(page);await select(page,name);await taps(page,30);
   expect((await snapshot(page)).regionCell).toBe(null);
-  await page.getByRole('button',{name:'Ativar meu ponto',exact:true}).click();
+  await page.getByRole('button',{name:'Compartilhar localização',exact:true}).click();
   await expect(page.getByTestId('live-regional-point')).toBeVisible();
   const stored=await snapshot(page);
+  expect(stored.geoConsent).toBe(true);
   expect(stored.regionCell).toMatch(/^r1:\d+:\d+$/);
   expect(Object.keys(writes[0])).toEqual(['cell']);
   expect(JSON.stringify(writes)).not.toContain('38.720123');
@@ -73,9 +72,9 @@ test('Regional browser permission stores only a coarse cell on real Neon; withdr
     const response=await page.request.get('/api/regions'),payload=await response.json();
     return payload.cells?.find((row:any)=>row.tagId===stored.activeTag.id)?.participants;
   }).toBe('1');
-  await page.getByRole('button',{name:'Remover meu ponto',exact:true}).click();
+  await page.getByRole('button',{name:'Desativar localização',exact:true}).click();
   await expect.poll(async()=>(await snapshot(page)).regionCell).toBe(null);
-  const after=await snapshot(page);
+  const after=await snapshot(page);expect(after.geoConsent).toBe(false);expect(after.geoCountry).toBe('ZZ');
   expect(after.credits.find((row:any)=>row.tagId===stored.activeTag.id).creditedSeconds).toBe('30');
   await expect.poll(async()=>{
     const payload=await (await page.request.get('/api/regions')).json();

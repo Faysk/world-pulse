@@ -103,22 +103,16 @@ export default function LiveExperience(){
     <section className="live-controls" aria-label="Sua participação">
       <p className="live-geography" data-testid="live-geography">{mapError?'Mapa indisponível. Seus saldos continuam acessíveis.':!mapReady?'Carregando mapa…':live.regional.readError?'Leitura regional indisponível. Seus taps continuam funcionando.':'Cada participação ativa forma um ponto regional. Pontos próximos formam manchas. Nenhuma posição é inventada.'}</p>
       {mapError&&<button onClick={()=>{setMap(null);setMapReady(false);setMapError('');setMapVersion(v=>v+1);}}>Recarregar mapa</button>}
-      <div className="live-sharing" aria-label="Seu ponto regional">
-        <strong>Seu ponto no mapa</strong>
-        <p>{live.regional.cell?'Ponto público em uma célula de cerca de 55 km. Atualize se mudou de região.':'Ative para compartilhar uma célula de cerca de 55 km no mapa público, mesmo sozinho. Coordenadas exatas não são enviadas; a região ainda pode revelar informações sobre você.'}</p>
-        <button disabled={!live.ready||!live.countryPreference.available||live.regional.busy} onClick={live.regional.locate}>{live.regional.busy?'Localizando…':live.regional.cell?'Atualizar meu ponto':'Ativar meu ponto'}</button>
-        {live.regional.cell&&<button disabled={live.regional.busy} onClick={()=>void live.regional.withdraw()}>Remover meu ponto</button>}
+      <div className="live-sharing" aria-label="Compartilhar localização">
+        <strong>Sua localização no mapa</strong>
+        <p>{live.regional.cell?'Localização ativa. Atualizar ou desativar aplica a escolha ao ponto e aos resumos.':'Uma única autorização para seu ponto regional e os resumos por país. O navegador arredonda para uma célula de cerca de 55 km antes de enviar. Sua região será pública, sem nome, mas ainda pode revelar informações sobre você.'}</p>
+        <button disabled={!live.ready||!live.countryPreference.available||live.regional.busy} onClick={live.regional.locate}>{live.regional.busy?'Atualizando…':live.regional.cell?'Atualizar localização':'Compartilhar localização'}</button>
+        {live.regional.shared&&!live.regional.cell&&<small>Compartilhamento anterior de país ativo. Desativar retira também esse dado.</small>}
+        {live.regional.shared&&<button disabled={live.regional.busy} onClick={()=>void live.regional.withdraw()}>Desativar localização</button>}
         {ownPoints.length>0&&<small data-testid="live-regional-point">Seu ponto regional está ativo. {live.pending>0?'O tempo provisório aguarda confirmação.':''}</small>}
         {live.regional.cell&&!ownPoints.length&&<small>Localização regional salva. Adicione tempo para acender seu ponto.</small>}
         {live.regional.error&&<p role="status">{live.regional.error}</p>}
       </div>
-      <div className="live-sharing" aria-label="Compartilhamento de país">
-        <label><input type="checkbox" checked={live.shareCountry} disabled={live.consentBusy} onChange={event=>void live.setGeoConsent(event.target.checked)}/> Compartilhar meu país aproximado</label>
-        <p>{live.shareCountry?'Ao participar, você compartilha seu país nos resumos, sem nome.':'Você participa sem compartilhar seu país.'} O ponto regional tem autorização separada.</p>
-        {!live.countryPreference.available&&<small>O país ainda está indisponível neste ambiente; sua participação continua funcionando.</small>}
-        {live.countryPreference.available&&<small>País estimado: {live.countryPreference.country==='ZZ'?'a confirmar ao participar':live.countryPreference.country} · resumos ocultam grupos menores que 5.</small>}
-      </div>
-      {live.consentBusy&&<small role="status">Salvando sua escolha de país…</small>}
       <form onSubmit={select}>
         <label htmlFor="live-name">Sua hashtag</label>
         <div className="live-form-row"><input id="live-name" value={name} onChange={e=>setName(e.target.value)} maxLength={34} placeholder="#o_que_te_move" autoComplete="off" required/>
@@ -141,7 +135,7 @@ export default function LiveExperience(){
       <details><summary>Como funciona e privacidade</summary>
         <p>Selecione uma hashtag e use +1 segundo ou toque no terreno sem ponto. Pontos representam regiões aproximadas, não posições exatas. Tocar um ponto seleciona a hashtag sem adicionar tempo. Arrastar e aproximar só navegam. Segundos extras não multiplicam participações no ranking.</p>
         <p>Este navegador usa uma sessão pseudônima. Após 30 dias sem retorno e com todos os saldos zerados, o histórico individual é consolidado nos totais por hashtag. Limpar cookies pode impedir sua recuperação.</p>
-        <p>Opcional. Sua participação continua no ranking sem compartilhar. País atual: {live.countryPreference.country==='ZZ'?'desconhecido':live.countryPreference.country}. Retirar a opção remove seu país das próximas leituras; cópias já recebidas não podem ser apagadas.</p>
+        <p>Opcional. Sua participação continua no ranking sem compartilhar localização. País atual: {live.countryPreference.country==='ZZ'?'desconhecido':live.countryPreference.country}. Retirar a opção remove seu país das próximas leituras; cópias já recebidas não podem ser apagadas.</p>
         <p>O navegador arredonda a localização para uma célula regional antes de enviar. Não enviamos coordenadas exatas ou cidade. O ponto regional aparece mesmo com uma participação; os resumos por país agrupam cinco sessões. Isso não garante anonimato: comparações entre leituras podem revelar mudanças. O mapa não contém participantes simulados.</p>
       </details>
     </section>

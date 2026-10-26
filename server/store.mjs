@@ -86,13 +86,16 @@ export async function findVisitor(token, country='ZZ') {
   return rows[0] ?? null;
 }
 
-export async function setRegionCell(visitorId,cell){
+export async function setRegionCell(visitorId,cell,country='ZZ'){
   if(cell!==null)regionCenter(cell);
   return transaction(async client=>{
+    await client.query('SELECT pg_advisory_xact_lock(1867401)');
     await client.query('SELECT pg_advisory_xact_lock(1867403)');
-    const changed=await client.query('UPDATE world_pulse.visitors SET region_cell=$2,region_shared_at=statement_timestamp() WHERE id=$1',[visitorId,cell]);
+    const changed=await client.query(`UPDATE world_pulse.visitors SET region_cell=$2,region_shared_at=statement_timestamp(),
+      country_consent=$3,country_code=$4,country_consent_at=statement_timestamp() WHERE id=$1`,[visitorId,cell,cell!==null,cell!==null?normalizeCountry(country):'ZZ']);
     if(!changed.rowCount)throw new ApiError(401,'session_expired','Sessão expirada.');
     await client.query('DELETE FROM world_pulse.region_snapshot_cache');
+    await client.query('DELETE FROM world_pulse.country_snapshot_cache');
   });
 }
 

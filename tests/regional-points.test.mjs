@@ -23,9 +23,14 @@ test('Location API accepts only coarse cells or withdrawal, rejects exact coordi
   const received=[];
   for(const body of [{cell:regionCell(38.72,-9.14)},{cell:null}]){
     const r=res();await route('location',{...operations,setRegionCell:async(id,cell)=>received.push([id,cell])})(request(body),r);
-    assert.equal(r.code,200);assert.deepEqual(r.payload,{regionCell:body.cell});
+    assert.equal(r.code,200);assert.deepEqual(r.payload,{regionCell:body.cell,geoConsent:body.cell!==null,geoCountry:'ZZ'});
   }
   assert.equal(received.length,2);
+  process.env.WP_GEO_PUBLIC_ENABLED='false';
+  const off=res();await route('location',operations)(request({cell:null}),off);assert.equal(off.code,200);
+  const blocked=res();await route('location',operations)(request({cell:regionCell(38.72,-9.14)}),blocked);assert.equal(blocked.code,503);
+  const read=res();await route('regions',operations)({method:'GET',headers:{}},read);assert.equal(read.code,503);
+  process.env.WP_GEO_PUBLIC_ENABLED='true';
   const rotated=res(),bad=request({cell:null});bad.headers['x-wp-session-binding']='0'.repeat(64);
   await route('location',operations)(bad,rotated);assert.equal(rotated.code,409);
   for(const body of [{latitude:38.72,longitude:-9.14},{cell:'r1:999:1'},{cell:'r1:257:266',latitude:38},{cell:55},{}]){
