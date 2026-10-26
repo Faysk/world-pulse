@@ -40,4 +40,25 @@ com falha do reconhecedor. Continuam exigidos exatamente um crédito no tap,
 nenhum crédito por navegação e os mesmos limites de duração/movimento do produto.
 
 Fonte: [documentação oficial de Docker do Playwright](https://playwright.dev/docs/docker).
-Os recibos e tempos observados serão registrados após a execução equivalente.
+
+## Validação e recibos
+
+A suíte completa passou no [run 40375877502](https://github.com/Faysk/world-pulse/actions/runs/40375877502),
+head `92a617e`, integrado pela [PR #150](https://github.com/Faysk/world-pulse/pull/150).
+
+| Job | Resultado | Duração total |
+| --- | --- | --- |
+| build | aprovado | 15 s |
+| preview-build-gate | aprovado | 1 min 03 s |
+| browser-smoke Chromium | aprovado | 4 min 51 s |
+| browser-smoke mobile Chromium | aprovado | 7 min 41 s |
+
+O preflight de versão/binário/WebGL2 levou cerca de 1 s em cada job com browser.
+A inicialização dos containers levou 27–40 s; esse custo continua existindo,
+mas a execução não dependeu de downloads apt do mirror que interrompia o gate.
+Os tempos são observações desta execução, não garantias de duração futura.
+
+O teste direcionado de gesto também passou localmente nos dois projetos antes
+da suíte completa. Nenhum limite ou reconhecedor de gesto do produto foi alterado.
+Os jobs de API/PostgreSQL e staging continuam fora desta mudança. A cobertura
+emulada não substitui a observação gradual de aparelhos reais com o público.
