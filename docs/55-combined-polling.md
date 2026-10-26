@@ -77,3 +77,62 @@ para medir HTTP, SQL, bytes e budgets sem produção ou secrets. Quotas permanec
 inalteradas; o limite lógico de reads continua. Não é arquitetura de broadcast:
 várias pessoas ainda causam consultas distintas. Feed compartilhado, viewport
 e deltas permanecem avaliação de #147, sem contratar/criar outro provedor agora.
+
+## Resultados e recibos
+
+PR [#157](https://github.com/Faysk/world-pulse/pull/157), main `de8a396`.
+Última revisão de código `f3297b8`; suites aprovadas antes da publicação:
+
+- [Carga 40394027468](https://github.com/Faysk/world-pulse/actions/runs/40394027468):
+  cinco perfis, cada um com 15 casos de rajada fria (1/10/25/50/100 abas virtuais,
+  três repetições), sem falhas.
+- [API/SQL 40394027285](https://github.com/Faysk/world-pulse/actions/runs/40394027285):
+  27 testes SQL e 27 de contrato aprovados; 14 cenários HTTP/browser/SQL aprovados,
+  incluindo o endpoint combinado, retirada e expiração natural.
+- [Visual 40394027652](https://github.com/Faysk/world-pulse/actions/runs/40394027652):
+  build, gate de produção/preview e suites completas desktop/mobile aprovados.
+- Local: 146 testes aprovados, um teste SQL ignorado localmente (executado no CI),
+  build e cenários focados de contagem/backoff aprovados nos dois projetos.
+
+Comparação com o mesmo dataset de 1.000 grupos e limites inalterados:
+
+| Total dos 15 casos | Compacto separado | Compacto combinado |
+| --- | ---: | ---: |
+| Requests HTTP | 1.116 | 558 |
+| Transações SQL | 2.232 | 1.674 |
+| Chamadas SQL instrumentadas | 8.493 | 6.834 |
+| Reads lógicos cobrados | 1.116 | 1.116 |
+| JSON decodificado (bytes) | 13.664.304 | 13.692.204 |
+
+Em uma atualização fria de uma aba: 2 → 1 requests, 4 → 3 transações e 20 → 17
+chamadas SQL. O envelope adiciona 50 bytes de JSON por atualização; a economia
+desta etapa é em requisições/transações, não em tamanho de JSON. Headers/TLS/gzip
+e fatura não foram medidos. Contagens de reconstrução podem variar na fronteira
+de janelas de cache, portanto não atribuir toda diferença de SQL ou latência a
+um ganho fixo por requisição. Os dois
+[relatórios agregados](assets/polling-2026-10-26/) preservam os resultados completos.
+
+### Preparação do CI HTTP — #158
+
+O mirror `azure.archive.ubuntu.com` estava gastando cerca de dez minutos em
+downloads de fontes/bibliotecas antes dos testes, nos runs superados
+40391639028/40391918765. O job HTTP em host agora usa HTTPS dos mirrors oficiais
+archive.ubuntu.com e security.ubuntu.com nas listas já existentes do runner.
+Não altera workstation, assinatura APT, TLS, timeout de 12 minutos, topologia
+loopback do PostgreSQL ou permissões/secrets. Não usa container para contornar
+os guards de destino.
+
+No run final 40394027285, instalação Playwright/dependências: 20:15:53–20:16:14 UTC
+(21 s); job HTTP inteiro: 4 min 39 s. São tempos observados, não garantia de mirror.
+Runs superados foram cancelados; seus cancelamentos não são falhas da aplicação.
+
+### Produção
+
+[40395236461](https://github.com/Faysk/world-pulse/actions/runs/40395236461) publicou
+a main `de8a396`, deployment `dpl_5YjxmkaGSqsR1XvKs1hGT26juhpZ`. O candidato
+foi testado antes de promover; HTTPS/assets confirmados após promoção.
+Conferência pública adicional: `/api/pulse` HTTP 200, `pulse_snapshot_v1`, região
+compacta, ranking ativo, no-store, TTL regional 5.000 ms e sem erro parcial.
+Zero grupos ativos no momento. `/api/regions` e `/api/ranking` anteriores também
+retornaram HTTP 200/no-store. Não foram inseridos participantes nem aplicada
+carga sintética em produção.

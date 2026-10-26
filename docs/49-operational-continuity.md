@@ -84,13 +84,14 @@ instantâneo de cópias antigas.
 ## Consultas e custos
 
 O Top 10 não consulta enquanto fechado, inclusive após seleção/taps/foco.
-Ao abrir, faz leitura imediata e segue a cada cinco segundos. Países já consultam
-somente com seu painel aberto; regiões continuam atualizando o mapa visível.
-Sem painéis, elimina até 12 requests de ranking/minuto por aba (até 17.280/dia
-se ficar visível 24h). Com feed regional ativo, baseline teórico cai de 24 para
-12 GETs/minuto; isso não representa CU, leituras SQL, fatura ou teste de carga.
-Abas ocultas suspendem polling. O teste de navegador conta requests reais
-interceptados e verifica fechar/reabrir no desktop e mobile.
+Ao abrir, faz leitura imediata; com geografia disponível compartilha o timer e
+GET de cinco segundos do mapa (#156). Sem geografia usa ranking separado.
+Países consultam somente com seu painel aberto; regiões atualizam o mapa visível.
+Só mapa: 12 GET/min em regime estável. Mapa + Top 10: também 12 GET/min, cobrando
+24 reads lógicos/min. Países acrescenta 12 GET/min se aberto. Abertura, foco,
+sessão, mutações e retries acrescentam operações. Isso não representa CU, fatura
+ou capacidade de pessoas. Abas ocultas suspendem polling; testes desktop/mobile
+contam chamadas, resultados renderizados, fechar/reabrir e ocultar/retomar.
 
 Os limites atuais em `server/costPolicy.mjs` continuam conservadores:
 600 leituras/min e 50.000 requests/dia. Um feed de mapa a cada 5s consome 12
@@ -100,6 +101,9 @@ a cerca de 69,4 horas de aba com esse feed, antes de taps/sessões/outros usos.
 São contas de orçamento, não teste de carga nem limite de pessoas comprovadas.
 O polling atual exige rever transporte/cache e medir custo antes de ampliar
 o público; não aumentar esses budgets só para esconder o problema. Rastreio #7.
+
+Com mapa + ranking combinados, os dois créditos lógicos por GET mantêm a conta
+de 25 abas nesse orçamento de reads sem margem; reduzir HTTP não aumentou quotas.
 
 `infra-usage.yml` gera relatório manual read-only: versão/tamanho do banco,
 estimativas por tabela e contadores globais de budget. Nunca publica IDs de
@@ -189,3 +193,9 @@ pede passos, resultado e aparelho opcional; não exige vários dispositivos nem
 coordenadas/cookies. Na triagem, vincular os relatos à milestone v0.4 e a #13;
 falhas reproduzíveis recebem correção e teste específicos. Um formulário publicado
 facilita feedback, mas não significa que a matriz de aparelhos foi validada.
+
+[55 — Polling combinado](55-combined-polling.md): com mapa e Top 10 abertos,
+o feed saudável usa um GET a cada 5 s em vez de dois, mantendo dois reads lógicos.
+Após mutações, atualiza ranking sozinho. Só mapa mantém 12 GET/min; países aberto
+continua separado. Abrir/foco/sessão/taps acrescentam operações a esses números.
+Não confundir 50% menos requests desse par com dobrar o limite de participantes.
