@@ -15,3 +15,12 @@ export function storage(env){
 export const object=Key=>({Bucket:backupBucket,Key});
 // Official multi-platform image digest exercised in Actions 40353610499.
 export const postgresImage='postgres:18@sha256:edb0c08dc33befd0262ab3b5cf1c4f3f8cfd8b09e88c05b45adee29d6761ddb6';
+export async function waitForPostgres(container,run=command,pause=ms=>new Promise(r=>setTimeout(r,ms))){
+  // The image's temporary initialization server accepts Unix sockets but no TCP.
+  // Probe loopback INSIDE the network-isolated container to wait for the final server.
+  for(let n=0;n<40;n++){
+    try{run(['exec',container,'pg_isready','-h','127.0.0.1','-U','postgres']);return;}
+    catch{await pause(500);}
+  }
+  throw new Error('backup_database_not_ready');
+}
