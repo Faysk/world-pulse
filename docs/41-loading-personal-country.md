@@ -1,5 +1,7 @@
 # 41 — Carregamento e prévia pessoal por país
 
+> Atualização de 26/10/2026: os polígonos/prévia de país inteiro foram substituídos no app principal pelos [pontos regionais com nova permissão](42-regional-participation-points.md). O registro abaixo preserva a implementação anterior; países continuam apenas nos resumos.
+
 Solicitação de 25/10/2026, issue #110.
 
 O fallback de texto da importação lazy foi substituído por um globo CSS com órbitas,

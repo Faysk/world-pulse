@@ -2,16 +2,16 @@
 
 Um planeta cinza que ganha cores com a participação das pessoas.
 
-**Estado em 25/10/2026:** [alpha funcional publicada](https://map.faysk.dev), com hashtags, saldos e ranking persistidos no Neon de produção. Taps têm resposta local imediata e confirmação em segundo plano. País aproximado tem aviso visível, escolha inicial marcada e retirada permitida; áreas exigem cinco participações na mesma hashtag/país. [Estado e evidências](docs/40-fluid-taps-country-choice.md).
+**Estado em 26/10/2026:** [alpha funcional publicada](https://map.faysk.dev), com hashtags, saldos e ranking no Neon de produção. Taps respondem imediatamente e confirmam em segundo plano. O mapa usa pontos regionais com permissão do navegador e quantização antes do envio; o resumo por país é separado. [Contrato, evidências e limites](docs/42-regional-participation-points.md).
 
 ## Estrutura real
 
 | Parte | Tecnologia / serviço | Estado |
 | --- | --- | --- |
 | Interface | React 19 + TypeScript + Vite | Publicada na Vercel |
-| Globo | MapLibre GL + cartografia OpenFreeMap | Países agregados com fonte Vercel direta; sem pontos individuais |
+| Globo | MapLibre GL + cartografia OpenFreeMap | Pontos regionais aproximados com halo; sem preenchimento de países |
 | Hospedagem | Vercel Hobby, projeto `world-pulse` | HTTPS em `map.faysk.dev` |
-| Banco | Neon Free / PostgreSQL, Londres | Schema 0001–0006 e runtime restrito ativos em produção |
+| Banco | Neon Free / PostgreSQL, Londres | Schema 0001–0007 e runtime restrito ativos em produção |
 | DNS | Cloudflare, zona `faysk.dev` | `map` aponta à Vercel, DNS only |
 | Objetos | Cloudflare R2, bucket privado `world-pulse-production` | Provisionado; ainda sem função no fluxo de taps |
 | Configuração e entrega | GitHub Actions + Environments `production` e `staging` | Origem das secrets/configurações e deploy manual de `main` |
@@ -42,7 +42,7 @@ O feed da Steam foi mantido no código, mas o painel foi **ocultado da experiên
 - Várias hashtags podem manter saldo/manchas simultaneamente; novos taps vão para uma seleção de cada vez.
 - A densidade conta participantes distintos por hashtag com saldo positivo, nunca soma de taps ou segundos.
 - Cor aleatória é persistida na primeira criação da hashtag e reutilizada nas seguintes.
-- País aproximado é opcional e agregado; não publicar posição individual.
+- Localização regional é opcional, quantizada no navegador; não publicar posição exata.
 - Top 10 atual conta participações com saldo positivo; ao zerar, sai do ranking e da mancha. Histórico começa na seleção e fica separado. [Contrato](docs/24-ranking-contract.md).
 
 A alpha pública grava o saldo no banco; a demonstração sintética permanece apenas como ferramenta de desenvolvimento. [Contrato confirmado](docs/14-time-credit-contract.md).
@@ -78,7 +78,7 @@ O app visual não exige secrets. Nunca colocar credenciais em `VITE_*` nem versi
 src/                         interface, globo, datasets sintéticos e contrato de saldo
 tests/                      testes de domínio e navegador
 infra/                       probes Neon/R2, sincronização e publicação staged
-infra/sql/                   migrações 0001–0006; domínio verificado em produção e staging
+infra/sql/                   migrações 0001–0007; domínio verificado em produção e staging
 scripts/                     benchmark dos cenários agregados
 api/steam.mjs                endpoint do feed externo Steam
 server/steam.mjs             consulta/validação do feed externo
@@ -87,7 +87,7 @@ server/geoPrivacy.mjs       país aproximado fechado por padrão; API agrega com
 docs/                        arquitetura, regras, evidências e pendências
 ```
 
-As pastas `api/` e `server/` contêm a API de participação e o feed Steam preservado e oculto. O pacote do [PR #31](https://github.com/Faysk/world-pulse/pull/31) reúne sessões, filas, saldos, ranking e geografia por país; as migrações 0001–0006 foram aplicadas/verificadas no staging. Produção foi migrada e ativada em 25/10/2026, pelo Actions e autorização do usuário. Código na main continua separado de deploy: a publicação é manual. Fonte geográfica foi verificada e ativada; migrações futuras continuam fechadas.
+As pastas `api/` e `server/` contêm a API de participação e o feed Steam preservado e oculto. O pacote do [PR #31](https://github.com/Faysk/world-pulse/pull/31) reúne sessões, filas, saldos, ranking e geografia por país; as migrações 0001–0007 foram aplicadas/verificadas no staging. Produção foi migrada e ativada em 25/10/2026, pelo Actions e autorização do usuário. Código na main continua separado de deploy: a publicação é manual. Fonte geográfica foi verificada e ativada; migrações futuras continuam fechadas.
 
 ## Documentação e próximos passos
 
@@ -118,4 +118,4 @@ O fluxo **interface → HTTPS privado no Actions → pooler Neon staging real �
 
 [Operações finais: preview, retenção e ativação explícita da alpha](docs/32-prepublication-operations.md), com gates independentes; alpha/API e país ativos em produção.
 
-[Carregamento fluido e prévia pessoal da mancha](docs/41-loading-personal-country.md): publicados e verificados. A prévia da hashtag selecionada aparece neste navegador desde o primeiro saldo positivo, no país aproximado; o agregado público mantém o mínimo de cinco participações por hashtag/país.
+[Carregamento fluido e prévia pessoal da mancha](docs/41-loading-personal-country.md): publicados e verificados. Registro histórico: a prévia por país foi substituída pelos [pontos regionais](docs/42-regional-participation-points.md), com nova autorização explícita. O mínimo de cinco permanece somente no resumo de países.

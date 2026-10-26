@@ -1,8 +1,8 @@
 # 26 — Estrutura real e prontidão da participação
 
-Atualizado em 25/10/2026. Alpha/API de produção foram deliberadamente ativadas
+Atualizado em 26/10/2026. Alpha/API de produção foram deliberadamente ativadas
 pelo Actions; fonte direta de país foi verificada e ativada. Código na main não publica
-automaticamente. [Estado operacional atual](40-fluid-taps-country-choice.md).
+automaticamente. [Estado operacional atual](42-regional-participation-points.md).
 
 ## Caminhos reais
 
@@ -29,12 +29,13 @@ objetos. O feed Steam permanece no código e oculto da experiência pública.
 | Tabela em `world_pulse` | Função |
 |---|---|
 | `tags` | Nome normalizado único e cor persistida uma vez |
-| `visitors` | Hash do cookie, seleção, retorno/validade e escolha opcional de país |
+| `visitors` | Hash do cookie, seleção, retorno/validade, país opcional e célula regional autorizada |
 | `visitor_tags` | Par único sessão/hashtag, histórico de segundos e expiração do saldo |
 | `tap_batches` | ID/fingerprint e taps de cada lote para idempotência |
 | `operation_budgets` | Até cinco contadores compartilhados de capacidade, sem dados de localização |
 | `tag_history_totals` | Histórico consolidado por hashtag sem vínculo individual |
-| `country_snapshot_cache` | Uma linha de agregado público por janela de 5s, sem IDs individuais |
+| `country_snapshot_cache` | Uma linha de resumo por país por janela de 5s, sem IDs individuais |
+| `region_snapshot_cache` | Agregado por célula/hashtag com saldo positivo; sem IDs de sessão |
 
 Nenhuma dessas tabelas contém IP bruto, GPS, cidade ou trajetória. País é opcional
 e a fonte/publicação têm gates próprios, fechados por padrão. Histórico começa na seleção; presença atual
@@ -46,9 +47,9 @@ sessão na mesma transação. DELETE/CASCADE isolado perderia histórico e é pr
 
 | Ambiente | Estado |
 |---|---|
-| Produção Neon `main` | Schema 0001–0006 verificado; alpha/API e fonte direta de país ativas |
-| Neon `world-pulse-staging` | Criado schema-only, sem copiar produção; fixtures de QA próprias e credenciais separadas no GitHub; 0001–0006 e timeouts transacionais no pooler verificados. Expira 31/10 às 01:15 UTC |
-| CI PostgreSQL descartável | Migrações 0001–0006; testes HTTP/duas sessões/abas e concorrência, sem secrets reais |
+| Produção Neon `main` | Schema 0001–0007 verificado; alpha/API e fonte direta de país ativas |
+| Neon `world-pulse-staging` | Criado schema-only, sem copiar produção; fixtures de QA próprias e credenciais separadas no GitHub; 0001–0007 e timeouts transacionais no pooler verificados. Expira 31/10 às 01:15 UTC |
+| CI PostgreSQL descartável | Migrações 0001–0007; testes HTTP/duas sessões/abas e concorrência, sem secrets reais |
 | Local visual | Funciona sem secrets; teste SQL requer PostgreSQL descartável do CI ou instalação local explícita |
 
 0004–0006 foram aplicadas no staging pelo Actions; qualquer migração futura exige operação manual revisada;
@@ -97,3 +98,5 @@ Referências: [fila](23-cross-tab-queue.md), [ranking](24-ranking-contract.md),
 [Operações preparadas e sequência de liberação](32-prepublication-operations.md). Nada disso ativa publicação, flags ou manutenção de produção por si só.
 
 Estado final, evidências e gates sem falsa promessa de 100%: [pré-publicação](36-prepublication-status.md). O HTTPS privado contra Neon real foi aprovado em dois navegadores; a borda pública continua em #53.
+
+A UI principal usa pontos regionais, não polígonos de país. Região fica NULL nas sessões antigas até nova autorização. [Modelo e limites](42-regional-participation-points.md).

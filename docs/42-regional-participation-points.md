@@ -78,3 +78,56 @@ faz uma leitura a cada 5s, além do ranking atual. Com o orçamento conservador 
 cerca de 25 navegadores antes de considerar mutações/retorno; abrir países adiciona
 12 leituras/minuto. Isso é orçamento interno, não capacidade medida da Vercel/Neon.
 Cache/CDN, snapshots combinados e medição de custo continuam necessários (#7).
+
+## Recibos de 26/10/2026
+
+- PR #114 integrou pontos/migração; PR #115 adicionou manutenção explícita após o
+  sync inicialmente recusar alpha com API false. Essa primeira tentativa não mudou
+  a Vercel nem migrou dados. O opt-in WP_MAINTENANCE só funciona com API e todos
+  os gates geográficos false; não é enviado ao runtime do app.
+- CI [40248412376](https://github.com/Faysk/world-pulse/actions/runs/40248412376):
+  32 testes desktop e 31 mobile aprovados, 1 mobile pulado, mais 3 de build/gates.
+  Os projetos agora têm jobs/artifacts separados e o mesmo limite de 12 minutos;
+  a asserção antiga do texto de país foi atualizada, sem retirar o teste de taps.
+- CI [40248412159](https://github.com/Faysk/world-pulse/actions/runs/40248412159):
+  PostgreSQL e dois navegadores aprovados. Infra: 39 testes aprovados com manutenção
+  ([40249256902](https://github.com/Faysk/world-pulse/actions/runs/40249256902)).
+- Staging migrou em [40246521868](https://github.com/Faysk/world-pulse/actions/runs/40246521868).
+  HTTPS/Neon real [40247107596](https://github.com/Faysk/world-pulse/actions/runs/40247107596):
+  4 testes desktop/mobile aprovados, 6 sessões sintéticas limpas. A primeira tentativa
+  do teste regional falhou porque seu helper descartava regionCell; foi corrigido.
+- Preview Vercel [40247841155](https://github.com/Faysk/world-pulse/actions/runs/40247841155)
+  aprovou duas sessões na mesma célula (2 → 1 → 0 com retiradas), cookies, retorno,
+  retry e país/spoof. Deployment dpl_HMhu79maeFUoKCYqEi7WDGEKxqBz; acesso temporário
+  revogado e 2 sessões sintéticas limpas. Uma tentativa concorrente anterior recebeu
+  503; o smoke passou a repetir somente leituras transitórias, sem repetir escritas.
+- Manutenção pública [40249355329](https://github.com/Faysk/world-pulse/actions/runs/40249355329)
+  foi promovida e a API pública respondeu 503 antes de executar SQL.
+- Migração de produção [40249564901](https://github.com/Faysk/world-pulse/actions/runs/40249564901):
+  0007 aplicada, schema e runtime conferidos; NOINHERIT, sem memberships/DDL/privilégios
+  elevados. Owner encerrou antes da verificação runtime. Nenhum saldo foi reescrito.
+- Reativação [40249714364](https://github.com/Faysk/world-pulse/actions/runs/40249714364)
+  aprovada: deployment dpl_HkgnVcyGXEU1JaRUu8wxhSzwqea5, source f42e7c8.
+  API/alpha/geografia true; WP_MAINTENANCE=false e WP_PRODUCTION_MIGRATIONS_ENABLED=false.
+  Ranking, regiões e países públicos responderam 200; HTML/assets passaram antes e
+  depois da promoção. Futuras publicações continuam manuais pelo GitHub Actions.
+
+Chrome público restaurou a sessão/#gta6 e exibiu Ativar meu ponto, sem polígono de
+país. Nenhuma permissão antiga foi convertida em autorização regional. Na tentativa
+manual deste dispositivo, o navegador retornou Localização indisponível; nenhuma
+célula foi enviada/publicada por essa tentativa. A janela estava minimizada e a
+ferramenta não expôs o pedido de permissão; isso não identifica a causa do erro.
+Precisão/permissão em hardware real continuam pendentes em #6/#12. As provas
+regionais acima usam coordenadas de fixture apenas no staging, não um ponto
+fictício em produção. O usuário precisa ativar e permitir numa janela/navegador
+que consiga fornecer localização; negar continua preservando taps/ranking.
+
+![Interface regional publicada, antes da permissão de dispositivo](assets/regional-production-ui-2026-10-26.png)
+
+O orçamento diário também é material: 24 leituras/minuto contínuas equivalem a
+34.560 leituras/dia por navegador, antes de mutações. O teto global atual de
+50.000 requests/dia não sustenta dois navegadores ininterruptos nesse ritmo.
+Cache SQL não remove cobrança de request nem esse limite. Snapshots combinados,
+cache/CDN e polling adaptativo precisam ser medidos antes de ampliar a alpha (#7).
+Saldos mais curtos que o intervalo de polling podem terminar entre leituras
+públicas; o feedback próprio provisório não significa transmissão global instantânea.

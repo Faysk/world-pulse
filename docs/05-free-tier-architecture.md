@@ -1,16 +1,16 @@
 # 05 — Arquitetura real e orçamento gratuito
 
-**Atualizado em 25/10/2026.** Fonte operacional: [runbook](11-infrastructure-operations.md). Rastreio: #7, #20 e #37.
+**Atualizado em 26/10/2026.** Fonte operacional: [runbook](11-infrastructure-operations.md). Rastreio: #7, #20 e #37.
 
 ## Implantado
 
 | Componente | Responsabilidade | Limite de escopo atual |
 | --- | --- | --- |
 | React + TypeScript + Vite | Interface estática compilada | Alpha pública com saldos e ranking reais |
-| MapLibre GL + OpenFreeMap | Globo vetorial e cartografia | Sem posições pessoais; país aproximado agregado |
+| MapLibre GL + OpenFreeMap | Globo vetorial e cartografia | Pontos em células regionais (~55 km); nunca posição exata |
 | Vercel Hobby | Entrega do app e HTTPS | API real integrada e ativa |
 | Cloudflare DNS | Resolver `map.faysk.dev` para a Vercel | DNS only; Cloudflare não hospeda o frontend |
-| Neon Free / PostgreSQL | Banco relacional com TLS e role runtime restrita | Schema 0001–0006 e runtime restrito ativos em produção |
+| Neon Free / PostgreSQL | Banco relacional com TLS e role runtime restrita | Schema 0001–0007 e runtime restrito ativos em produção |
 | Cloudflare R2 Standard | Armazenamento S3 privado | Apenas provisionamento/probes; não participa dos taps nem fornece os tiles |
 | GitHub Actions | Validar, sincronizar configuração e publicar | Environment `production`, branch `main`; sem secrets em PRs |
 | Feed Steam | Endpoint Vercel para dados externos de jogos | Publicado pelo PR #41; amostra externa independente do banco e das manchas |
@@ -43,3 +43,5 @@ Enviar taps em lotes idempotentes, não escrever no banco a cada segundo do sald
 [Publicação pelo Actions](https://github.com/Faysk/world-pulse/actions/runs/40041911767): conexão Neon/R2, sincronização server-side, candidata, smoke HTML/JS/CSS, revogação temporária, promoção e smoke público concluídos. Isso não prova persistência de participação real.
 
 [Cenários visuais](15-population-scenarios.md): até 1 trilhão representado por no máximo 756 células sintéticas. Não é teste de bilhões de conexões nem benchmark do banco nessa escala.
+
+A região vem da permissão do navegador, quantizada antes de enviar. País por IP é apenas um resumo separado. [Pontos regionais e orçamento de leituras](42-regional-participation-points.md).

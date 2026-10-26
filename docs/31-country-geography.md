@@ -1,5 +1,7 @@
 # Geografia por país na experiência de homologação
 
+> Atualização de 26/10/2026: os polígonos/prévia de país inteiro foram substituídos no app principal pelos [pontos regionais com nova permissão](42-regional-participation-points.md). O registro abaixo preserva a implementação anterior; países continuam apenas nos resumos.
+
 Implementação da issue #74 e PR #75; UX/fonte atualizadas no PR #108. Fonte direta ativa em produção, com [evidências e limitações](40-fluid-taps-country-choice.md).
 
 ## Contrato real

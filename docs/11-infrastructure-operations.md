@@ -1,6 +1,6 @@
 # 11 — Infraestrutura e operações
 
-**Atualizado em 25/10/2026.** Rastreio: #7, #15, #16, #17 e #18.
+**Atualizado em 26/10/2026.** Rastreio: #7, #15, #16, #17 e #18.
 
 ## Serviços e estado real
 
@@ -11,7 +11,7 @@
 | Banco | Neon Free, `world-pulse-production`, Londres | Provisionado pelo Vercel Marketplace; runtime configurado pelo GitHub; `SELECT 1` com TLS validado |
 | Objetos | R2 Standard, `world-pulse-production` | Privado; teste de escrita/leitura/remoção validado |
 | Credenciais | GitHub Environment `production` | Credenciais de banco e R2 armazenadas; deploy permitido somente na branch `main` |
-| App | React/Vite/MapLibre em `main` | Alpha/API reais publicadas; país agregado ativo com escolha visível |
+| App | React/Vite/MapLibre em `main` | Alpha/API e pontos regionais ativos; país só nos resumos |
 
 O domínio responde com a alpha funcional desde 25/10/2026. Migrações e runtime
 verificados, retenção ativa, candidato testado/promovido e conferência pública
@@ -21,7 +21,7 @@ aprovada. [Primeira alpha](39-production-alpha-release.md) e [taps/país: estado
 
 Neon Free fornece PostgreSQL separado em Londres. A aplicação acessa o banco por
 API server-side com role runtime restrita; a credencial de migração permanece
-separada. Não usamos serviços externos de Auth/Realtime. Migrações 0001–0006 foram aplicadas/verificadas em produção; futuras mudanças
+separada. Não usamos serviços externos de Auth/Realtime. Migrações 0001–0007 foram aplicadas/verificadas em produção; futuras mudanças
 continuam manuais e separadas do deploy.
 
 Planos/quotas devem ser conferidos nos painéis e nas fontes oficiais: [Neon](https://neon.com/pricing),
@@ -97,3 +97,5 @@ Falha de configuração: comparar nomes com `.env.example`; não imprimir valore
 Esta configuração valida conectividade, não implementa hashtags, sessões, lotes idempotentes ou presença. A API experimental do PR #31 ainda precisa cumprir o contrato de saldo e as decisões de privacidade/retenção antes de ativação. Implementar API com credencial SQL restrita, validação e lotes; nunca conectar o navegador diretamente ao Postgres ou expor o bucket. O contrato de saldo (#9) já está confirmado; falta implementá-lo no banco/API e integrar o cliente.
 
 
+
+Pontos regionais: [migração 0007, fonte, autorização e recibos](42-regional-participation-points.md). As coordenadas exatas não são recebidas pelo servidor.
