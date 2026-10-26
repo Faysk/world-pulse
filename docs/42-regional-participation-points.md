@@ -1,5 +1,7 @@
 # 42 — Pontos regionais com localização aproximada do navegador
 
+> Atualização de 26/10/2026: a autorização de localização foi unificada em [um único controle para ponto e resumos](43-unified-location.md). O registro abaixo preserva a implementação anterior; precisão e limites regionais permanecem.
+
 Solicitação/decisão do usuário em 25/10/2026; issue #113. Substitui a prévia de
 país inteiro do PR #111/documento 41: essa área não representava uma participação.
 

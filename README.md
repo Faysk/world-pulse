@@ -2,7 +2,7 @@
 
 Um planeta cinza que ganha cores com a participação das pessoas.
 
-**Estado em 26/10/2026:** [alpha funcional publicada](https://map.faysk.dev), com hashtags, saldos e ranking no Neon de produção. Taps respondem imediatamente e confirmam em segundo plano. O mapa usa pontos regionais com permissão do navegador e quantização antes do envio; o resumo por país é separado. [Contrato, evidências e limites](docs/42-regional-participation-points.md).
+**Estado em 26/10/2026:** [alpha funcional publicada](https://map.faysk.dev), com hashtags, saldos e ranking no Neon de produção. Taps respondem imediatamente e confirmam em segundo plano. O mapa usa pontos regionais com permissão do navegador e quantização antes do envio; uma única autorização vale para ponto e resumos por país. [Controle unificado e recibos](docs/43-unified-location.md) · [Modelo regional e limites](docs/42-regional-participation-points.md).
 
 ## Estrutura real
 
