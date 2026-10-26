@@ -19,6 +19,8 @@ async function verifyRuntime(connectionString){
       'SELECT region_cell,region_shared_at,last_seen_at,country_code,country_consent FROM world_pulse.visitors LIMIT 0',
       'SELECT batch_id FROM world_pulse.tap_batches LIMIT 0','SELECT scope FROM world_pulse.operation_budgets LIMIT 0',
       'SELECT participants FROM world_pulse.tag_history_totals LIMIT 0','SELECT payload FROM world_pulse.country_snapshot_cache LIMIT 0','SELECT payload FROM world_pulse.region_snapshot_cache LIMIT 0'])await client.query(query);
+    const {rows:[regionConstraint]}=await client.query("SELECT pg_get_constraintdef(oid) AS definition FROM pg_constraint WHERE conrelid='world_pulse.visitors'::regclass AND conname='visitors_region_cell_check'");
+    if(!regionConstraint?.definition.includes('r2:'))throw new Error('one_km_schema_not_applied');
     await client.query('COMMIT');
   }finally{await client.end();}
 }

@@ -38,6 +38,9 @@ export async function checkStaging(connectionString) {
     await db.query('SELECT country_consent,country_code,region_cell,region_shared_at FROM world_pulse.visitors LIMIT 0');
     await db.query('SELECT payload FROM world_pulse.region_snapshot_cache LIMIT 0');
     await db.query('SELECT payload FROM world_pulse.country_snapshot_cache LIMIT 0');
+    const {rows:[regionConstraint]}=await db.query("SELECT pg_get_constraintdef(oid) AS definition FROM pg_constraint WHERE conrelid='world_pulse.visitors'::regclass AND conname='visitors_region_cell_check'");
+    if(!regionConstraint?.definition.includes('r2:'))throw new Error('one_km_schema_not_applied');
+
     const {rows:[timeouts]}=await db.query(`SELECT current_setting('statement_timeout') AS statement,
       current_setting('lock_timeout') AS lock`);
     if (timeouts.statement !== '5s' || timeouts.lock !== '1s') throw new Error('runtime_timeouts_not_applied');
@@ -62,7 +65,7 @@ export async function migrateStaging(ownerUrl, runtimeUrl) {
     const { rows } = await db.query(`SELECT m.rolname FROM pg_auth_members a
       JOIN pg_roles m ON m.oid=a.roleid JOIN pg_roles r ON r.oid=a.member WHERE r.rolname='world_pulse_app'`);
     if (rows.length) throw new Error('unexpected_runtime_membership');
-    for (const file of ['0001-runtime-access.sql', '0002-participation-core.sql', '0003-time-balances.sql', '0004-operation-budgets.sql', '0005-retention-rollups.sql', '0006-country-geography.sql','0007-regional-points.sql']) {
+    for (const file of ['0001-runtime-access.sql', '0002-participation-core.sql', '0003-time-balances.sql', '0004-operation-budgets.sql', '0005-retention-rollups.sql', '0006-country-geography.sql','0007-regional-points.sql','0008-one-km-regions.sql']) {
       await db.query(await readFile(new URL(`sql/${file}`, import.meta.url), 'utf8'));
       console.log(`Staging migration applied: ${file}`);
     }

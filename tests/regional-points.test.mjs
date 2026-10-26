@@ -12,7 +12,7 @@ test('Regional grid bounds, quantization, dateline and poles; center is never ra
   }
   assert.equal(regionCell(38.72001,-9.14001),regionCell(38.72002,-9.14002));
   for(const args of [[NaN,0],[0,Infinity],[91,0],[0,-181]])assert.throws(()=>regionCell(...args));
-  for(const cell of ['r1:360:0','r1:0:999','r1:01:2','r2:1:2',{},null,'38.72,-9.14'])assert.throws(()=>regionCenter(cell));
+  for(const cell of ['r1:360:0','r1:0:999','r1:01:2','r2:20040:0','r2:0:3','r2:01:0','r3:1:2',{},null,'38.72,-9.14'])assert.throws(()=>regionCenter(cell));
 });
 function res(){return {code:200,headers:{},setHeader(k,v){this.headers[k]=v;},status(n){this.code=n;return this;},end(s){this.payload=JSON.parse(s);}};}
 const session=newSession();
@@ -37,4 +37,18 @@ test('Location API accepts only coarse cells or withdrawal, rejects exact coordi
     const r=res();await route('location',operations)(request(body),r);assert.equal(r.code,400);
   }
   const r=res();await route('location',operations)({...request({cell:null}),headers:{host:'map.faysk.dev',origin:'https://attacker.invalid'}},r);assert.equal(r.code,403);
+});
+
+test('One-km grid has bounded displacement globally while legacy centers stay unchanged',()=>{
+  const rad=x=>x*Math.PI/180;
+  const distance=(a,b)=>{const lat=rad(b[1]-a[1]),lon=rad(b[0]-a[0]);return 6371*2*Math.asin(Math.min(1,Math.sqrt(Math.sin(lat/2)**2+Math.cos(rad(a[1]))*Math.cos(rad(b[1]))*Math.sin(lon/2)**2)));};
+  assert.deepEqual(regionCenter('r1:257:266'),[-9.288256227758012,38.75]);
+  assert.notEqual(regionCell(38.72,-9.14),regionCell(38.74,-9.14));
+  for(const lat of [-90,-89.999,-89.995,-89.991,-89.98,-80,-60,-30,0,30,60,80,89.98,89.991,89.995,89.999,90]){
+    for(let lon=-180;lon<=180;lon+=.9){
+      const cell=regionCell(lat,lon),center=regionCenter(cell);
+      assert.match(cell,/^r2:/);assert.equal(regionCell(center[1],center[0]),cell);
+      assert.ok(distance([lon,lat],center)<1.1,'cell-center displacement is bounded, including polar caps');
+    }
+  }
 });
