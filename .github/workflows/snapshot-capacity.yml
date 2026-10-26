@@ -1,7 +1,7 @@
 name: Isolated snapshot capacity
 on:
   pull_request:
-    paths: ['scripts/capacity-*', 'scripts/snapshot-capacity.mjs', '.github/workflows/snapshot-capacity.yml']
+    paths: ['scripts/capacity-*', 'scripts/snapshot-capacity.mjs', 'server/store.mjs', 'server/snapshotCache.mjs', 'server/costPolicy.mjs', 'server/databaseLimits.mjs', '.github/workflows/snapshot-capacity.yml']
   workflow_dispatch:
     inputs:
       mode:
