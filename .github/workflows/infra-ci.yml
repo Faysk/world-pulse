@@ -1,13 +1,46 @@
 name: Infrastructure CI
 on:
   pull_request:
-    paths: ['infra/**', '.github/workflows/infra-*.yml', '.env.example']
+    paths: ['infra/**', 'scripts/recovery-service-drill.mjs', '.github/workflows/infra-*.yml', '.env.example']
   push:
     branches: [main]
-    paths: ['infra/**', '.github/workflows/infra-*.yml', '.env.example']
+    paths: ['infra/**', 'scripts/recovery-service-drill.mjs', '.github/workflows/infra-*.yml', '.env.example']
 permissions:
   contents: read
 jobs:
+  recovery-service:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:18@sha256:edb0c08dc33befd0262ab3b5cf1c4f3f8cfd8b09e88c05b45adee29d6761ddb6
+        env:
+          POSTGRES_PASSWORD: local-only
+          POSTGRES_DB: world_pulse_recovery
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U postgres -d world_pulse_recovery"
+          --health-interval 2s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm ci --prefix infra --ignore-scripts --no-audit --no-fund
+      - name: Restore synthetic backup, reset geography and verify service after disposable source removal
+        run: node scripts/recovery-service-drill.mjs
+        env:
+          WP_RECOVERY_DRILL: synthetic-loopback
+          WP_RECOVERY_CONTAINER: ${{ job.services.postgres.id }}
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: synthetic-service-recovery
+          path: test-artifacts/recovery-service.json
+          retention-days: 7
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 10

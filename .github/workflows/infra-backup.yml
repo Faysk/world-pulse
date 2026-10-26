@@ -1,6 +1,12 @@
 name: Encrypted database backup
 on:
   workflow_dispatch:
+    inputs:
+      key_slot:
+        description: Use current key, or verify candidate key BEFORE promoting it from independent custody
+        type: choice
+        options: [current, candidate]
+        default: current
   schedule:
     - cron: '17 4 * * *'
 permissions:
@@ -33,7 +39,7 @@ jobs:
           R2_BACKUP_BUCKET_NAME: ${{ vars.R2_BACKUP_BUCKET_NAME }}
           R2_BACKUP_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
           R2_BACKUP_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
-          WP_BACKUP_ENCRYPTION_KEY: ${{ secrets.WP_BACKUP_ENCRYPTION_KEY }}
+          WP_BACKUP_ENCRYPTION_KEY: ${{ inputs.key_slot == 'candidate' && secrets.WP_BACKUP_NEXT_ENCRYPTION_KEY || inputs.key_slot != 'candidate' && secrets.WP_BACKUP_ENCRYPTION_KEY || '' }}
       - name: Read back R2 object and restore into isolated disposable PostgreSQL; no production DB credentials
         run: node infra/backup-verify.mjs
         env:
@@ -42,7 +48,7 @@ jobs:
           R2_BACKUP_BUCKET_NAME: ${{ vars.R2_BACKUP_BUCKET_NAME }}
           R2_BACKUP_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
           R2_BACKUP_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
-          WP_BACKUP_ENCRYPTION_KEY: ${{ secrets.WP_BACKUP_ENCRYPTION_KEY }}
+          WP_BACKUP_ENCRYPTION_KEY: ${{ inputs.key_slot == 'candidate' && secrets.WP_BACKUP_NEXT_ENCRYPTION_KEY || inputs.key_slot != 'candidate' && secrets.WP_BACKUP_ENCRYPTION_KEY || '' }}
       - name: Always dispose ephemeral restore data
         if: always()
         run: |
