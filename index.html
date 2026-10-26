@@ -4,11 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#101112" />
-    <meta name="description" content="World Pulse — a live globe of the hashtags that move us." />
-    <title>World Pulse</title>
+    <!-- wp:search-head -->
+    <link rel="stylesheet" href="/brand.css" />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <main class="search-fallback">
+        <img src="/favicon.svg" width="72" height="72" alt="" />
+        <h1>World Pulse</h1>
+        <p>Live hashtags on a shared world map. Add time to what moves you and explore the places lighting up around it.</p>
+        <nav aria-label="About World Pulse"><a href="/about/">How it works</a><a href="https://github.com/Faysk/world-pulse">GitHub</a></nav>
+        <p class="startup-label">Connecting the world…</p>
+      </main>
+    </div>
+    <noscript><div class="no-script">The interactive globe needs JavaScript and WebGL. <a href="/about/">Learn how World Pulse works</a>, or read in <a href="/pt/sobre/" lang="pt">Português</a> / <a href="/es/acerca/" lang="es">Español</a>.</div></noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

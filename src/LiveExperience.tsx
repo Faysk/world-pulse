@@ -139,9 +139,9 @@ export default function LiveExperience() {
       />
       <div className="live-shade" aria-hidden="true" />
       <header className="live-header">
-        <div className="live-brand">
+        <h1 className="live-brand" aria-label="World Pulse">
           WORLD<span>PULSE</span>
-        </div>
+        </h1>
         <button
           ref={helpButton}
           className="live-help-button"
@@ -576,6 +576,9 @@ export default function LiveExperience() {
               </div>
               <p>{t.languageHelp}</p>
             </div>
+            <a href={locale === "pt" ? "/pt/sobre/" : locale === "es" ? "/es/acerca/" : "/about/"}>
+              {t.about}
+            </a>
             <a
               href="https://github.com/Faysk/world-pulse"
               target="_blank"
