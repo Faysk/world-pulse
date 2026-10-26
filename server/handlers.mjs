@@ -102,12 +102,12 @@ export function route(kind, operations = store) {
 
       const visitor = await requireVisitor(token,country);
       if(kind==='location'){
-        if(process.env.WP_GEO_PUBLIC_ENABLED!=='true')throw new ApiError(503,'geography_disabled','Mapa regional indisponível.');
+        if(process.env.WP_GEO_PUBLIC_ENABLED!=='true'&&body.cell!==null)throw new ApiError(503,'geography_disabled','Mapa regional indisponível.');
         if(req.headers?.['x-wp-session-binding']!==tokenHash('world-pulse-queue-binding-v1:'+token))throw new ApiError(409,'session_binding_mismatch','A sessão mudou. Recarregue antes de compartilhar a região.');
         if(Object.keys(body).some(key=>key!=='cell')||!('cell'in body))throw new ApiError(400,'invalid_region_cell','Envie somente a célula regional.');
         try{if(body.cell!==null)regionCenter(body.cell);}catch{throw new ApiError(400,'invalid_region_cell','Célula regional inválida.');}
-        await setRegionCell(visitor.id,body.cell);
-        return json(res,200,{regionCell:body.cell});
+        await setRegionCell(visitor.id,body.cell,country);
+        return json(res,200,{regionCell:body.cell,geoConsent:body.cell!==null,geoCountry:body.cell!==null?country:'ZZ'});
       }
       if (kind === 'tags') {
         if (typeof body.name !== 'string') throw new ApiError(400,'invalid_hashtag','Nome obrigatório.');

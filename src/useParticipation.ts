@@ -37,14 +37,10 @@ export function useParticipation(countryOverview=true) {
   const [countryError,setCountryError]=useState(false);
   const [countryPreference,setCountryPreference]=useState(client.countryPreference());
   const regional=useRegionalLocation(client,ready&&countryPreference.available);
-  const [consentBusy,setConsentBusy]=useState(false);
-  const [shareCountry,setShareCountry]=useState(true);
   const [deliveryNotice,setDeliveryNotice]=useState('');
   const intents=useRef(new Map<string,number>());
-  const participatedHere=useRef(false);
   const retryAt=useRef(0);
   const retryCount=useRef(0);
-  useEffect(()=>{if(countryPreference.decided)setShareCountry(countryPreference.consent);},[countryPreference.decided,countryPreference.consent]);
   const countryRequest=useRef<Promise<void>|null>(null);
   const countryRevision=useRef(0);
   const sending=useRef(false);
@@ -83,18 +79,10 @@ export function useParticipation(countryOverview=true) {
     countryRequest.current=task;
     try{await task;}finally{if(countryRequest.current===task)countryRequest.current=null;}
   },[client]);
-  const setGeoConsent=useCallback(async(allowed:boolean)=>{
-    setShareCountry(allowed);
-    if(consentBusy||!ready)return;
-    setConsentBusy(true);
-    try{await client.setGeoConsent(allowed);if(!mounted.current)return;countryRevision.current++;setCountrySnapshot(null);view();await refreshCountries(true);}
-    catch(reason){failure(reason);if(mounted.current&&!client.isQuarantined())setError('Não foi possível confirmar sua escolha de país. Recarregue a página para conferir a preferência salva.');}
-    finally{if(mounted.current)setConsentBusy(false);}
-  },[client,consentBusy,ready,view,refreshCountries,failure]);
-  const ensureCountryChoice=useCallback(async()=>{
-    const preference=client.countryPreference();
-    if(!preference.decided||preference.consent!==shareCountry){await client.setGeoConsent(shareCountry);view();}
-  },[client,shareCountry,view]);
+  useEffect(()=>{
+    countryRevision.current++;setCountrySnapshot(null);view();
+    if(ready&&countryOverview)void refreshCountries(true);
+  },[regional.cell,regional.shared,ready,countryOverview,view,refreshCountries]);
   useEffect(()=>{
     if(!ready||!countryPreference.available||!countryOverview)return;
     void refreshCountries();
@@ -124,7 +112,6 @@ export function useParticipation(countryOverview=true) {
     if(!ready||sending.current||client.isQuarantined())return;
     sending.current=true;setSyncing(true);
     try{
-      if(participatedHere.current)await ensureCountryChoice();
       await client.refreshPending();
       if(client.pendingClicks())await client.flush();
       retryAt.current=0;retryCount.current=0;view();setError('');setDeliveryNotice('');await refreshRanking(true);
@@ -137,7 +124,7 @@ export function useParticipation(countryOverview=true) {
       }
     }
     finally{sending.current=false;if(mounted.current){view();setSyncing(false);}}
-  },[client,ready,view,refreshRanking,failure,ensureCountryChoice]);
+  },[client,ready,view,refreshRanking,failure]);
   useEffect(()=>{
     if(!ready)return;
     const id=window.setInterval(()=>{if(!document.hidden&&client.pendingClicks()>0&&performance.now()>=retryAt.current)void sync();},2000);
@@ -156,15 +143,14 @@ export function useParticipation(countryOverview=true) {
 
   const select=useCallback(async(name:string)=>{
     if(selecting||!ready)return;
-    setSelecting(true);participatedHere.current=true;
-    try{await ensureCountryChoice();await client.selectTag(name);view();setError('');await refreshRanking(true);}
+    setSelecting(true);
+    try{await client.selectTag(name);view();setError('');await refreshRanking(true);}
     catch(reason){failure(reason);}
     finally{if(mounted.current)setSelecting(false);}
-  },[client,selecting,ready,view,refreshRanking,failure,ensureCountryChoice]);
+  },[client,selecting,ready,view,refreshRanking,failure]);
   const tap=useCallback(()=>{
     const tagId=client.selection();
     if(!ready||selecting||!tagId)return;
-    participatedHere.current=true;
     intents.current.set(tagId,(intents.current.get(tagId)??0)+1);
     setTick(n=>n+1); // Immediate provisional feedback, before any lock or network.
     void client.creditClick().then(accepted=>{
@@ -179,6 +165,6 @@ export function useParticipation(countryOverview=true) {
     try{await client.discardOrphanedPending();await connect();}
     catch(reason){failure(reason);}
   },[client,connect,failure]);
-  return {regional,shareCountry,deliveryNotice,countrySnapshot,countryError,countryPreference,consentBusy,setGeoConsent,ready,selecting,syncing,error,selected,balances,pending:pending+[...intents.current.values()].reduce((a,b)=>a+b,0),quarantined,ranking,rankingError,tick,persistent:client.persistsPending(),balancesLimited:client.balancesLimited(),
+  return {regional,deliveryNotice,countrySnapshot,countryError,countryPreference,ready,selecting,syncing,error,selected,balances,pending:pending+[...intents.current.values()].reduce((a,b)=>a+b,0),quarantined,ranking,rankingError,tick,persistent:client.persistsPending(),balancesLimited:client.balancesLimited(),
     remaining:(tagId:string)=>client.remainingMilliseconds(tagId)+(client.pendingForTag(tagId)+(intents.current.get(tagId)??0))*1000,connect,select,tap,sync,discard};
 }

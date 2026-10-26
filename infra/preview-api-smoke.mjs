@@ -54,11 +54,11 @@ export async function smokePreviewApi(origin,secret,createdHashes,fetcher=fetch,
   assert.equal((await second.call('/api/taps',{tagId:tagA.id,batchId:randomUUID(),clicks:15})).creditedSeconds,'15');
   assert.equal(a.regionCell,null);assert.equal(b.regionCell,null);
   const cell='r1:257:266'; // Disposable fixture region, never a production participant.
-  await first.call('/api/location',{cell});await second.call('/api/location',{cell});
+  assert.equal((await first.call('/api/location',{cell})).geoConsent,true);assert.equal((await second.call('/api/location',{cell})).geoConsent,true);
   assert.equal((await first.call('/api/regions')).cells.find(row=>row.tagId===tagA.id)?.participants,'2');
-  await first.call('/api/location',{cell:null});
+  assert.equal((await first.call('/api/location',{cell:null})).geoConsent,false);
   assert.equal((await second.call('/api/regions')).cells.find(row=>row.tagId===tagA.id)?.participants,'1');
-  await second.call('/api/location',{cell:null});
+  assert.equal((await second.call('/api/location',{cell:null})).geoConsent,false);
   assert.equal((await first.call('/api/regions')).cells.filter(row=>row.tagId===tagA.id).length,0);
   const other=(await first.call('/api/tags',{name:otherName})).tag;await first.call('/api/select',{tagId:other.id});
   await first.call('/api/taps',{tagId:other.id,batchId:randomUUID(),clicks:2});

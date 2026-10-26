@@ -49,5 +49,5 @@ export function useRegionalLocation(client:ParticipationClient,enabled:boolean){
     try{await save(null);}catch{if(mounted.current)setError('Não foi possível confirmar a retirada. Recarregue para conferir.');}
     finally{if(mounted.current)setBusy(false);}
   },[busy,save]);
-  return {snapshot,busy,error,readError,cell:client.regionalCell(),locate,withdraw,refresh};
+  return {snapshot,busy,error,readError,shared:client.regionalCell()!==null||client.countryPreference().consent,cell:client.regionalCell(),locate,withdraw,refresh};
 }

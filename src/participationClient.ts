@@ -281,9 +281,10 @@ export class ParticipationClient {
   regionalCell(){return this.regionCell;}
   setRegionalCell(cell:string|null):Promise<void>{
     return this.enqueueSelection(()=>this.withWriter(async()=>{
-      const result=await this.request<{regionCell:string|null}>('/api/location',{cell});
+      const result=await this.request<{regionCell:string|null;geoConsent?:boolean;geoCountry?:string}>('/api/location',{cell});
       if(result.regionCell!==cell)throw new Error('invalid_region_choice');
-      this.regionCell=result.regionCell;this.signalSelectionChange();
+      this.regionCell=result.regionCell;this.geoConsent=result.geoConsent??cell!==null;this.geoDecided=true;
+      this.geoCountry=typeof result.geoCountry==='string'&&/^[A-Z]{2}$/.test(result.geoCountry)?result.geoCountry:'ZZ';this.signalSelectionChange();
     }));
   }
   async regions():Promise<RegionSnapshot>{

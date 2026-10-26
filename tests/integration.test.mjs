@@ -460,7 +460,9 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
     const visitors=[await createVisitor(),await createVisitor()];
     for(const v of visitors){await selectTag(v.visitorId,tag.id);await creditBatch(v.visitorId,{batchId:randomUUID(),tagId:tag.id,clicks:30});}
     assert.equal((await getRegionSnapshot()).cells.filter(row=>row.tagId===tag.id).length,0,'country/session alone is not regional consent');
-    await setRegionCell(visitors[0].visitorId,cell);
+    await setRegionCell(visitors[0].visitorId,cell,'PT');
+    const shared=(await owner.query('SELECT country_consent,country_code FROM world_pulse.visitors WHERE id=$1',[visitors[0].visitorId])).rows[0];
+    assert.deepEqual(shared,{country_consent:true,country_code:'PT'});
     let row=(await getRegionSnapshot()).cells.find(row=>row.tagId===tag.id);
     assert.equal(row.participants,'1');assert.equal(row.cell,cell);
     assert.deepEqual(Object.keys(row).sort(),['cell','color','name','participants','tagId']);
@@ -468,6 +470,8 @@ test('PostgreSQL: anonymous participation and transaction invariants', {
     assert.equal((await getRegionSnapshot()).cells.find(row=>row.tagId===tag.id).participants,'2');
     await assert.rejects(setRegionCell(visitors[0].visitorId,'r1:999:1'));
     await setRegionCell(visitors[0].visitorId,null);
+    const withdrawn=(await owner.query('SELECT country_consent,country_code,region_cell FROM world_pulse.visitors WHERE id=$1',[visitors[0].visitorId])).rows[0];
+    assert.deepEqual(withdrawn,{country_consent:false,country_code:'ZZ',region_cell:null});
     assert.equal((await getRegionSnapshot()).cells.find(row=>row.tagId===tag.id).participants,'1');
     assert.ok((await getCredits(visitors[0].visitorId))[0].remainingMs>0,'withdrawal preserves balance');
     await owner.query("UPDATE world_pulse.visitor_tags SET expires_at=now()-interval '1 minute' WHERE visitor_id=$1",[visitors[1].visitorId]);
