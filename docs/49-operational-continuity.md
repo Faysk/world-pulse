@@ -165,3 +165,12 @@ Esta decisão não adiciona telemetria nem coleta automática de dados de aparel
 
 As próximas frentes independentes seguem sendo custo/capacidade (#7), recuperação
 completa (#138) e evolução visual (#32), sem aguardar uma matriz física completa.
+
+## Medição de capacidade e reconstrução de cache
+
+O [relatório de snapshots](50-snapshot-capacity.md) registra a carga isolada de
+1/10/25/50/100 abas HTTP virtuais. O PR #146 corrige 503 desnecessários durante
+reconstruções concorrentes, preservando retirada, TTL, no-store e budgets.
+O orçamento de 600 leituras/min continua limitando a cadência; a correção não é
+prova de capacidade geral para 100 pessoas nem medição de fatura. A próxima
+mudança no transporte/payload está rastreada em #147.

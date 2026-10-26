@@ -1,7 +1,7 @@
 name: Isolated snapshot capacity
 on:
   pull_request:
-    paths: ['scripts/capacity-*', 'scripts/snapshot-capacity.mjs', 'server/store.mjs', 'server/snapshotCache.mjs', 'server/costPolicy.mjs', 'server/databaseLimits.mjs', '.github/workflows/snapshot-capacity.yml']
+    paths: ['scripts/capacity-*', 'scripts/check-capacity-burst.mjs', 'scripts/snapshot-capacity.mjs', 'server/store.mjs', 'server/snapshotCache.mjs', 'server/costPolicy.mjs', 'server/databaseLimits.mjs', '.github/workflows/snapshot-capacity.yml']
   workflow_dispatch:
     inputs:
       mode:
@@ -41,12 +41,15 @@ jobs:
           node-version: '24'
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: node --test scripts/capacity-model.test.mjs
-      - name: Read-only API workload against synthetic loopback database only
+      - name: GET aggregate workload with real budget and cache writes in disposable loopback database
         run: node scripts/snapshot-capacity.mjs
         env:
           WP_CAPACITY_BENCHMARK: '1'
           WP_CAPACITY_PROFILE: ${{ matrix.profile }}
           WP_CAPACITY_MODE: ${{ inputs.mode || 'burst' }}
+      - name: Reject unnecessary failures in cold-cache burst regression
+        if: inputs.mode != 'cadence'
+        run: node scripts/check-capacity-burst.mjs ${{ matrix.profile }}
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
