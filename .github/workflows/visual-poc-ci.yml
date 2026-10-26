@@ -15,6 +15,7 @@ on:
       - "tsconfig.json"
       - "playwright.config.ts"
       - "playwright.build.config.ts"
+      - "scripts/verify-playwright-runtime.mjs"
       - "vite.config.ts"
       - "build/**"
       - "tests/browser/**"
@@ -28,15 +29,25 @@ on:
       - "tsconfig.json"
       - "tests/**"
       - "playwright*.config.ts"
+      - "scripts/verify-playwright-runtime.mjs"
       - "vite.config.ts"
       - "build/**"
 
 permissions:
   contents: read
 
+concurrency:
+  group: visual-poc-ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   preview-build-gate:
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble@sha256:06a9939e57531807f8d5fd76ce44b53165ffb7d7501d87ab10e285c20b1e971f
+      options: --shm-size=1g
+    env:
+      PLAYWRIGHT_IMAGE_VERSION: '1.64.0'
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -46,7 +57,8 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --no-fund
-      - run: npx playwright install chromium --with-deps
+      - name: Verify bundled browser version and software WebGL before tests
+        run: node scripts/verify-playwright-runtime.mjs
       - name: Test compiled production denial and explicit preview opt-in
         run: npx playwright test --config playwright.build.config.ts
   build:
@@ -66,7 +78,12 @@ jobs:
   browser-smoke:
     needs: build
     runs-on: ubuntu-latest
-    # Browser installation can consume six minutes before tests start.
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble@sha256:06a9939e57531807f8d5fd76ce44b53165ffb7d7501d87ab10e285c20b1e971f
+      options: --shm-size=1g
+    env:
+      PLAYWRIGHT_IMAGE_VERSION: '1.64.0'
+    # Keep the existing test deadline; browsers/dependencies come from the pinned image.
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -80,8 +97,8 @@ jobs:
         with:
           node-version: "22"
       - run: npm ci --no-fund
-      - name: Install only Chromium for Playwright
-        run: npx playwright install chromium --with-deps
+      - name: Verify bundled browser version and software WebGL before tests
+        run: node scripts/verify-playwright-runtime.mjs
       - name: Smoke test browser project
         run: npm run test:browser -- --project=${{ matrix.project }}
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
