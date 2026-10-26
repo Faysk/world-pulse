@@ -2,13 +2,13 @@
 import {readFile} from 'node:fs/promises';
 import {randomBytes} from 'node:crypto';
 import assert from 'node:assert/strict';
-import {command} from './backup-runtime.mjs';
+import {command,postgresImage} from './backup-runtime.mjs';
 import {restoreArchive} from './backup-restore.mjs';
 import {durableTables,transientTables,fingerprintSql,sealBackup,openBackup,maxArchiveBytes} from './backup-core.mjs';
 const container='world-pulse-backup-fixture';let started=false;
 const local={POSTGRES_PASSWORD:randomBytes(32).toString('hex'),PGOPTIONS:'-c timezone=UTC'};
 try{
-  command(['run','--detach','--name',container,'--network','none','--log-driver','none','--tmpfs','/var/lib/postgresql:rw,noexec,nosuid,size=512m','-e','POSTGRES_PASSWORD','postgres:18'],{env:local});started=true;
+  command(['run','--detach','--name',container,'--network','none','--log-driver','none','--tmpfs','/var/lib/postgresql:rw,noexec,nosuid,size=512m','-e','POSTGRES_PASSWORD',postgresImage],{env:local});started=true;
   let ready=false;
   for(let n=0;n<40;n++){try{command(['exec',container,'pg_isready','-U','postgres']);ready=true;break;}catch{await new Promise(r=>setTimeout(r,500));}}
   if(!ready)throw new Error('fixture_not_ready');

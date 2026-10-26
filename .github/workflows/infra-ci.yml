@@ -24,6 +24,6 @@ jobs:
       - run: npm test --prefix infra
       - run: npm audit --prefix infra --omit=dev --audit-level=high
       - name: Pull official PostgreSQL client and disposable restore server
-        run: docker pull postgres:18
+        run: docker pull postgres:18@sha256:edb0c08dc33befd0262ab3b5cf1c4f3f8cfd8b09e88c05b45adee29d6761ddb6
       - name: Exercise non-empty encrypted SQL backup and restore without cloud secrets
         run: node infra/backup-fixture.mjs

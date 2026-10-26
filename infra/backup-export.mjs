@@ -3,7 +3,7 @@ import {randomUUID} from 'node:crypto';
 import {writeFile,mkdir,chmod} from 'node:fs/promises';
 import {PutObjectCommand,ListObjectsV2Command} from '@aws-sdk/client-s3';
 import {backupContext,backupDatabase,durableTables,transientTables,fingerprintSql,maxArchiveBytes,sealBackup} from './backup-core.mjs';
-import {command,storage,object} from './backup-runtime.mjs';
+import {command,storage,object,postgresImage} from './backup-runtime.mjs';
 let db,s3;
 try{
   const env=process.env;backupContext(env);
@@ -24,7 +24,7 @@ try{
   for(const table of durableTables){const {rows:[r]}=await db.query(fingerprintSql(table));tables[table]=r.fingerprint;}
   const args=['run','--rm','--network','host'];
   for(const name of Object.keys(libpq))args.push('-e',name);
-  args.push('postgres:18','pg_dump','--format=custom','--schema=world_pulse','--no-acl','--no-owner','--lock-wait-timeout=5s','--snapshot='+row.snapshot);
+  args.push(postgresImage,'pg_dump','--format=custom','--schema=world_pulse','--no-acl','--no-owner','--lock-wait-timeout=5s','--snapshot='+row.snapshot);
   for(const table of transientTables)args.push('--exclude-table-data=world_pulse.'+table);
   const archive=command(args,{env:libpq,maxBuffer:maxArchiveBytes});
   await db.query('COMMIT');

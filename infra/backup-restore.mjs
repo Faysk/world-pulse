@@ -1,11 +1,11 @@
 import {randomBytes} from 'node:crypto';
 import {durableTables,transientTables,fingerprintSql} from './backup-core.mjs';
-import {command} from './backup-runtime.mjs';
+import {command,postgresImage} from './backup-runtime.mjs';
 export async function restoreArchive(archive,manifest){
   const container='world-pulse-backup-restore';let started=false;
   const password=randomBytes(32).toString('hex'),local={POSTGRES_PASSWORD:password,PGPASSWORD:password,PGOPTIONS:'-c timezone=UTC'};
   try{
-    command(['run','--detach','--name',container,'--network','none','--log-driver','none','--tmpfs','/var/lib/postgresql:rw,noexec,nosuid,size=1536m','-e','POSTGRES_PASSWORD','postgres:18'],{env:local});started=true;
+    command(['run','--detach','--name',container,'--network','none','--log-driver','none','--tmpfs','/var/lib/postgresql:rw,noexec,nosuid,size=1536m','-e','POSTGRES_PASSWORD',postgresImage],{env:local});started=true;
     let ready=false;
     for(let n=0;n<40;n++){
       try{command(['exec',container,'pg_isready','-U','postgres']);ready=true;break;}catch{await new Promise(r=>setTimeout(r,500));}

@@ -13,3 +13,5 @@ export function storage(env){
     maxAttempts:2,requestHandler:{connectionTimeout:15000,requestTimeout:60000}});
 }
 export const object=Key=>({Bucket:backupBucket,Key});
+// Official multi-platform image digest exercised in Actions 40353610499.
+export const postgresImage='postgres:18@sha256:edb0c08dc33befd0262ab3b5cf1c4f3f8cfd8b09e88c05b45adee29d6761ddb6';

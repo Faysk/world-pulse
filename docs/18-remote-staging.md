@@ -102,4 +102,5 @@ esse preview não usa a conexão de produção. [Registro atual](36-prepublicati
 O token próprio de staging foi criado e salvo no GitHub em 25/10, com acesso
 somente ao projeto world-pulse e validade até 01/11. A sincronização de preview
 [40230733906](https://github.com/Faysk/world-pulse/actions/runs/40230733906) passou.
-A fonte de país permanece desligada; a expiração do Neon staging continua 31/10.
+Esse recibo histórico foi superado: fonte de país ativada posteriormente,
+expiração automática removida e token renovado em 26/10; ver estado atual no topo.

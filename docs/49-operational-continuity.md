@@ -36,7 +36,7 @@ do endpoint exato de produção, TLS verify-full e CA do sistema. O proprietári
 de migrations não entra nesse workflow.
 
 1. Transação read-only com snapshot exportado. `pg_dump` custom da imagem oficial
-   postgres:18 usa o mesmo snapshot; aceita servidor 14–18. O inventário de oito
+   postgres:18, fixada por digest, usa o mesmo snapshot; aceita servidor 14–18. O inventário de oito
    tabelas é conferido e alterações de schema desconhecidas exigem revisão.
 2. Preserva tags, sessões, saldos, lotes idempotentes e totais históricos.
    Exclui apenas os dados de caches regionais/países e budgets temporários;
@@ -64,9 +64,12 @@ com schema 0001–0008 e dados sintéticos não vazios no CI, sem secrets da nuv
 24h, condicionado ao último sucesso; RTO ainda não medido. Não há operação que
 sobrescreva produção. Em desastre: identificar último recibo verificado, preparar
 um destino novo, revisar schema/roles/grants atuais, restaurar e executar smoke,
-aplicar retenção/retirada de localização ocorridas desde a cópia e só então
-planejar troca de conexão. Nunca executar uma restauração antiga diretamente
-sobre produção nem republicar localizações retiradas entre backup e incidente.
+executar retenção e retirar TODAS as localizações/consentimentos recuperados
+(country_consent=false, country_code=ZZ, region_cell=null e datas de consentimento
+nulas), limpar os caches e exigir nova autorização antes de voltar a publicar
+pontos. Isso protege retiradas ocorridas entre a cópia e o incidente que já não
+podem ser reconstruídas. Só então planejar troca de conexão. Nunca executar uma
+restauração antiga diretamente sobre produção.
 
 A ajuda pública EN/PT/ES informa retenção adicional das cópias criptografadas e
 possível atraso em falhas de manutenção. Não promete anonimato ou apagamento
@@ -99,6 +102,8 @@ Fontes: [Neon branches](https://neon.com/docs/manage/branches),
 
 ## Recibos
 
+Fixture SQL real aprovada no [Actions 40353610499](https://github.com/Faysk/world-pulse/actions/runs/40353610499).
+44 testes de infraestrutura e 28 cenários locais da experiência desktop/mobile aprovados.
 Os links dos testes remotos e da primeira cópia verificada serão registrados
 neste documento antes de encerrar #134–#136. Recursos provisionados ou testes
 unitários não bastam para declarar restauração de produção verificada.
