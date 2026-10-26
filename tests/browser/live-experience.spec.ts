@@ -305,6 +305,7 @@ test('Clean controls default to English; help is keyboard accessible and regiona
   await expect(page.getByRole('button',{name:'How it works',exact:true})).toBeFocused();
   await page.getByRole('switch').click();await expect(page.locator('html')).toHaveAttribute('lang','pt');
   await expect(page.getByRole('switch',{name:'Localização',exact:true})).toHaveAttribute('aria-checked','true');
+  await expect(page.locator('.world-loading')).toBeHidden();
   await page.screenshot({path:`test-artifacts/clean-product-${info.project.name}.png`});
   const dimensions=await page.locator('.live-controls').boundingBox();expect(dimensions!.height).toBeLessThan(260);
   await page.getByRole('switch').click();await expect(page.locator('html')).toHaveAttribute('lang','en');
