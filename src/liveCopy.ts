@@ -25,6 +25,9 @@ export const english = {
   unknown: "Unknown / not shared",
   other: "Other countries",
   connecting: "Connecting the world",
+  savedRegion: "Saved point region",
+  legacyLocation:
+    "Your point still uses the older region (~55 km). Switch Location off and on to update.",
   reportedAccuracy: "Browser-reported accuracy",
   locationImprecise:
     "Location is too imprecise for your point. Enable precise location for this browser and try again. You can still participate without a point.",
@@ -60,6 +63,9 @@ export const english = {
 export type Copy = typeof english;
 const pt: Copy = {
   ...english,
+  savedRegion: "Região do ponto salvo",
+  legacyLocation:
+    "Seu ponto ainda usa a região antiga (~55 km). Desligue e ligue Localização para atualizar.",
   reportedAccuracy: "Margem informada pelo navegador",
   locationImprecise:
     "Localização imprecisa para seu ponto. Ative a localização precisa para este navegador e tente novamente. Você pode continuar participando sem ponto.",
@@ -119,6 +125,9 @@ const pt: Copy = {
 };
 const es: Copy = {
   ...english,
+  savedRegion: "Región del punto guardado",
+  legacyLocation:
+    "Tu punto aún usa la región anterior (~55 km). Desactiva y activa Ubicación para actualizar.",
   reportedAccuracy: "Margen informado por el navegador",
   locationImprecise:
     "Ubicación demasiado imprecisa para tu punto. Activa la ubicación precisa para este navegador e inténtalo de nuevo. Puedes seguir participando sin punto.",

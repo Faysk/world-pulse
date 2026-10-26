@@ -44,6 +44,10 @@ test('One-km grid has bounded displacement globally while legacy centers stay un
   const distance=(a,b)=>{const lat=rad(b[1]-a[1]),lon=rad(b[0]-a[0]);return 6371*2*Math.asin(Math.min(1,Math.sqrt(Math.sin(lat/2)**2+Math.cos(rad(a[1]))*Math.cos(rad(b[1]))*Math.sin(lon/2)**2)));};
   assert.deepEqual(regionCenter('r1:257:266'),[-9.288256227758012,38.75]);
   assert.notEqual(regionCell(38.72,-9.14),regionCell(38.74,-9.14));
+  // Public locality reference, not a user's coordinates: Getty TGN 7743567.
+  const cete=[-8.3649,41.1826];
+  assert.ok(distance(cete,regionCenter('r1:262:257'))>20);
+  assert.ok(distance(cete,regionCenter(regionCell(cete[1],cete[0])))<1);
   for(const lat of [-90,-89.999,-89.995,-89.991,-89.98,-80,-60,-30,0,30,60,80,89.98,89.991,89.995,89.999,90]){
     for(let lon=-180;lon<=180;lon+=.9){
       const cell=regionCell(lat,lon),center=regionCenter(cell);
