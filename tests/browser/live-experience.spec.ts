@@ -185,7 +185,7 @@ test('Taps update immediately while a POST is held; country notice is visible an
     await page.goto('/?experiencePreview=1');await expect(page.getByTestId('live-connection')).toHaveText('Sessão conectada');
     const choice=page.getByRole('checkbox',{name:'Compartilhar meu país aproximado'});
     await expect(choice).toBeVisible();await expect(choice).toBeChecked();expect(consent).toBe(false);
-    await expect(page.getByText(/Ao participar, você aceita compartilhar seu país aproximado/)).toBeVisible();
+    await expect(page.getByText(/Ao participar, você compartilha seu país nos resumos/)).toBeVisible();
     await page.getByLabel('Sua hashtag',{exact:true}).fill('#gta6');await page.getByRole('button',{name:'Participar',exact:true}).click();
     await expect(page.getByTestId('live-selected')).toHaveText('#gta6');expect(consent).toBe(true);
     await page.getByRole('button',{name:'+1 segundo',exact:true}).click();await started;
