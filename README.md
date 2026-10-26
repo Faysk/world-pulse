@@ -123,3 +123,5 @@ O fluxo **interface → HTTPS privado no Actions → pooler Neon staging real �
 Interface pública atual e idiomas: [documentação](docs/44-clean-product-ui.md).
 
 Resolução atual da localização: [teste de aproximadamente 1 km](docs/45-one-km-location.md).
+
+Qualidade da leitura do navegador: [alta precisão e verificação local](docs/46-location-quality.md).

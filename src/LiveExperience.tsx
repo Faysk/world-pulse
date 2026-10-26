@@ -368,7 +368,13 @@ export default function LiveExperience() {
             <span />
           </button>
         </div>
-        {live.regional.error && <p role="status">{t.locationError}</p>}
+        {live.regional.error && (
+          <p role="status">
+            {live.regional.error === "imprecise_location"
+              ? t.locationImprecise
+              : t.locationError}
+          </p>
+        )}
         <form onSubmit={select}>
           <label className="sr-only" htmlFor="live-name">
             {t.hashtag}

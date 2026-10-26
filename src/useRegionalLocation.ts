@@ -35,13 +35,16 @@ export function useRegionalLocation(client:ParticipationClient,enabled:boolean){
     setBusy(true);setError('');
     navigator.geolocation.getCurrentPosition(position=>{
       if(!mounted.current)return;
+      // Accuracy is a provider estimate, not GPS/source attestation. Keep it local.
+      const accuracy=position.coords.accuracy;
+      if(!Number.isFinite(accuracy)||accuracy<0||accuracy>1000){setError('imprecise_location');setBusy(false);return;}
       // Raw coordinates are used only here and never stored, logged or sent.
       const cell=regionCell(position.coords.latitude,position.coords.longitude);
       void save(cell).catch(()=>{if(mounted.current)setError('Não foi possível salvar seu ponto. Tente novamente.');})
         .finally(()=>{if(mounted.current)setBusy(false);});
     },reason=>{
       if(mounted.current){setBusy(false);setError(reason.code===1?'Localização não autorizada. Sua participação continua sem ponto.':'Localização indisponível. Tente novamente; seus taps continuam funcionando.');}
-    },{enableHighAccuracy:false,maximumAge:0,timeout:15000});
+    },{enableHighAccuracy:true,maximumAge:0,timeout:20000});
   },[busy,enabled,save]);
   const withdraw=useCallback(async()=>{
     if(busy)return;
