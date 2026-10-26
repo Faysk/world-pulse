@@ -125,3 +125,5 @@ Interface pública atual e idiomas: [documentação](docs/44-clean-product-ui.md
 Resolução atual da localização: [teste de aproximadamente 1 km](docs/45-one-km-location.md).
 
 Qualidade da leitura do navegador: [alta precisão e verificação local](docs/46-location-quality.md).
+
+Ponto antigo e margem do navegador: [como distinguir](docs/47-saved-location-resolution.md).

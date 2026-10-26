@@ -356,3 +356,31 @@ test('Location requests high accuracy and rejects uncertain fixes without sendin
   await page.getByRole('button',{name:'How it works',exact:true}).click();
   await expect(page.getByTestId('location-accuracy')).toHaveCount(0);
 });
+
+test('Saved legacy resolution is disclosed and moves to one km only after explicit off/on',async({page,context})=>{
+  await context.grantPermissions(['geolocation']);await context.setGeolocation({latitude:41.1826,longitude:-8.3649,accuracy:25});
+  let cell:string|null='r1:262:257';const writes:any[]=[];
+  await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/,route=>route.fulfill({json:{version:8,sources:{},layers:[]}}));
+  await page.route('**/api/**',route=>{
+    const path=new URL(route.request().url()).pathname;
+    if(path==='/api/session')return route.fulfill({json:{anonymous:true,sessionFresh:false,sessionBinding:'a'.repeat(64),activeTagId:id,activeTag:{id,name:'#gta6',color:'#5d5de5'},credits:[],geoConsent:cell!==null,geoCountry:cell?'PT':'ZZ',regionCell:cell,geographyAvailable:true}});
+    if(path==='/api/location'){const body=route.request().postDataJSON();writes.push(body);cell=body.cell;return route.fulfill({json:{regionCell:cell,geoConsent:cell!==null,geoCountry:cell?'PT':'ZZ'}});}
+    if(path==='/api/regions'){const asOfMs=Math.floor(Date.now()/5000)*5000;return route.fulfill({json:{type:'region_snapshot',asOfMs,validUntilMs:asOfMs+5000,cells:[]}});}
+    return route.fulfill({status:503,json:{error:'unavailable'}});
+  });
+  await page.goto('/?experiencePreview=1');await expect(page.getByTestId('legacy-location-notice')).toContainText('55 km');
+  expect(writes).toEqual([]);await page.getByRole('button',{name:'Como funciona',exact:true}).click();
+  await expect(page.getByTestId('saved-region-size')).toHaveText('Região do ponto salvo: ~55 km');
+  await expect(page.getByTestId('location-accuracy')).toHaveCount(0);
+  await page.getByRole('button',{name:'Fechar',exact:true}).click();
+  await page.getByRole('switch').click();await expect(page.getByRole('switch')).toHaveAttribute('aria-checked','false');
+  await expect(page.getByTestId('legacy-location-notice')).toHaveCount(0);
+  await page.getByRole('switch').click();await expect(page.getByRole('switch')).toHaveAttribute('aria-checked','true');
+  expect(writes).toHaveLength(2);expect(writes[0]).toEqual({cell:null});expect(writes[1].cell).toMatch(/^r2:/);expect(Object.keys(writes[1])).toEqual(['cell']);
+  await page.getByRole('button',{name:'Como funciona',exact:true}).click();
+  await expect(page.getByTestId('saved-region-size')).toHaveText('Região do ponto salvo: ~1 km');
+  await expect(page.getByTestId('location-accuracy')).toHaveText('Margem informada pelo navegador: 25 m');
+  await page.reload();await page.getByRole('button',{name:'Como funciona',exact:true}).click();
+  await expect(page.getByTestId('saved-region-size')).toHaveText('Região do ponto salvo: ~1 km');
+  expect(writes).toHaveLength(2);
+});

@@ -35,6 +35,11 @@ export default function LiveExperience() {
       ? countryLanguage(live.countryPreference.country)
       : language;
   const t = languages[locale];
+  const savedRegionKm = live.regional.cell?.startsWith("r1:")
+    ? 55
+    : live.regional.cell?.startsWith("r2:")
+      ? 1
+      : null;
   const count = (value: string) =>
     Intl.NumberFormat(locale).format(BigInt(value));
   const help = useRef<HTMLDialogElement>(null),
@@ -368,6 +373,11 @@ export default function LiveExperience() {
             <span />
           </button>
         </div>
+        {savedRegionKm === 55 && (
+          <p role="status" data-testid="legacy-location-notice">
+            {t.legacyLocation}
+          </p>
+        )}
         {live.regional.error && (
           <p role="status">
             {live.regional.error === "imprecise_location"
@@ -465,6 +475,11 @@ export default function LiveExperience() {
           <p>{t.mapHelp}</p>
           <p>{t.rankingHelp}</p>
           <p id="location-privacy">{t.privacy}</p>
+          {savedRegionKm !== null && (
+            <p data-testid="saved-region-size">
+              {t.savedRegion}: ~{savedRegionKm} km
+            </p>
+          )}
           {live.regional.accuracyMeters !== null && (
             <p data-testid="location-accuracy">
               {t.reportedAccuracy}:{" "}
