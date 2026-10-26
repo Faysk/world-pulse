@@ -6,6 +6,7 @@ import {regionCell} from '../server/regionGrid.mjs';
 export function useRegionalLocation(client:ParticipationClient,enabled:boolean){
   const [snapshot,setSnapshot]=useState<RegionSnapshot|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState('');
   const [,render]=useState(0);
+  const [accuracyMeters,setAccuracyMeters]=useState<number|null>(null);
   const [readError,setReadError]=useState(false);
   const allowed=useRef(enabled);allowed.current=enabled;
   const mounted=useRef(false),revision=useRef(0),request=useRef<Promise<void>|null>(null);
@@ -32,11 +33,12 @@ export function useRegionalLocation(client:ParticipationClient,enabled:boolean){
   const locate=useCallback(()=>{
     if(busy||!enabled)return;
     if(!navigator.geolocation){setError('Este navegador não oferece localização. Você pode participar sem ponto.');return;}
-    setBusy(true);setError('');
+    setBusy(true);setError('');setAccuracyMeters(null);
     navigator.geolocation.getCurrentPosition(position=>{
       if(!mounted.current)return;
       // Accuracy is a provider estimate, not GPS/source attestation. Keep it local.
       const accuracy=position.coords.accuracy;
+      setAccuracyMeters(Number.isFinite(accuracy)&&accuracy>=0?accuracy:null);
       if(!Number.isFinite(accuracy)||accuracy<0||accuracy>1000){setError('imprecise_location');setBusy(false);return;}
       // Raw coordinates are used only here and never stored, logged or sent.
       const cell=regionCell(position.coords.latitude,position.coords.longitude);
@@ -48,9 +50,9 @@ export function useRegionalLocation(client:ParticipationClient,enabled:boolean){
   },[busy,enabled,save]);
   const withdraw=useCallback(async()=>{
     if(busy)return;
-    setBusy(true);setError('');
+    setBusy(true);setError('');setAccuracyMeters(null);
     try{await save(null);}catch{if(mounted.current)setError('Não foi possível confirmar a retirada. Recarregue para conferir.');}
     finally{if(mounted.current)setBusy(false);}
   },[busy,save]);
-  return {snapshot,busy,error,readError,shared:client.regionalCell()!==null||client.countryPreference().consent,cell:client.regionalCell(),locate,withdraw,refresh};
+  return {snapshot,busy,error,accuracyMeters,readError,shared:client.regionalCell()!==null||client.countryPreference().consent,cell:client.regionalCell(),locate,withdraw,refresh};
 }

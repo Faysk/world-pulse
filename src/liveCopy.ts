@@ -25,6 +25,7 @@ export const english = {
   unknown: "Unknown / not shared",
   other: "Other countries",
   connecting: "Connecting the world",
+  reportedAccuracy: "Browser-reported accuracy",
   locationImprecise:
     "Location is too imprecise for your point. Enable precise location for this browser and try again. You can still participate without a point.",
   locationError:
@@ -59,6 +60,7 @@ export const english = {
 export type Copy = typeof english;
 const pt: Copy = {
   ...english,
+  reportedAccuracy: "Margem informada pelo navegador",
   locationImprecise:
     "Localização imprecisa para seu ponto. Ative a localização precisa para este navegador e tente novamente. Você pode continuar participando sem ponto.",
   limited:
@@ -117,6 +119,7 @@ const pt: Copy = {
 };
 const es: Copy = {
   ...english,
+  reportedAccuracy: "Margen informado por el navegador",
   locationImprecise:
     "Ubicación demasiado imprecisa para tu punto. Activa la ubicación precisa para este navegador e inténtalo de nuevo. Puedes seguir participando sin punto.",
   limited:

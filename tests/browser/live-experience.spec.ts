@@ -338,10 +338,21 @@ test('Location requests high accuracy and rejects uncertain fixes without sendin
     await expect(page.getByRole('switch')).toHaveAttribute('aria-checked','false');
     await expect(page.getByRole('button',{name:'+1',exact:true})).toBeEnabled();
     expect(writes).toEqual([]);
+    if(accuracy===25000){
+      await page.getByRole('button',{name:'How it works',exact:true}).click();
+      await expect(page.getByTestId('location-accuracy')).toHaveText('Browser-reported accuracy: 25,000 m');
+      await page.getByRole('button',{name:'Close',exact:true}).click();
+    }
   }
   expect(await page.evaluate(()=>(window as any).locationRequestOptions)).toEqual({enableHighAccuracy:true,maximumAge:0,timeout:20000});
   await page.evaluate(()=>{(window as any).fixtureAccuracy=25;});await page.getByRole('switch').click();
   await expect(page.getByRole('switch')).toHaveAttribute('aria-checked','true');
   expect(writes).toHaveLength(1);expect(Object.keys(writes[0])).toEqual(['cell']);expect(writes[0].cell).toMatch(/^r2:/);
   expect(JSON.stringify(writes)).not.toContain('38.72');expect(JSON.stringify(writes)).not.toContain('accuracy');
+  await page.getByRole('button',{name:'Como funciona',exact:true}).click();
+  await expect(page.getByTestId('location-accuracy')).toHaveText('Margem informada pelo navegador: 25 m');
+  await page.getByRole('button',{name:'Fechar',exact:true}).click();
+  await page.reload();await expect(page.getByRole('button',{name:'How it works',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'How it works',exact:true}).click();
+  await expect(page.getByTestId('location-accuracy')).toHaveCount(0);
 });
