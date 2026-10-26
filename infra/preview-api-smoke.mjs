@@ -1,5 +1,6 @@
 import {randomUUID,createHash} from 'node:crypto';
 import assert from 'node:assert/strict';
+import {setTimeout as pause} from 'node:timers/promises';
 /** Exact HTTPS deployment only; no cookies or provider access sent to other origins. */
 export async function smokePreviewApi(origin,secret,createdHashes,fetcher=fetch,{countrySource=false}={}){
   const base=new URL(origin);
@@ -11,7 +12,7 @@ export async function smokePreviewApi(origin,secret,createdHashes,fetcher=fetch,
       if(!cookies.size)url.searchParams.set('_vercel_share',secret);
       for(let redirects=0;redirects<4;redirects++){
         const response=await fetcher(url,{method:body===undefined?'GET':'POST',redirect:'manual',signal:AbortSignal.timeout(30000),
-          headers:{Origin:base.origin,'Content-Type':'application/json',Cookie:[...cookies].map(([k,v])=>k+'='+v).join('; '),...(path==='/api/taps'?{'X-WP-Session-Binding':binding??''}:{}),...geoHeaders},
+          headers:{Origin:base.origin,'Content-Type':'application/json',Cookie:[...cookies].map(([k,v])=>k+'='+v).join('; '),...(['/api/taps','/api/location'].includes(path)?{'X-WP-Session-Binding':binding??''}:{}),...geoHeaders},
           ...(body===undefined?{}:{body:JSON.stringify(body)})});
         const setCookies=response.headers.getSetCookie();
         for(const cookie of setCookies){
@@ -25,7 +26,8 @@ export async function smokePreviewApi(origin,secret,createdHashes,fetcher=fetch,
         if(response.status>=300&&response.status<400){
           const next=new URL(response.headers.get('location'),url);assert.equal(next.origin,base.origin);url.href=next.href;continue;
         }
-        if(response.status!==200)throw new Error('preview_http_'+response.status);
+        if(response.status===503&&body===undefined&&['/api/regions','/api/countries','/api/ranking'].includes(path)&&redirects<3){await response.body?.cancel();await pause(1000);continue;}
+        if(response.status!==200){const error=new Error('preview_http_'+response.status);error.operation=path;throw error;}
         if(!json)return response.text();
         const value=await response.json();
         if(path==='/api/session')binding=value.sessionBinding;
@@ -50,6 +52,14 @@ export async function smokePreviewApi(origin,secret,createdHashes,fetcher=fetch,
   // Deliberately retry the same committed payload, as after a lost response.
   const retry=await first.call('/api/taps',batch);assert.equal(retry.duplicate,true);assert.equal(retry.creditedSeconds,'30');assert.equal(retry.expiresAtMs,accepted.expiresAtMs);
   assert.equal((await second.call('/api/taps',{tagId:tagA.id,batchId:randomUUID(),clicks:15})).creditedSeconds,'15');
+  assert.equal(a.regionCell,null);assert.equal(b.regionCell,null);
+  const cell='r1:257:266'; // Disposable fixture region, never a production participant.
+  await first.call('/api/location',{cell});await second.call('/api/location',{cell});
+  assert.equal((await first.call('/api/regions')).cells.find(row=>row.tagId===tagA.id)?.participants,'2');
+  await first.call('/api/location',{cell:null});
+  assert.equal((await second.call('/api/regions')).cells.find(row=>row.tagId===tagA.id)?.participants,'1');
+  await second.call('/api/location',{cell:null});
+  assert.equal((await first.call('/api/regions')).cells.filter(row=>row.tagId===tagA.id).length,0);
   const other=(await first.call('/api/tags',{name:otherName})).tag;await first.call('/api/select',{tagId:other.id});
   await first.call('/api/taps',{tagId:other.id,batchId:randomUUID(),clicks:2});
   const restored=await first.call('/api/session',{});assert.equal(restored.activeTag.id,other.id);

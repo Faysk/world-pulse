@@ -16,9 +16,9 @@ async function verifyRuntime(connectionString){
     if(role?.name!=='world_pulse_app'||Object.entries(role).some(([key,value])=>
       key==='name'?false:key==='memberships'?value!==0:value!==false))throw new Error('production_runtime_permissions_rejected');
     for(const query of ['SELECT id FROM world_pulse.tags LIMIT 0','SELECT expires_at FROM world_pulse.visitor_tags LIMIT 0',
-      'SELECT last_seen_at,country_code,country_consent FROM world_pulse.visitors LIMIT 0',
+      'SELECT region_cell,region_shared_at,last_seen_at,country_code,country_consent FROM world_pulse.visitors LIMIT 0',
       'SELECT batch_id FROM world_pulse.tap_batches LIMIT 0','SELECT scope FROM world_pulse.operation_budgets LIMIT 0',
-      'SELECT participants FROM world_pulse.tag_history_totals LIMIT 0','SELECT payload FROM world_pulse.country_snapshot_cache LIMIT 0'])await client.query(query);
+      'SELECT participants FROM world_pulse.tag_history_totals LIMIT 0','SELECT payload FROM world_pulse.country_snapshot_cache LIMIT 0','SELECT payload FROM world_pulse.region_snapshot_cache LIMIT 0'])await client.query(query);
     await client.query('COMMIT');
   }finally{await client.end();}
 }

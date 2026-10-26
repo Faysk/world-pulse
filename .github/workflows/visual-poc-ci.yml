@@ -67,6 +67,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, mobile-chromium]
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -77,12 +81,12 @@ jobs:
       - run: npm ci --no-fund
       - name: Install only Chromium for Playwright
         run: npx playwright install chromium --with-deps
-      - name: Smoke test desktop and mobile
-        run: npm run test:browser
+      - name: Smoke test browser project
+        run: npm run test:browser -- --project=${{ matrix.project }}
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
-          name: world-pulse-browser-smoke
+          name: world-pulse-browser-smoke-${{ matrix.project }}
           path: |
             test-results/
             test-artifacts/

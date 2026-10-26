@@ -1,14 +1,14 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import type { Map as MapInstance } from 'maplibre-gl';
-import { CountryLayer } from './CountryLayer';
 import { WorldGlobe } from './WorldGlobe';
 import type { PulseCollection } from './demoData';
 import { useParticipation } from './useParticipation';
 import {tagLabelStyle} from './tagLabel';
-import {composeCountries,countryTagPage} from './countryComposition';
+import {countryTagPage} from './countryComposition';
 import './liveExperience.css';
 import {WorldLoading} from './WorldLoading';
-import {PersonalCountryLayer} from './PersonalCountryLayer';
+import {RegionalPointLayer} from './RegionalPointLayer';
+import type {RegionRow} from './regionalTypes';
 
 const EMPTY_GEOGRAPHY:PulseCollection={type:'FeatureCollection',features:[]};
 const numberFormat=Intl.NumberFormat('pt-BR');
@@ -16,35 +16,33 @@ const count=(value:string)=>numberFormat.format(BigInt(value));
 function duration(ms:number){const seconds=Math.ceil(ms/1000);return `${Math.floor(seconds/3600)}h ${String(Math.floor(seconds/60)%60).padStart(2,'0')}m ${String(seconds%60).padStart(2,'0')}s`;}
 
 export default function LiveExperience(){
-  const live=useParticipation();
-  const [map,setMap]=useState<MapInstance|null>(null);
   const [countriesOpen,setCountriesOpen]=useState(false);
+  const live=useParticipation(countriesOpen);
+  const [map,setMap]=useState<MapInstance|null>(null);
   const [countryPick,setCountryPick]=useState<string|null>(null);
-  const [countryDrawError,setCountryDrawError]=useState('');
-  const [personalDrawError,setPersonalDrawError]=useState('');
+
   const [focusSelected,setFocusSelected]=useState(false);
   const [countrySearch,setCountrySearch]=useState('');
   const [countryPage,setCountryPage]=useState(0);
   const focusId=focusSelected&&live.selected?live.selected.id:null;
-  const composition=useMemo(()=>composeCountries(live.countrySnapshot,focusId),[live.countrySnapshot,focusId]);
   const countryRows=useMemo(()=>countryTagPage(live.countrySnapshot,countryPick,countrySearch,countryPage),[live.countrySnapshot,countryPick,countrySearch,countryPage]);
   const countryTag=live.countrySnapshot?.tags.find(tag=>tag.id===live.selected?.id);
-  const emptyGeography=live.countryPreference.available?(live.countrySnapshot?.tags.some(tag=>tag.countries.some(row=>row.countryCode==='OTHER'))?'Grupos menores que cinco ficam reunidos na lista de países. Nenhuma posição é inventada.':'Participe para formar áreas por país. Nenhuma posição é inventada.'):'Mapa aguardando geografia confiável. Nenhuma posição é inventada.';
   const [name,setName]=useState('');
   const [rankingOpen,setRankingOpen]=useState(()=>window.innerWidth>760);
   const [balancesOpen,setBalancesOpen]=useState(false);
   const [mapReady,setMapReady]=useState(false);
   const [mapError,setMapError]=useState('');
   const [mapVersion,setMapVersion]=useState(0);
-  const personalCountry=live.shareCountry&&live.countryPreference.consent&&live.countryPreference.available&&live.countryPreference.country!=='ZZ'&&live.selected&&live.remaining(live.selected.id)>0?live.countryPreference.country:null;
+  const ownTags=live.regional.cell&&live.countryPreference.available?[...live.balances.map(row=>({id:row.tagId,name:row.name??'',color:row.color??'#63d7bd'})),...(live.selected?[live.selected]:[])].filter((tag,index,rows)=>live.remaining(tag.id)>0&&rows.findIndex(row=>row.id===tag.id)===index):[];
+  const ownSignature=JSON.stringify(ownTags.map(tag=>({cell:live.regional.cell!,tagId:tag.id,name:tag.name,color:tag.color,participants:'1'})));
+  const ownPoints=useMemo(()=>JSON.parse(ownSignature) as RegionRow[],[ownSignature]);
   async function select(event:FormEvent){event.preventDefault();await live.select(name);}
   return <main className="live-world" aria-label="World Pulse participação">
-    <WorldGlobe key={mapVersion} ariaLabel="Globo interativo com países agregados" scale={0} population={EMPTY_GEOGRAPHY} selected={null} cityLights={false}
+    <WorldGlobe key={mapVersion} ariaLabel="Globo interativo com pontos regionais" scale={0} population={EMPTY_GEOGRAPHY} selected={null} cityLights={false}
       onReady={instance=>{setMap(instance);setMapReady(true);setMapError('');}}
       onCountryPick={code=>{setCountryPick(code);setCountrySearch('');setCountryPage(0);setCountriesOpen(true);setRankingOpen(false);setBalancesOpen(false);}} onZoom={()=>{}} onFps={()=>{}}
-      onTap={()=>void live.tap()} onTagPick={()=>{}} onFailure={setMapError}/>
-    <CountryLayer map={map} snapshot={live.countrySnapshot} tagId={live.selected?.id??null} mode={focusId?'selected':'all'} onError={setCountryDrawError}/>
-    <PersonalCountryLayer map={map} country={personalCountry} color={live.selected?.color??'#63d7bd'} onError={setPersonalDrawError}/>
+      onRegionPick={tag=>void live.select(tag)} onTap={()=>void live.tap()} onTagPick={()=>{}} onFailure={setMapError}/>
+    <RegionalPointLayer map={map} snapshot={live.regional.snapshot} own={ownPoints} tagId={focusId}/>
     <WorldLoading ready={mapReady||Boolean(mapError)}/>
     <div className="live-shade" aria-hidden="true"/>
     <header className="live-header">
@@ -101,18 +99,24 @@ export default function LiveExperience(){
         <div className="live-country-pages"><button disabled={countryRows.page===0} onClick={()=>setCountryPage(countryRows.page-1)}>Anterior</button><span>Página {countryRows.page+1} de {countryRows.pages}</span><button disabled={countryRows.page+1>=countryRows.pages} onClick={()=>setCountryPage(countryRows.page+1)}>Próxima</button></div>
       </>}
       <p>País estimado pela conexão, sujeito a VPN e erros. Pequenos grupos são agrupados. Algumas ilhas e territórios não têm desenho nesta escala; seus totais continuam na lista.</p>
-      {countryDrawError&&<p role="status">{countryDrawError}</p>}
     </aside>}
     <section className="live-controls" aria-label="Sua participação">
-      <p className="live-geography" data-testid="live-geography">{mapError?'Mapa indisponível. Seus saldos continuam acessíveis.':mapReady?(composition.length>0?(focusId?'Países agregados da hashtag selecionada. Toque na área para inspecionar.':'Países agregados com várias hashtags. Toque na área para inspecionar.'):emptyGeography):'Carregando mapa…'}</p>
-      {personalCountry&&!personalDrawError&&<p className="live-personal" data-testid="live-personal">Sua mancha em {personalCountry} · prévia só para você, no país aproximado. O mapa público reúne grupos de 5 ou mais.</p>}
-      {personalDrawError&&<p role="status">{personalDrawError}</p>}
+      <p className="live-geography" data-testid="live-geography">{mapError?'Mapa indisponível. Seus saldos continuam acessíveis.':!mapReady?'Carregando mapa…':live.regional.readError?'Leitura regional indisponível. Seus taps continuam funcionando.':'Cada participação ativa forma um ponto regional. Pontos próximos formam manchas. Nenhuma posição é inventada.'}</p>
       {mapError&&<button onClick={()=>{setMap(null);setMapReady(false);setMapError('');setMapVersion(v=>v+1);}}>Recarregar mapa</button>}
+      <div className="live-sharing" aria-label="Seu ponto regional">
+        <strong>Seu ponto no mapa</strong>
+        <p>{live.regional.cell?'Ponto público em uma célula de cerca de 55 km. Atualize se mudou de região.':'Ative para compartilhar uma célula de cerca de 55 km no mapa público, mesmo sozinho. Coordenadas exatas não são enviadas; a região ainda pode revelar informações sobre você.'}</p>
+        <button disabled={!live.ready||!live.countryPreference.available||live.regional.busy} onClick={live.regional.locate}>{live.regional.busy?'Localizando…':live.regional.cell?'Atualizar meu ponto':'Ativar meu ponto'}</button>
+        {live.regional.cell&&<button disabled={live.regional.busy} onClick={()=>void live.regional.withdraw()}>Remover meu ponto</button>}
+        {ownPoints.length>0&&<small data-testid="live-regional-point">Seu ponto regional está ativo. {live.pending>0?'O tempo provisório aguarda confirmação.':''}</small>}
+        {live.regional.cell&&!ownPoints.length&&<small>Localização regional salva. Adicione tempo para acender seu ponto.</small>}
+        {live.regional.error&&<p role="status">{live.regional.error}</p>}
+      </div>
       <div className="live-sharing" aria-label="Compartilhamento de país">
         <label><input type="checkbox" checked={live.shareCountry} disabled={live.consentBusy} onChange={event=>void live.setGeoConsent(event.target.checked)}/> Compartilhar meu país aproximado</label>
-        <p>{live.shareCountry?'Ao participar, você aceita compartilhar seu país aproximado nos totais do mapa.':'Você participa sem compartilhar seu país.'} O mapa não mostra seu nome nem um ponto individual. Você pode desligar a opção a qualquer momento.</p>
+        <p>{live.shareCountry?'Ao participar, você compartilha seu país nos resumos, sem nome.':'Você participa sem compartilhar seu país.'} O ponto regional tem autorização separada.</p>
         {!live.countryPreference.available&&<small>O país ainda está indisponível neste ambiente; sua participação continua funcionando.</small>}
-        {live.countryPreference.available&&<small>País estimado: {live.countryPreference.country==='ZZ'?'a confirmar ao participar':live.countryPreference.country} · áreas aparecem com 5 participações na mesma hashtag e país.</small>}
+        {live.countryPreference.available&&<small>País estimado: {live.countryPreference.country==='ZZ'?'a confirmar ao participar':live.countryPreference.country} · resumos ocultam grupos menores que 5.</small>}
       </div>
       {live.consentBusy&&<small role="status">Salvando sua escolha de país…</small>}
       <form onSubmit={select}>
@@ -135,10 +139,10 @@ export default function LiveExperience(){
       {live.quarantined&&<div className="live-quarantine"><p>A fila anterior foi preservada. Descartá-la pode perder taps ainda não reconhecidos.</p>
         <button onClick={()=>void live.discard()}>Descartar fila antiga e reconectar</button></div>}
       <details><summary>Como funciona e privacidade</summary>
-        <p>Selecione uma hashtag e use +1 segundo ou toque no terreno sem área colorida. Tocar um país colorido inspeciona as origens e não adiciona tempo. Arrastar e aproximar só navegam. Segundos extras não multiplicam participações no ranking.</p>
+        <p>Selecione uma hashtag e use +1 segundo ou toque no terreno sem ponto. Pontos representam regiões aproximadas, não posições exatas. Tocar um ponto seleciona a hashtag sem adicionar tempo. Arrastar e aproximar só navegam. Segundos extras não multiplicam participações no ranking.</p>
         <p>Este navegador usa uma sessão pseudônima. Após 30 dias sem retorno e com todos os saldos zerados, o histórico individual é consolidado nos totais por hashtag. Limpar cookies pode impedir sua recuperação.</p>
         <p>Opcional. Sua participação continua no ranking sem compartilhar. País atual: {live.countryPreference.country==='ZZ'?'desconhecido':live.countryPreference.country}. Retirar a opção remove seu país das próximas leituras; cópias já recebidas não podem ser apagadas.</p>
-        <p>Não coletamos cidade ou coordenadas nesta experiência. Agrupar cinco sessões não garante anonimato: comparações entre leituras podem revelar mudanças. O mapa não contém participantes simulados.</p>
+        <p>O navegador arredonda a localização para uma célula regional antes de enviar. Não enviamos coordenadas exatas ou cidade. O ponto regional aparece mesmo com uma participação; os resumos por país agrupam cinco sessões. Isso não garante anonimato: comparações entre leituras podem revelar mudanças. O mapa não contém participantes simulados.</p>
       </details>
     </section>
   </main>;

@@ -6,6 +6,7 @@ import { beginLimitedTransaction } from './databaseLimits.mjs';
 import { consolidateInactive } from './retention.mjs';
 import { normalizeCountry } from './countryCodes.mjs';
 import { countrySnapshot } from './countrySnapshot.mjs';
+import {regionCenter} from './regionGrid.mjs';
 
 let pool;
 
@@ -74,8 +75,8 @@ export async function findVisitor(token, country='ZZ') {
         country_code=CASE WHEN country_consent THEN $2 ELSE 'ZZ' END,
         expires_at=GREATEST(current.expires_at,statement_timestamp()+interval '30 days',
           COALESCE((SELECT max(vt.expires_at)+interval '1 day' FROM world_pulse.visitor_tags vt WHERE vt.visitor_id=current.id),statement_timestamp()))
-      WHERE session_hash=$1 AND current.expires_at>statement_timestamp() RETURNING id,active_tag_id,expires_at,country_consent,country_code,country_consent_at
-    ) SELECT v.id, v.active_tag_id,v.expires_at,v.country_consent,v.country_code,v.country_consent_at,
+      WHERE session_hash=$1 AND current.expires_at>statement_timestamp() RETURNING id,active_tag_id,expires_at,country_consent,country_code,country_consent_at,region_cell
+    ) SELECT v.id, v.active_tag_id,v.expires_at,v.country_consent,v.country_code,v.country_consent_at,v.region_cell,
       t.normalized AS active_tag_name, t.color AS active_tag_color
     FROM renewed v
     LEFT JOIN world_pulse.tags t ON t.id = v.active_tag_id
@@ -83,6 +84,36 @@ export async function findVisitor(token, country='ZZ') {
     [tokenHash(token),normalizeCountry(country)]
   );
   return rows[0] ?? null;
+}
+
+export async function setRegionCell(visitorId,cell){
+  if(cell!==null)regionCenter(cell);
+  return transaction(async client=>{
+    await client.query('SELECT pg_advisory_xact_lock(1867403)');
+    const changed=await client.query('UPDATE world_pulse.visitors SET region_cell=$2,region_shared_at=statement_timestamp() WHERE id=$1',[visitorId,cell]);
+    if(!changed.rowCount)throw new ApiError(401,'session_expired','Sessão expirada.');
+    await client.query('DELETE FROM world_pulse.region_snapshot_cache');
+  });
+}
+
+export async function getRegionSnapshot(){
+  return transaction(async client=>{
+    const {rows:[clock]}=await client.query('SELECT floor(extract(epoch FROM statement_timestamp())/5)*5000 AS ms');
+    const asOfMs=Number(clock.ms);
+    const cached=await client.query('SELECT payload FROM world_pulse.region_snapshot_cache WHERE key=true AND window_start=to_timestamp($1/1000.0)',[asOfMs]);
+    if(cached.rows.length)return cached.rows[0].payload;
+    const {rows:[lock]}=await client.query('SELECT pg_try_advisory_xact_lock(1867403) AS acquired');
+    if(!lock.acquired)throw new ApiError(503,'geography_refreshing','Mapa atualizando.');
+    const {rows}=await client.query(`SELECT v.region_cell AS cell,t.id AS "tagId",'#'||t.normalized AS name,t.color,count(*)::text AS participants
+      FROM world_pulse.visitor_tags vt JOIN world_pulse.visitors v ON v.id=vt.visitor_id JOIN world_pulse.tags t ON t.id=vt.tag_id
+      WHERE vt.expires_at>statement_timestamp() AND v.region_cell IS NOT NULL
+      GROUP BY v.region_cell,t.id,t.normalized,t.color ORDER BY v.region_cell,t.id LIMIT 2001`);
+    if(rows.length>2000)throw new ApiError(503,'geography_capacity','Mapa regional temporariamente indisponível.');
+    const payload={type:'region_snapshot',asOfMs,validUntilMs:asOfMs+5000,cells:rows};
+    await client.query(`INSERT INTO world_pulse.region_snapshot_cache(key,window_start,payload) VALUES(true,to_timestamp($1/1000.0),$2::jsonb)
+      ON CONFLICT(key) DO UPDATE SET window_start=EXCLUDED.window_start,payload=EXCLUDED.payload`,[asOfMs,JSON.stringify(payload)]);
+    return payload;
+  });
 }
 
 export async function createVisitor() {

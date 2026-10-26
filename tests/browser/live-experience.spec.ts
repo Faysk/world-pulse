@@ -97,9 +97,13 @@ test('Disabling geography clears old and in-flight areas while authenticated wit
       return route.fulfill({json:{anonymous:true,sessionFresh:false,sessionBinding:'a'.repeat(64),activeTagId:id,activeTag:{id,name:'#gta6',color:'#ff9465'},credits:[{tagId:id,name:'#gta6',color:'#ff9465',creditedSeconds:'3600',expiresAtMs:expires,serverNowMs:Date.now(),remainingMs:Math.max(0,expires-Date.now())}],geoConsent:consent,geoConsentDecided:true,geoCountry:consent&&available?'PT':'ZZ',geographyAvailable:available}});
     }
     if(path==='/api/countries'){
-      if(++reads===2){secondStarted();await heldResponse;}
       const asOfMs=Math.floor(Date.now()/5000)*5000;
       return route.fulfill({json:{type:'country_snapshot',asOfMs,validUntilMs:asOfMs+5000,granularity:'country',privacyThreshold:5,tags:[{id,name:'#gta6',color:'#ff9465',activeParticipants:'5',countries:[{countryCode:'PT',activeParticipants:'5'}]}]}});
+    }
+    if(path==='/api/regions'){
+      if(++reads===2){secondStarted();await heldResponse;}
+      const asOfMs=Math.floor(Date.now()/5000)*5000;
+      return route.fulfill({json:{type:'region_snapshot',asOfMs,validUntilMs:asOfMs+5000,cells:[{cell:'r1:257:266',tagId:id,name:'#gta6',color:'#ff9465',participants:'5'}]}});
     }
     if(path==='/api/taps')taps++;
     if(path==='/api/ranking')return route.fulfill({json:{type:'active',asOfMs:Date.now(),metric:'distinct_anonymous_sessions_with_positive_balance',geography:'unavailable',ranking:[]}});
@@ -107,11 +111,11 @@ test('Disabling geography clears old and in-flight areas while authenticated wit
   });
   try{
     await page.goto('/?experiencePreview=1');
-    await expect(page.getByTestId('live-geography')).toContainText('Países agregados');
+    await expect(page.getByTestId('live-geography')).toContainText('ponto regional');
     await secondRequest;
     available=false;await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
     await expect(page.getByTestId('live-geography')).toContainText('Nenhuma posição é inventada');
-    const returned=page.waitForResponse(response=>response.url().endsWith('/api/countries'));release();await returned;
+    const returned=page.waitForResponse(response=>response.url().endsWith('/api/regions'));release();await returned;
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
     await expect(page.getByTestId('live-geography')).toContainText('Nenhuma posição é inventada');
     await page.getByText('Como funciona e privacidade',{exact:true}).click();
@@ -181,7 +185,7 @@ test('Taps update immediately while a POST is held; country notice is visible an
     await page.goto('/?experiencePreview=1');await expect(page.getByTestId('live-connection')).toHaveText('Sessão conectada');
     const choice=page.getByRole('checkbox',{name:'Compartilhar meu país aproximado'});
     await expect(choice).toBeVisible();await expect(choice).toBeChecked();expect(consent).toBe(false);
-    await expect(page.getByText(/Ao participar, você aceita compartilhar seu país aproximado/)).toBeVisible();
+    await expect(page.getByText(/Ao participar, você compartilha seu país nos resumos/)).toBeVisible();
     await page.getByLabel('Sua hashtag',{exact:true}).fill('#gta6');await page.getByRole('button',{name:'Participar',exact:true}).click();
     await expect(page.getByTestId('live-selected')).toHaveText('#gta6');expect(consent).toBe(true);
     await page.getByRole('button',{name:'+1 segundo',exact:true}).click();await started;
@@ -230,28 +234,47 @@ test('Modern loading remains visible until the map is ready and respects reduced
   await expect(page.locator('.world-loading')).toBeHidden();
 });
 
-test('Own country preview needs positive time and consent; zero balance and opt-out remove it',async({page})=>{
-  let consent=true,remaining=60000;
+
+test('Browser location sends only a coarse cell; old country consent never opts into points',async({page,context},info)=>{
+  await context.grantPermissions(['geolocation']);await context.setGeolocation({latitude:38.720123,longitude:-9.140456});
+  let cell:string|null=null,remaining=60000,locationWrites:any[]=[];
   await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/,route=>route.fulfill({json:{version:8,sources:{},layers:[{id:'bg',type:'background',paint:{'background-color':'#14222e'}}]}}));
   await page.route('**/api/**',route=>{
     const path=new URL(route.request().url()).pathname;
-    if(path==='/api/session'){
-      const body=route.request().postDataJSON();if(typeof body.geoConsent==='boolean')consent=body.geoConsent;
-      return route.fulfill({json:{anonymous:true,sessionFresh:false,sessionBinding:'a'.repeat(64),activeTagId:id,activeTag:{id,name:'#gta6',color:'#5d5de5'},credits:[{tagId:id,name:'#gta6',color:'#5d5de5',creditedSeconds:'60',remainingMs:remaining,serverNowMs:Date.now(),expiresAtMs:Date.now()+remaining}],geoConsent:consent,geoConsentDecided:true,geoCountry:consent?'PT':'ZZ',geographyAvailable:true}});
-    }
-    if(path==='/api/countries')return route.fulfill({json:{type:'country_snapshot',asOfMs:Date.now(),validUntilMs:Date.now()+5000,granularity:'country',privacyThreshold:5,tags:[]}});
+    if(path==='/api/session')return route.fulfill({json:{anonymous:true,sessionFresh:false,sessionBinding:'a'.repeat(64),activeTagId:id,activeTag:{id,name:'#gta6',color:'#5d5de5'},credits:[{tagId:id,name:'#gta6',color:'#5d5de5',creditedSeconds:'60',remainingMs:remaining,serverNowMs:Date.now(),expiresAtMs:Date.now()+remaining}],geoConsent:true,geoConsentDecided:true,geoCountry:'PT',geographyAvailable:true,regionCell:cell}});
+    if(path==='/api/location'){const body=route.request().postDataJSON();locationWrites.push(body);cell=body.cell;return route.fulfill({json:{regionCell:cell}});}
+    if(path==='/api/regions'){const asOfMs=Math.floor(Date.now()/5000)*5000;return route.fulfill({json:{type:'region_snapshot',asOfMs,validUntilMs:asOfMs+5000,cells:[]}});}
+    if(path==='/api/countries'){const asOfMs=Math.floor(Date.now()/5000)*5000;return route.fulfill({json:{type:'country_snapshot',asOfMs,validUntilMs:asOfMs+5000,granularity:'country',privacyThreshold:5,tags:[]}});}
     if(path==='/api/ranking')return route.fulfill({json:{type:'active',asOfMs:Date.now(),ranking:[]}});
     return route.fulfill({status:404,json:{error:'not_found'}});
   });
   await page.goto('/?experiencePreview=1');
-  await expect(page.getByTestId('live-personal')).toContainText('prévia só para você');
-  await page.getByRole('checkbox',{name:'Compartilhar meu país aproximado'}).uncheck();
-  await expect(page.getByTestId('live-personal')).toHaveCount(0);
-  await expect.poll(()=>consent).toBe(false);
-  await expect(page.getByRole('checkbox',{name:'Compartilhar meu país aproximado'})).toBeEnabled();
-  await page.getByRole('checkbox',{name:'Compartilhar meu país aproximado'}).check();
-  await expect(page.getByTestId('live-personal')).toBeVisible();
-  remaining=0;await page.reload();
   await expect(page.getByTestId('live-connection')).toHaveText('Sessão conectada');
-  await expect(page.getByTestId('live-personal')).toHaveCount(0);
+  expect(locationWrites).toEqual([]);await expect(page.getByTestId('live-regional-point')).toHaveCount(0);
+  await page.getByRole('button',{name:'Ativar meu ponto',exact:true}).click();
+  await expect(page.getByTestId('live-regional-point')).toBeVisible();
+  expect(locationWrites).toHaveLength(1);expect(Object.keys(locationWrites[0])).toEqual(['cell']);expect(locationWrites[0].cell).toMatch(/^r1:\d+:\d+$/);
+  expect(JSON.stringify(locationWrites)).not.toContain('38.720123');expect(JSON.stringify(locationWrites)).not.toContain('-9.140456');
+  await page.screenshot({path:`test-artifacts/regional-point-${info.project.name}.png`});
+  remaining=0;await page.reload();await expect(page.getByTestId('live-connection')).toHaveText('Sessão conectada');
+  await expect(page.getByTestId('live-regional-point')).toHaveCount(0);
+  await page.getByRole('button',{name:'Remover meu ponto',exact:true}).click();await expect.poll(()=>cell).toBe(null);
+  await expect(page.getByRole('button',{name:'Ativar meu ponto',exact:true})).toBeEnabled();
+  expect(locationWrites.at(-1)).toEqual({cell:null});
+});
+
+test('Denied browser location leaves participation available and sends no location',async({page,context})=>{
+  await context.clearPermissions();
+  await page.addInitScript(()=>{Object.defineProperty(navigator,'geolocation',{value:{getCurrentPosition:(_ok:any,fail:any)=>fail({code:1})}});});
+  let locationWrites=0;
+  await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/,route=>route.fulfill({json:{version:8,sources:{},layers:[{id:'bg',type:'background',paint:{'background-color':'#14222e'}}]}}));
+  await page.route('**/api/**',route=>{
+    const path=new URL(route.request().url()).pathname;
+    if(path==='/api/session')return route.fulfill({json:{anonymous:true,sessionFresh:false,sessionBinding:'a'.repeat(64),activeTagId:id,activeTag:{id,name:'#gta6',color:'#5d5de5'},credits:[],geoConsent:true,geoConsentDecided:true,geoCountry:'PT',geographyAvailable:true,regionCell:null}});
+    if(path==='/api/location'){locationWrites++;return route.fulfill({json:{regionCell:null}});}
+    return route.fulfill({status:503,json:{error:'unavailable'}});
+  });
+  await page.goto('/?experiencePreview=1');await page.getByRole('button',{name:'Ativar meu ponto',exact:true}).click();
+  await expect(page.getByText('Localização não autorizada. Sua participação continua sem ponto.',{exact:true})).toBeVisible();
+  expect(locationWrites).toBe(0);await expect(page.getByRole('button',{name:'+1 segundo',exact:true})).toBeEnabled();
 });

@@ -3,6 +3,8 @@
  * The browser never receives database credentials or direct visitor IDs.
  */
 import type { CountrySnapshot } from './countryTypes';
+import type {RegionSnapshot} from './regionalTypes';
+import {regionCenter} from '../server/regionGrid.mjs';
 export type LiveTag = { id: string; name: string; color: string };
 export type PendingTapBatch = { batchId: string; tagId: string; clicks: number };
 export type TimeBalance = { tagId: string; creditedSeconds: string;
@@ -60,6 +62,7 @@ export class ParticipationClient {
   private memorySender:Promise<unknown>=Promise.resolve();
   private geoDecided=false;
   private geoConsent=false;
+  private regionCell:string|null=null;
   private geoCountry='ZZ';
   private geographyAvailable=false;
 
@@ -190,7 +193,7 @@ export class ParticipationClient {
       method: body === undefined ? 'GET' : 'POST',
       headers: body === undefined ? {} : {
         'Content-Type': 'application/json',
-        ...(path === '/api/taps' ? { 'X-WP-Session-Binding': binding ?? '' } : {})
+        ...(['/api/taps','/api/location'].includes(path) ? { 'X-WP-Session-Binding': binding ?? '' } : {})
       },
       credentials: 'same-origin',
       signal: AbortSignal.timeout(10_000),
@@ -216,7 +219,7 @@ export class ParticipationClient {
     const session = await this.request<{
       anonymous: true; sessionFresh: boolean; sessionBinding: string;
       activeTagId: string | null; activeTag: LiveTag | null; credits: TimeBalance[];creditsHasMore?:boolean;
-      geoConsent?:boolean;geoConsentDecided?:boolean;geoCountry?:string;geographyAvailable?:boolean;
+      geoConsent?:boolean;geoConsentDecided?:boolean;geoCountry?:string;geographyAvailable?:boolean;regionCell?:string|null;
     }>('/api/session', geoConsent===undefined?{}:{geoConsent});
     if (typeof session.sessionBinding !== 'string' ||
       !/^[0-9a-f]{64}$/.test(session.sessionBinding)) {
@@ -234,6 +237,7 @@ export class ParticipationClient {
     if(typeof session.geoConsentDecided==='boolean')this.geoDecided=session.geoConsentDecided;
     else if(geoConsent!==undefined||session.geoConsent===true)this.geoDecided=true;
     this.geoConsent=session.geoConsent===true;
+    this.regionCell=typeof session.regionCell==='string'?session.regionCell:null;
     this.geoCountry=typeof session.geoCountry==='string'&&/^[A-Z]{2}$/.test(session.geoCountry)?session.geoCountry:'ZZ';
     this.geographyAvailable=session.geographyAvailable===true;
     if (!this.pending.length) this.persist();
@@ -274,6 +278,23 @@ export class ParticipationClient {
   }
 
   countryPreference(){return {consent:this.geoConsent,decided:this.geoDecided,country:this.geoCountry,available:this.geographyAvailable};}
+  regionalCell(){return this.regionCell;}
+  setRegionalCell(cell:string|null):Promise<void>{
+    return this.enqueueSelection(()=>this.withWriter(async()=>{
+      const result=await this.request<{regionCell:string|null}>('/api/location',{cell});
+      if(result.regionCell!==cell)throw new Error('invalid_region_choice');
+      this.regionCell=result.regionCell;this.signalSelectionChange();
+    }));
+  }
+  async regions():Promise<RegionSnapshot>{
+    const value=await this.request<RegionSnapshot>('/api/regions');
+    if(!value||value.type!=='region_snapshot'||!Number.isFinite(value.asOfMs)||value.validUntilMs!==value.asOfMs+5000||!Array.isArray(value.cells)||value.cells.length>2000||value.cells.some(row=>{
+      try{regionCenter(row.cell);}catch{return true;}
+      return !/^[0-9a-f-]{36}$/i.test(row.tagId)||typeof row.name!=='string'||!/^#[\p{L}\p{N}_]{2,32}$/u.test(row.name)||!/^#[0-9a-f]{6}$/i.test(row.color)||typeof row.participants!=='string'||!/^\d{1,64}$/.test(row.participants)||BigInt(row.participants)<1n;
+    }))throw new Error('invalid_region_snapshot');
+    if(new Set(value.cells.map(row=>row.cell+row.tagId)).size!==value.cells.length)throw new Error('invalid_region_snapshot');
+    return value;
+  }
   setGeoConsent(allowed:boolean):Promise<void>{
     return this.enqueueSelection(()=>this.withWriter(async()=>{
       await this.loadSession(allowed);this.sessionPromise=Promise.resolve();this.signalSelectionChange();
