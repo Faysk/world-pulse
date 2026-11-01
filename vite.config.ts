@@ -3,7 +3,6 @@ import { previewUiBuildEnabled,alphaUiBuildEnabled } from './build/preview-gate.
 import {searchPresence} from './build/search-presence.mjs';
 
 export default defineConfig({
-  build:{rollupOptions:{input:{main:'index.html',network:'network/index.html'}}},
   plugins:[searchPresence(process.env)],
   define: { __WP_PREVIEW_UI__: JSON.stringify(previewUiBuildEnabled(process.env)),__WP_ALPHA_RELEASE__:JSON.stringify(alphaUiBuildEnabled(process.env)) }
 });
