@@ -44,7 +44,7 @@ export function renderAbout(page,indexable=false){
   return `<!doctype html><html lang="${page.lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101112">${searchHead({indexable,path:page.path,title:page.title,description:page.description,language:page.lang,alternates:true})}<link rel="stylesheet" href="/brand.css"></head><body class="about-page"><header class="about-header"><a class="brand-link" href="/" aria-label="World Pulse"><img src="/favicon.svg" width="40" height="40" alt="">WORLD<span>PULSE</span></a><nav aria-label="Language">${aboutPages.map(p=>`<a href="${p.path}" lang="${p.lang}" hreflang="${p.lang}"${p.lang===page.lang?' aria-current="page"':''}>${p.lang==='en'?'English':p.lang==='pt'?'Português':'Español'}</a>`).join('')}</nav></header><main class="about-main"><section class="about-intro"><p class="eyebrow">WORLD PULSE</p><h1>${escape(page.heading)}</h1><p class="lead">${escape(page.intro)}</p><a class="primary-link" href="/">${escape(page.enter)} <span aria-hidden="true">↗</span></a></section><section><h2>${escape(page.how)}</h2><ol>${page.steps.map(step=>`<li>${escape(step)}</li>`).join('')}</ol></section><section><h2>${escape(page.privacy)}</h2><p>${escape(page.privacyText)}</p><p>${escape(page.withdrawal)}</p></section><section><h2>${escape(page.session)}</h2><p>${escape(page.sessionText)}</p></section><section><h2>${escape(page.source)}</h2><p>${escape(page.sourceText)}</p><a href="https://github.com/Faysk/world-pulse">${escape(page.github)} ↗</a></section></main><footer class="about-footer"><a href="/">${escape(page.home)}</a><p>${escape(page.notice)}</p></footer></body></html>`;
 }
 export function discoveryFiles(indexable){
-  const urls=indexable?['/','/network/',...aboutPages.map(page=>page.path)]:[];
+  const urls=indexable?['/',...aboutPages.map(page=>page.path)]:[];
   return {
     'robots.txt':indexable?`User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: ${siteOrigin}/sitemap.xml\n`:'User-agent: *\nDisallow: /\n',
     'sitemap.xml':'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+urls.map(path=>`<url><loc>${siteOrigin+path}</loc></url>`).join('')+'</urlset>\n'
@@ -53,7 +53,7 @@ export function discoveryFiles(indexable){
 export function searchPresence(env){
   const indexable=alphaUiBuildEnabled(env);
   return {name:'world-pulse-search-presence',
-    transformIndexHtml:html=>html.replace('<!-- wp:search-head -->',searchHead({indexable})).replace('<!-- wp:network-head -->',searchHead({indexable,path:'/network/',title:'Network Pulse — Public Internet Traffic Observatory',description:'Explore real public network traffic observations, compare regions over time and understand source coverage. A World Pulse observatory powered by Cloudflare Radar.'})),
+    transformIndexHtml:html=>html.replace('<!-- wp:search-head -->',searchHead({indexable})),
     generateBundle(){
       for(const [fileName,source]of Object.entries(discoveryFiles(indexable)))this.emitFile({type:'asset',fileName,source});
       for(const page of aboutPages)this.emitFile({type:'asset',fileName:page.path.slice(1)+'index.html',source:renderAbout(page,indexable)});

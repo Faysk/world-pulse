@@ -92,15 +92,6 @@
   background: #16161680;
   backdrop-filter: blur(16px);
 }
-.live-navigation a {
-  font-size: 12px;
-  border-radius: 12px;
-  background: #16161680;
-  backdrop-filter: blur(16px);
-  padding: 14px 16px;
-  display: inline-flex;
-  align-items: center;
-}
 .live-panel {
   position: absolute;
   z-index: 3;
@@ -586,14 +577,6 @@
   }
   .live-contribution {
     margin-top: 14px;
-  }
-}
-@media (max-width: 420px) {
-  .live-navigation { gap: 4px; }
-  .live-navigation button, .live-navigation a {
-    font-size: 11px;
-    padding: 10px 8px;
-    min-height: 44px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
