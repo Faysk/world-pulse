@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#101112" />
+    <!-- wp:network-head -->
+    <link rel="stylesheet" href="/brand.css" />
+  </head>
+  <body>
+    <div id="root">
+      <main class="search-fallback">
+        <img src="/favicon.svg" width="72" height="72" alt="" />
+        <h1>Network Pulse</h1>
+        <p>
+          Explore public network traffic observations with Cloudflare Radar.
+          Compare regions over time, with source attribution and coverage
+          explained. These observations do not identify individual game
+          downloads.
+        </p>
+        <nav>
+          <a href="/">World Pulse map</a
+          ><a href="https://radar.cloudflare.com/traffic">Cloudflare Radar</a
+          ><a href="https://github.com/Faysk/world-pulse/issues/164"
+            >Method and code</a
+          >
+        </nav>
+        <p class="startup-label">Opening the observatory…</p>
+      </main>
+    </div>
+    <noscript
+      ><div class="no-script">
+        The interactive observatory needs JavaScript.
+        <a href="https://radar.cloudflare.com/traffic">View the source</a>.
+      </div></noscript
+    >
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

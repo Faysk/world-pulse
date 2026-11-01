@@ -174,6 +174,7 @@ export default function LiveExperience() {
         >
           {t.balances}
         </button>
+        <a href={'/network/?lang='+(locale==='pt'?'pt':'en')}>Network ↗</a>
       </nav>
       {panel === "ranking" && (
         <aside
