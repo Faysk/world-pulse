@@ -588,6 +588,14 @@
     margin-top: 14px;
   }
 }
+@media (max-width: 420px) {
+  .live-navigation { gap: 4px; }
+  .live-navigation button, .live-navigation a {
+    font-size: 11px;
+    padding: 10px 8px;
+    min-height: 44px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .live-world * {
     animation: none !important;
