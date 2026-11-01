@@ -13,7 +13,7 @@ test('only explicit public production release permits indexing and emits real ca
     assert.equal(assets.length,5);
     const files=Object.fromEntries(assets.map(a=>[a.fileName,a.source]));
     assert.equal(files['robots.txt'],discoveryFiles(indexable)['robots.txt']);
-    assert.equal((files['sitemap.xml'].match(/<loc>/g)??[]).length,indexable?4:0);
+    assert.equal((files['sitemap.xml'].match(/<loc>/g)??[]).length,indexable?5:0);
     for(const page of aboutPages){assert.ok(files[page.path.slice(1)+'index.html'].includes(`<html lang="${page.lang}">`));assert.match(files[page.path.slice(1)+'index.html'],indexable?/content="index, follow/:/content="noindex, nofollow/);}
   }
   const files=discoveryFiles(true);
