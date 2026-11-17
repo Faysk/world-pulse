@@ -4,8 +4,8 @@ import { WorldGlobe } from './WorldGlobe';
 import { Gta6LaunchLayer } from './Gta6LaunchLayer';
 import type { PulseCollection } from './demoData';
 import {
-  RELEASE_REGIONS, SOURCE_URL, firstUnlock, lastUnlock, previewStart, previewEnd,
-  isReleased, releasedWindows, nextUnlock, remainingText, formatRelease, type ReleaseRegion
+  RELEASE_REGIONS, VERIFIED_COUNTRY_CODES, SOURCE_URL, previewStart, previewEnd,
+  isReleased, nextUnlock, remainingText, formatRelease, type ReleaseRegion
 } from './gta6LaunchSchedule';
 import './gta6LaunchExperience.css';
 
@@ -63,7 +63,6 @@ export default function Gta6LaunchExperience() {
   const unlocked = RELEASE_REGIONS.filter(region => isReleased(region, time)).length;
   const next = nextUnlock(time);
   const percent = Math.round(unlocked / RELEASE_REGIONS.length * 100);
-  const selectedCompleted = releasedWindows(selected, time);
   const nextSelected = selected.windows.find(window => Date.parse(window.unlockAt) > time);
   const visibleRegions = RELEASE_REGIONS.filter(region => region.label.toLocaleLowerCase('pt').includes(search.toLocaleLowerCase('pt')) || region.code.toLowerCase().includes(search.toLowerCase()));
   const pick = useCallback((region: ReleaseRegion) => {
@@ -101,15 +100,15 @@ export default function Gta6LaunchExperience() {
           <span className="gta-launch-orbit">◎</span>
           <span>WORLD<span className="gta-launch-brand-accent">PULSE</span></span>
         </div>
-        <span className="gta-launch-chip">{simulated ? 'REPLAY DA ONDA' : 'MEIA-NOITE PELO MUNDO'}</span>
+        <span className="gta-launch-chip">{simulated ? 'REPLAY DA ONDA' : 'LOJAS E MEIA-NOITE'}</span>
       </header>
 
       <section className="gta-launch-hero" aria-label="Resumo do lançamento">
         <div className="gta-launch-eyebrow">WORLD MOMENT / 001</div>
         <h1>O mundo inteiro.<br/><em>Uma nova Vice City.</em></h1>
-        <p>Acompanha a onda de 19 de novembro. Cada território ganha cor ao atingir a meia-noite local. Os horários geográficos são ilustrativos, não confirmação de venda do jogo.</p>
+        <p>Acompanha o GTA VI chegando aos mercados digitais em 19 de novembro. Onde temos horário confirmado da PlayStation Store, o país acende inteiro; nos demais, mostramos uma simulação ilustrativa da meia-noite.</p>
         <div className="gta-launch-kpis">
-          <div><strong>{unlocked}<small> / {RELEASE_REGIONS.length}</small></strong><span>territórios mapeados</span></div>
+          <div><strong>{unlocked}<small> / {RELEASE_REGIONS.length}</small></strong><span>territórios na visualização</span></div>
           <div><strong>{next ? remainingText(Date.parse(next.window.unlockAt) - time) : '00:00:00'}</strong><span>{next ? 'até a próxima meia-noite' : 'onda concluída'}</span></div>
         </div>
         <div className="gta-launch-progress" role="progressbar" aria-label="Territórios com a virada local concluída"
@@ -130,20 +129,19 @@ export default function Gta6LaunchExperience() {
 
       <aside className="gta-launch-panel" aria-label="Janelas regionais">
         <div className="gta-launch-panel-head">
-          <span>REGIÕES</span><span>{RELEASE_REGIONS.length} territórios · fusos IANA</span>
+          <span>REGIÕES</span><span>{VERIFIED_COUNTRY_CODES.length} lojas conferidas · {RELEASE_REGIONS.length} territórios</span>
         </div>
         <div className="gta-launch-selected">
           <div className="gta-launch-eyebrow">REGIÃO SELECIONADA</div>
           <h2>{selected.label}</h2>
           <strong className={isReleased(selected, time) ? 'released' : ''}>
-            {isReleased(selected, time) ? 'MEIA-NOITE ALCANÇADA' :
+            {isReleased(selected, time) ? (selected.verified ? 'LIBERADO NA PS STORE' : 'MEIA-NOITE SIMULADA') :
               nextSelected ? remainingText(Date.parse(nextSelected.unlockAt) - time) : 'AGUARDANDO'}
           </strong>
-          <small>{selectedCompleted} de {selected.windows.length} {selected.windows.length === 1 ? 'fuso' : 'fusos'} na virada</small>
+          <small>{selected.verified ? 'Horário de desbloqueio conferido na PlayStation Store' : 'Horário aproximado; nenhuma oferta local foi verificada'}</small>
           <small>Referência local: {formatRelease(selected.windows[0])}</small>
-          <small>{selected.reference
-            ? 'Divisão geográfica aproximada entre fusos; não representa limites oficiais de lojas.'
-            : 'Horário civil IANA; disponibilidade comercial não confirmada para este território.'}</small>
+          {selected.storeUrl ? <a className="gta-launch-source" href={selected.storeUrl} target="_blank" rel="noreferrer">Consultar PlayStation Store ↗</a> :
+            <small>Não implica disponibilidade real do GTA VI neste mercado.</small>}
         </div>
         <label className="gta-launch-search-label" htmlFor="gta-launch-filter">Buscar território</label>
         <input className="gta-launch-search" id="gta-launch-filter" type="search"
@@ -156,16 +154,14 @@ export default function Gta6LaunchExperience() {
               onClick={() => focus(region)}>
               <i style={{ background: isReleased(region, time) ? region.color : '#536073' }}/>
               <span>{region.label}</span>
-              <b>{isReleased(region, time) ? '00:00 ✓' : region.windows.some(window => Date.parse(window.unlockAt) <= time)
-                ? releasedWindows(region, time) + '/' + region.windows.length + ' FUSOS'
-                : remainingText(Date.parse(region.windows[0].unlockAt) - time)}</b>
+              <b>{isReleased(region, time) ? (region.verified ? 'LIBERADO' : 'SIMULAÇÃO') : remainingText(Date.parse(region.unlockAt) - time)}</b>
             </button>
           ))}
         </div>
       </aside>
       <footer className="gta-launch-footer">
-        <span>ONDA VISUAL DA MEIA-NOITE · NÃO REPRESENTA JOGADORES, VOTOS OU DISPONIBILIDADE EM LOJAS</span>
-        <span>Fusos IANA por longitude aproximada, não fronteiras exatas. A cobertura exclui a Antártida e as Terras Austrais Francesas.</span>
+        <span>HORÁRIOS PS STORE CONFERIDOS EM 4 MERCADOS · DEMAIS TERRITÓRIOS SÃO SIMULAÇÕES</span>
+        <span>Brasil, EUA e Canadá têm uma liberação única por país; Rússia fica neutra (sem oferta digital local confirmada).</span>
         <a href={SOURCE_URL} rel="noreferrer" target="_blank">Data de lançamento: Rockstar ↗</a>
         <a href="/" aria-label="Voltar ao World Pulse">Voltar ao World Pulse ↗</a>
       </footer>
