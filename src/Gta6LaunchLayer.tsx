@@ -42,11 +42,11 @@ export function Gta6LaunchLayer({ map, now, simulated, onPick, onError }: Props)
     });
     map.addLayer({
       id: 'gta6-launch-completed-fill', type: 'fill', source: 'gta6-launch-completed',
-      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.73 }
+      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': ['case', ['get', 'verified'], 0.78, 0.42] }
     });
     map.addLayer({
       id: 'gta6-launch-color', type: 'fill', source: 'gta6-launch-reveal',
-      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.8 }
+      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': ['case', ['get', 'verified'], 0.85, 0.5] }
     });
     map.addLayer({
       id: 'gta6-launch-aura', type: 'line', source: 'gta6-launch-reveal',
@@ -112,7 +112,7 @@ export function Gta6LaunchLayer({ map, now, simulated, onPick, onError }: Props)
     for (const segment of segments) {
       const progress = revealProgress(segment.window, now, simulated);
       if (progress <= 0) continue;
-      const properties = { countryCode: segment.countryCode, color: segment.region.color };
+      const properties = { countryCode: segment.countryCode, color: segment.region.color, verified: segment.region.verified };
       if (progress >= 0.99999) {
         completedKeys.push(segment.countryCode + ':' + segment.window.unlockAt);
         completed.push({ type: 'Feature', geometry: segment.geometry, properties });
