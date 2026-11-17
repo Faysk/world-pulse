@@ -7,7 +7,7 @@ import {
 
 test('Camera moments group simultaneous releases instead of revisiting each store', () => {
   const groups = buildUnlockMoments(RELEASE_REGIONS);
-  assert.equal(groups.length, new Set(RELEASE_REGIONS.map(r => r.unlockAt)).size);
+  assert.equal(groups.length, new Set(RELEASE_REGIONS.map(r => Date.parse(r.unlockAt))).size);
   assert.ok(groups.length > 12);
   assert.deepEqual(groups.map(g => g.at), [...groups.map(g => g.at)].sort((a,b) => a-b));
   assert.equal(groups.reduce((sum, group) => sum + group.regions.length, 0), RELEASE_REGIONS.length);
