@@ -1,4 +1,4 @@
-import { RELEASE_REGIONS, type ReleaseRegion } from './gta6LaunchSchedule';
+import { RELEASE_REGIONS, type ReleaseRegion } from './gta6LaunchSchedule.ts';
 
 export type UnlockMoment = {
   at: number;
