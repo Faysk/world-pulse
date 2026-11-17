@@ -1,12 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
-import type { FeatureCollection } from 'geojson';
+import type { FeatureCollection, Geometry } from 'geojson';
 import type { GeoJSONSource, Map as MapInstance } from 'maplibre-gl';
 import { countryGeometry } from './CountryLayer';
-import { clipCountryReveal } from './gta6LaunchGeometry';
-import { RELEASE_REGIONS, revealProgress, type ReleaseRegion } from './gta6LaunchSchedule';
+import { clipCountryReveal, splitCountryByZones } from './gta6LaunchGeometry';
+import {
+  RELEASE_REGIONS, revealProgress, type ReleaseRegion, type ReleaseWindow
+} from './gta6LaunchSchedule';
 
 const EMPTY: FeatureCollection = { type: 'FeatureCollection', features: [] };
 const REGION_BY_CODE = new Map(RELEASE_REGIONS.map(region => [region.code, region]));
+
+type Segment = {
+  countryCode: string;
+  region: ReleaseRegion;
+  window: ReleaseWindow;
+  geometry: Geometry;
+};
 
 type Props = {
   map: MapInstance | null;
@@ -17,86 +26,115 @@ type Props = {
 };
 
 export function Gta6LaunchLayer({ map, now, simulated, onPick, onError }: Props) {
-  const [geometry, setGeometry] = useState<FeatureCollection | null>(null);
+  const [segments, setSegments] = useState<Segment[]>([]);
   const callback = useRef(onPick);
+  const lastCompleted = useRef('');
   callback.current = onPick;
 
   useEffect(() => {
     if (!map) return;
     let mounted = true;
-    map.addSource('gta6-launch-regions', { type: 'geojson', data: EMPTY });
-    map.addSource('gta6-launch-reveal', { type: 'geojson', data: EMPTY });
+    const sources = ['gta6-launch-regions', 'gta6-launch-completed', 'gta6-launch-reveal'];
+    for (const id of sources) map.addSource(id, { type: 'geojson', data: EMPTY });
     map.addLayer({
       id: 'gta6-launch-zone-hit', type: 'fill', source: 'gta6-launch-regions',
       paint: { 'fill-color': '#ffffff', 'fill-opacity': 0.001 }
     });
     map.addLayer({
+      id: 'gta6-launch-completed-fill', type: 'fill', source: 'gta6-launch-completed',
+      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.73 }
+    });
+    map.addLayer({
       id: 'gta6-launch-color', type: 'fill', source: 'gta6-launch-reveal',
-      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.72 }
+      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.8 }
     });
     map.addLayer({
       id: 'gta6-launch-aura', type: 'line', source: 'gta6-launch-reveal',
-      paint: { 'line-color': ['get', 'color'], 'line-width': 5, 'line-opacity': 0.19 }
+      paint: { 'line-color': ['get', 'color'], 'line-width': 5, 'line-opacity': 0.2 }
     });
     map.addLayer({
       id: 'gta6-launch-sheen', type: 'line', source: 'gta6-launch-reveal',
-      paint: { 'line-color': ['get', 'color'], 'line-width': 1.25, 'line-opacity': 0.66 }
+      paint: { 'line-color': '#fff2ea', 'line-width': 1.6, 'line-opacity': 0.73 }
     });
 
     const onClick = (event: { point: { x: number; y: number } }) => {
-      const feature = map.queryRenderedFeatures([event.point.x, event.point.y], { layers: ['gta6-launch-zone-hit'] })[0];
-      const region = REGION_BY_CODE.get(String(feature?.properties?.countryCode ?? ''));
+      const features = map.queryRenderedFeatures([event.point.x, event.point.y], { layers: ['gta6-launch-zone-hit'] });
+      const code = String(features[0]?.properties?.countryCode ?? '');
+      const region = REGION_BY_CODE.get(code);
       if (region) callback.current(region);
     };
     map.on('click', onClick);
-
     void countryGeometry().then(collection => {
       if (!mounted) return;
-      const features = collection.features.filter(feature =>
-        REGION_BY_CODE.has(String(feature.properties?.countryCode ?? ''))
-      );
-      const selected: FeatureCollection = { type: 'FeatureCollection', features };
-      (map.getSource('gta6-launch-regions') as GeoJSONSource | undefined)?.setData(selected);
-      setGeometry(selected);
+      const allPieces: Segment[] = [];
+      const hitFeatures: FeatureCollection['features'] = [];
+      for (const feature of collection.features) {
+        const code = String(feature.properties?.countryCode ?? '');
+        const region = REGION_BY_CODE.get(code);
+        if (!region || !feature.geometry) continue;
+        const pieces = splitCountryByZones(feature.geometry, region.windows);
+        for (let index = 0; index < pieces.length; index++) {
+          const geometry = pieces[index];
+          if (!geometry) continue;
+          allPieces.push({ countryCode: code, region, window: region.windows[index], geometry });
+          hitFeatures.push({
+            type: 'Feature', geometry, properties: { countryCode: code }
+          });
+        }
+      }
+      (map.getSource('gta6-launch-regions') as GeoJSONSource | undefined)?.setData({
+        type: 'FeatureCollection', features: hitFeatures
+      });
+      lastCompleted.current = '';
+      setSegments(allPieces);
       onError('');
     }).catch(() => {
       if (mounted) onError('Não foi possível carregar os limites dos países.');
     });
-
     return () => {
       mounted = false;
       map.off('click', onClick);
-      setGeometry(null);
+      lastCompleted.current = '';
+      setSegments([]);
       if (!map.getStyle()) return;
-      for (const id of ['gta6-launch-sheen', 'gta6-launch-aura', 'gta6-launch-color', 'gta6-launch-zone-hit']) {
+      for (const id of ['gta6-launch-sheen', 'gta6-launch-aura', 'gta6-launch-color', 'gta6-launch-completed-fill', 'gta6-launch-zone-hit']) {
         if (map.getLayer(id)) map.removeLayer(id);
       }
-      for (const id of ['gta6-launch-reveal', 'gta6-launch-regions']) {
-        if (map.getSource(id)) map.removeSource(id);
-      }
+      for (const id of sources) if (map.getSource(id)) map.removeSource(id);
     };
   }, [map, onError]);
 
   useEffect(() => {
-    if (!map || !geometry || !map.getSource('gta6-launch-reveal')) return;
-    const features: FeatureCollection['features'] = [];
-    for (const feature of geometry.features) {
-      const region = REGION_BY_CODE.get(String(feature.properties?.countryCode ?? ''));
-      if (!region || !feature.geometry) continue;
-      const progress = revealProgress(region, now, simulated);
+    if (!map || !segments.length) return;
+    const completed: FeatureCollection['features'] = [];
+    const moving: FeatureCollection['features'] = [];
+    const completedKeys: string[] = [];
+    for (const segment of segments) {
+      const progress = revealProgress(segment.window, now, simulated);
       if (progress <= 0) continue;
-      const revealed = clipCountryReveal(feature.geometry, region.anchor, progress);
-      if (!revealed) continue;
-      features.push({
-        type: 'Feature',
-        geometry: revealed,
-        properties: { countryCode: region.code, color: region.color, name: region.label }
-      });
+      const properties = { countryCode: segment.countryCode, color: segment.region.color };
+      if (progress >= 0.99999) {
+        completedKeys.push(segment.countryCode + ':' + segment.window.unlockAt);
+        completed.push({ type: 'Feature', geometry: segment.geometry, properties });
+      } else {
+        const geometry = clipCountryReveal(segment.geometry, segment.window.anchor, progress);
+        if (geometry) moving.push({ type: 'Feature', geometry, properties });
+      }
     }
-    (map.getSource('gta6-launch-reveal') as GeoJSONSource).setData({
-      type: 'FeatureCollection', features
+
+    // The static source is only rebuilt at a release boundary, not on every
+    // animation frame. Most territories stay GPU-resident between updates.
+    const signature = completedKeys.join('|');
+    if (signature !== lastCompleted.current) {
+      (map.getSource('gta6-launch-completed') as GeoJSONSource | undefined)?.setData({
+        type: 'FeatureCollection', features: completed
+      });
+      lastCompleted.current = signature;
+    }
+    (map.getSource('gta6-launch-reveal') as GeoJSONSource | undefined)?.setData({
+      type: 'FeatureCollection', features: moving
     });
-  }, [map, geometry, now, simulated]);
+  }, [map, segments, now, simulated]);
 
   return null;
 }
