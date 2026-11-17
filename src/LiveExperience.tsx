@@ -153,6 +153,7 @@ export default function LiveExperience() {
         </button>
       </header>
       <nav className="live-navigation" aria-label="World Pulse">
+        <a href="/?moment=gta6" className="live-gta-moment" aria-label="GTA VI — acompanhar lançamento global">✦ GTA VI</a>
         <button
           aria-expanded={panel === "ranking"}
           aria-controls="live-ranking"
