@@ -60,3 +60,67 @@
 
 .gta-launch-source{color:#ffd3b9;font-weight:700;font-size:11px;text-underline-offset:3px;width:max-content}
 .gta-launch-source:hover{color:#fff5dc}
+
+/* Cinematic globe camera: transient spotlight never blocks map interactions. */
+.gta-launch-cinema {
+  position:absolute;
+  z-index:3;
+  pointer-events:none;
+  left:50%;
+  bottom:clamp(98px,14vh,148px);
+  width:min(440px,36vw);
+  transform:translateX(-50%);
+  padding:16px 22px 18px;
+  color:#fff1ef;
+  text-align:center;
+  border:1px solid #ffa4c263;
+  border-radius:18px;
+  background:linear-gradient(140deg,#1b1128dd,#45223bcc 55%,#1c1837dd);
+  box-shadow:0 12px 65px #120516aa,0 0 36px #f276b22c;
+  backdrop-filter:blur(20px);
+  animation:gta-spotlight-enter .48s both;
+}
+.gta-launch-cinema-eyebrow {
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  font-size:10px;letter-spacing:.14em;font-weight:800;color:#ffa6bf;
+}
+.gta-launch-cinema-pulse {
+  display:inline-block;width:8px;height:8px;border-radius:50%;
+  background:#ffaf81;box-shadow:0 0 16px #ff94aa;
+  animation:gta-spotlight-pulse 1.6s ease-in-out infinite;
+}
+.gta-launch-cinema strong {
+  display:block;
+  margin:9px 0 6px;
+  font-size:clamp(18px,1.8vw,28px);
+  line-height:1.17;
+  letter-spacing:-.03em;
+  text-shadow:0 0 25px #f88cb28c;
+}
+.gta-launch-cinema small {
+  font-size:11px;
+  color:#e0c5d5;
+  line-height:1.4;
+}
+@keyframes gta-spotlight-enter {
+  from {opacity:0;transform:translate(-50%,14px) scale(.96)}
+  to {opacity:1;transform:translate(-50%,0) scale(1)}
+}
+@keyframes gta-spotlight-pulse {
+  50% {opacity:.45;transform:scale(1.8)}
+}
+@media(max-width:980px) {
+  .gta-launch-cinema {width:min(340px,38vw);padding:12px 16px;bottom:120px}
+}
+@media(max-width:680px) {
+  .gta-launch-cinema {
+    position:fixed;left:50%;bottom:14px;
+    width:calc(100% - 36px);
+    padding:12px 18px;
+  }
+  .gta-launch-cinema strong {font-size:18px}
+  .gta-launch-cinema-eyebrow {font-size:9px}
+}
+@media(prefers-reduced-motion:reduce) {
+  .gta-launch-cinema,.gta-launch-cinema-pulse {animation:none!important}
+}
