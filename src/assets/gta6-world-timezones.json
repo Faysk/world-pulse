@@ -1,0 +1,3793 @@
+[
+  {
+    "code": "AF",
+    "label": "Afeganistão",
+    "anchor": [
+      66.087,
+      33.856
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Asia/Kabul",
+        "unlockAt": "2026-11-18T19:30:00.000Z",
+        "anchor": [
+          69.2,
+          34.517
+        ],
+        "offsetMinutes": 270
+      }
+    ]
+  },
+  {
+    "code": "ZA",
+    "label": "África do Sul",
+    "anchor": [
+      25,
+      -29
+    ],
+    "color": "#aa80ff",
+    "windows": [
+      {
+        "timeZone": "Africa/Johannesburg",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          28,
+          -26.25
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "AL",
+    "label": "Albânia",
+    "anchor": [
+      20.032,
+      41.141
+    ],
+    "color": "#ee86bd",
+    "windows": [
+      {
+        "timeZone": "Europe/Tirane",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          19.833,
+          41.333
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "DE",
+    "label": "Alemanha",
+    "anchor": [
+      10.5,
+      51
+    ],
+    "color": "#fa7e9c",
+    "windows": [
+      {
+        "timeZone": "Europe/Busingen",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          8.683,
+          47.7
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "AO",
+    "label": "Angola",
+    "anchor": [
+      17.503,
+      -12.292
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Africa/Luanda",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          13.233,
+          -8.8
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "SA",
+    "label": "Arábia Saudita",
+    "anchor": [
+      44.516,
+      24.123
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Asia/Riyadh",
+        "unlockAt": "2026-11-18T21:00:00.000Z",
+        "anchor": [
+          46.717,
+          24.633
+        ],
+        "offsetMinutes": 180
+      }
+    ]
+  },
+  {
+    "code": "DZ",
+    "label": "Argélia",
+    "anchor": [
+      2.598,
+      28.185
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "Africa/Algiers",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          3.05,
+          36.783
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "AR",
+    "label": "Argentina",
+    "anchor": [
+      -64,
+      -36
+    ],
+    "color": "#ff7d9f",
+    "windows": [
+      {
+        "timeZone": "America/Argentina/San_Luis",
+        "unlockAt": "2026-11-19T03:00:00.000Z",
+        "anchor": [
+          -66.35,
+          -33.317
+        ],
+        "offsetMinutes": -180
+      }
+    ]
+  },
+  {
+    "code": "AM",
+    "label": "Arménia",
+    "anchor": [
+      45,
+      40.217
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Asia/Yerevan",
+        "unlockAt": "2026-11-18T20:00:00.000Z",
+        "anchor": [
+          44.5,
+          40.183
+        ],
+        "offsetMinutes": 240
+      }
+    ]
+  },
+  {
+    "code": "AU",
+    "label": "Austrália",
+    "anchor": [
+      134,
+      -26
+    ],
+    "color": "#ffac77",
+    "windows": [
+      {
+        "timeZone": "Australia/Hobart",
+        "unlockAt": "2026-11-18T13:00:00.000Z",
+        "anchor": [
+          147.317,
+          -42.883
+        ],
+        "offsetMinutes": 660
+      },
+      {
+        "timeZone": "Australia/Adelaide",
+        "unlockAt": "2026-11-18T13:30:00.000Z",
+        "anchor": [
+          138.583,
+          -34.917
+        ],
+        "offsetMinutes": 630
+      },
+      {
+        "timeZone": "Australia/Lindeman",
+        "unlockAt": "2026-11-18T14:00:00.000Z",
+        "anchor": [
+          149,
+          -20.267
+        ],
+        "offsetMinutes": 600
+      },
+      {
+        "timeZone": "Australia/Darwin",
+        "unlockAt": "2026-11-18T14:30:00.000Z",
+        "anchor": [
+          130.833,
+          -12.467
+        ],
+        "offsetMinutes": 570
+      },
+      {
+        "timeZone": "Australia/Eucla",
+        "unlockAt": "2026-11-18T15:15:00.000Z",
+        "anchor": [
+          128.867,
+          -31.717
+        ],
+        "offsetMinutes": 525
+      },
+      {
+        "timeZone": "Australia/Perth",
+        "unlockAt": "2026-11-18T16:00:00.000Z",
+        "anchor": [
+          115.85,
+          -31.95
+        ],
+        "offsetMinutes": 480
+      }
+    ]
+  },
+  {
+    "code": "AT",
+    "label": "Áustria",
+    "anchor": [
+      14.076,
+      47.614
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "Europe/Vienna",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          16.333,
+          48.217
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "AZ",
+    "label": "Azerbaijão",
+    "anchor": [
+      47.681,
+      40.281
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Asia/Baku",
+        "unlockAt": "2026-11-18T20:00:00.000Z",
+        "anchor": [
+          49.85,
+          40.383
+        ],
+        "offsetMinutes": 240
+      }
+    ]
+  },
+  {
+    "code": "BS",
+    "label": "Bahamas",
+    "anchor": [
+      -77.916,
+      24.506
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "America/Nassau",
+        "unlockAt": "2026-11-19T05:00:00.000Z",
+        "anchor": [
+          -77.35,
+          25.083
+        ],
+        "offsetMinutes": -300
+      }
+    ]
+  },
+  {
+    "code": "BD",
+    "label": "Bangladesh",
+    "anchor": [
+      90.268,
+      23.839
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "Asia/Dhaka",
+        "unlockAt": "2026-11-18T18:00:00.000Z",
+        "anchor": [
+          90.417,
+          23.717
+        ],
+        "offsetMinutes": 360
+      }
+    ]
+  },
+  {
+    "code": "BE",
+    "label": "Bélgica",
+    "anchor": [
+      4.581,
+      50.652
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "Europe/Brussels",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          4.333,
+          50.833
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "BZ",
+    "label": "Belize",
+    "anchor": [
+      -88.703,
+      17.197
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "America/Belize",
+        "unlockAt": "2026-11-19T06:00:00.000Z",
+        "anchor": [
+          -88.2,
+          17.5
+        ],
+        "offsetMinutes": -360
+      }
+    ]
+  },
+  {
+    "code": "BJ",
+    "label": "Benim",
+    "anchor": [
+      2.337,
+      9.647
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "Africa/Porto-Novo",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          2.617,
+          6.483
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "BY",
+    "label": "Bielorrússia",
+    "anchor": [
+      27.981,
+      53.506
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "Europe/Minsk",
+        "unlockAt": "2026-11-18T21:00:00.000Z",
+        "anchor": [
+          27.567,
+          53.9
+        ],
+        "offsetMinutes": 180
+      }
+    ]
+  },
+  {
+    "code": "BO",
+    "label": "Bolívia",
+    "anchor": [
+      -64.641,
+      -16.729
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "America/La_Paz",
+        "unlockAt": "2026-11-19T04:00:00.000Z",
+        "anchor": [
+          -68.15,
+          -16.5
+        ],
+        "offsetMinutes": -240
+      }
+    ]
+  },
+  {
+    "code": "BA",
+    "label": "Bósnia e Herzegovina",
+    "anchor": [
+      17.817,
+      44.181
+    ],
+    "color": "#ee86bd",
+    "windows": [
+      {
+        "timeZone": "Europe/Sarajevo",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          18.417,
+          43.867
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "BW",
+    "label": "Botsuana",
+    "anchor": [
+      23.773,
+      -22.1
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Africa/Gaborone",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          25.917,
+          -24.65
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "BR",
+    "label": "Brasil",
+    "anchor": [
+      -51,
+      -14
+    ],
+    "color": "#ffac77",
+    "windows": [
+      {
+        "timeZone": "America/Sao_Paulo",
+        "unlockAt": "2026-11-19T03:00:00.000Z",
+        "anchor": [
+          -46.617,
+          -23.533
+        ],
+        "offsetMinutes": -180
+      },
+      {
+        "timeZone": "America/Manaus",
+        "unlockAt": "2026-11-19T04:00:00.000Z",
+        "anchor": [
+          -60.017,
+          -3.133
+        ],
+        "offsetMinutes": -240
+      },
+      {
+        "timeZone": "America/Eirunepe",
+        "unlockAt": "2026-11-19T05:00:00.000Z",
+        "anchor": [
+          -69.867,
+          -6.667
+        ],
+        "offsetMinutes": -300
+      }
+    ]
+  },
+  {
+    "code": "BN",
+    "label": "Brunei",
+    "anchor": [
+      114.915,
+      4.69
+    ],
+    "color": "#ee86bd",
+    "windows": [
+      {
+        "timeZone": "Asia/Brunei",
+        "unlockAt": "2026-11-18T16:00:00.000Z",
+        "anchor": [
+          114.917,
+          4.933
+        ],
+        "offsetMinutes": 480
+      }
+    ]
+  },
+  {
+    "code": "BG",
+    "label": "Bulgária",
+    "anchor": [
+      25.195,
+      42.753
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Europe/Sofia",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          23.317,
+          42.683
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "BF",
+    "label": "Burkina Faso",
+    "anchor": [
+      -1.777,
+      12.312
+    ],
+    "color": "#ee86bd",
+    "windows": [
+      {
+        "timeZone": "Africa/Ouagadougou",
+        "unlockAt": "2026-11-19T00:00:00.000Z",
+        "anchor": [
+          -1.517,
+          12.367
+        ],
+        "offsetMinutes": 0
+      }
+    ]
+  },
+  {
+    "code": "BI",
+    "label": "Burundi",
+    "anchor": [
+      29.914,
+      -3.377
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "Africa/Bujumbura",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          29.367,
+          -3.383
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "BT",
+    "label": "Butão",
+    "anchor": [
+      90.472,
+      27.428
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "Asia/Thimphu",
+        "unlockAt": "2026-11-18T18:00:00.000Z",
+        "anchor": [
+          89.65,
+          27.467
+        ],
+        "offsetMinutes": 360
+      }
+    ]
+  },
+  {
+    "code": "CM",
+    "label": "Camarões",
+    "anchor": [
+      12.612,
+      5.663
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "Africa/Douala",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          9.7,
+          4.05
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "KH",
+    "label": "Camboja",
+    "anchor": [
+      104.876,
+      12.685
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "Asia/Phnom_Penh",
+        "unlockAt": "2026-11-18T17:00:00.000Z",
+        "anchor": [
+          104.917,
+          11.55
+        ],
+        "offsetMinutes": 420
+      }
+    ]
+  },
+  {
+    "code": "CA",
+    "label": "Canadá",
+    "anchor": [
+      -101.57,
+      57.749
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "America/St_Johns",
+        "unlockAt": "2026-11-19T03:30:00.000Z",
+        "anchor": [
+          -52.717,
+          47.567
+        ],
+        "offsetMinutes": -210
+      },
+      {
+        "timeZone": "America/Goose_Bay",
+        "unlockAt": "2026-11-19T04:00:00.000Z",
+        "anchor": [
+          -60.417,
+          53.333
+        ],
+        "offsetMinutes": -240
+      },
+      {
+        "timeZone": "America/Toronto",
+        "unlockAt": "2026-11-19T05:00:00.000Z",
+        "anchor": [
+          -79.383,
+          43.65
+        ],
+        "offsetMinutes": -300
+      },
+      {
+        "timeZone": "America/Winnipeg",
+        "unlockAt": "2026-11-19T06:00:00.000Z",
+        "anchor": [
+          -97.15,
+          49.883
+        ],
+        "offsetMinutes": -360
+      },
+      {
+        "timeZone": "America/Fort_Nelson",
+        "unlockAt": "2026-11-19T07:00:00.000Z",
+        "anchor": [
+          -122.7,
+          58.8
+        ],
+        "offsetMinutes": -420
+      },
+      {
+        "timeZone": "America/Vancouver",
+        "unlockAt": "2026-11-19T08:00:00.000Z",
+        "anchor": [
+          -123.117,
+          49.267
+        ],
+        "offsetMinutes": -480
+      }
+    ]
+  },
+  {
+    "code": "QA",
+    "label": "Catar",
+    "anchor": [
+      51.184,
+      25.322
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Asia/Qatar",
+        "unlockAt": "2026-11-18T21:00:00.000Z",
+        "anchor": [
+          51.533,
+          25.283
+        ],
+        "offsetMinutes": 180
+      }
+    ]
+  },
+  {
+    "code": "KZ",
+    "label": "Cazaquistão",
+    "anchor": [
+      67.285,
+      48.192
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "Asia/Aqtobe",
+        "unlockAt": "2026-11-18T19:00:00.000Z",
+        "anchor": [
+          57.167,
+          50.283
+        ],
+        "offsetMinutes": 300
+      }
+    ]
+  },
+  {
+    "code": "TD",
+    "label": "Chade",
+    "anchor": [
+      18.581,
+      15.329
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "Africa/Ndjamena",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          15.05,
+          12.117
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "CZ",
+    "label": "Chéquia",
+    "anchor": [
+      15.335,
+      49.775
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "Europe/Prague",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          14.433,
+          50.083
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "CL",
+    "label": "Chile",
+    "anchor": [
+      -71.671,
+      -37.342
+    ],
+    "color": "#ee86bd",
+    "windows": [
+      {
+        "timeZone": "America/Punta_Arenas",
+        "unlockAt": "2026-11-19T03:00:00.000Z",
+        "anchor": [
+          -70.917,
+          -53.15
+        ],
+        "offsetMinutes": -180
+      }
+    ]
+  },
+  {
+    "code": "CN",
+    "label": "China",
+    "anchor": [
+      103.865,
+      36.609
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Asia/Shanghai",
+        "unlockAt": "2026-11-18T16:00:00.000Z",
+        "anchor": [
+          121.467,
+          31.233
+        ],
+        "offsetMinutes": 480
+      },
+      {
+        "timeZone": "Asia/Urumqi",
+        "unlockAt": "2026-11-18T18:00:00.000Z",
+        "anchor": [
+          87.583,
+          43.8
+        ],
+        "offsetMinutes": 360
+      }
+    ]
+  },
+  {
+    "code": "CY",
+    "label": "Chipre",
+    "anchor": [
+      33.04,
+      34.907
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "Asia/Nicosia",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          33.367,
+          35.167
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "CO",
+    "label": "Colômbia",
+    "anchor": [
+      -73.078,
+      3.927
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "America/Bogota",
+        "unlockAt": "2026-11-19T05:00:00.000Z",
+        "anchor": [
+          -74.083,
+          4.6
+        ],
+        "offsetMinutes": -300
+      }
+    ]
+  },
+  {
+    "code": "KP",
+    "label": "Coreia do Norte",
+    "anchor": [
+      127.165,
+      40.143
+    ],
+    "color": "#ee86bd",
+    "windows": [
+      {
+        "timeZone": "Asia/Pyongyang",
+        "unlockAt": "2026-11-18T15:00:00.000Z",
+        "anchor": [
+          125.75,
+          39.017
+        ],
+        "offsetMinutes": 540
+      }
+    ]
+  },
+  {
+    "code": "KR",
+    "label": "Coreia do Sul",
+    "anchor": [
+      128,
+      36
+    ],
+    "color": "#b77dfc",
+    "windows": [
+      {
+        "timeZone": "Asia/Seoul",
+        "unlockAt": "2026-11-18T15:00:00.000Z",
+        "anchor": [
+          126.967,
+          37.55
+        ],
+        "offsetMinutes": 540
+      }
+    ]
+  },
+  {
+    "code": "CI",
+    "label": "Costa do Marfim",
+    "anchor": [
+      -5.612,
+      7.554
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "Africa/Abidjan",
+        "unlockAt": "2026-11-19T00:00:00.000Z",
+        "anchor": [
+          -4.033,
+          5.317
+        ],
+        "offsetMinutes": 0
+      }
+    ]
+  },
+  {
+    "code": "CR",
+    "label": "Costa Rica",
+    "anchor": [
+      -84.175,
+      9.966
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "America/Costa_Rica",
+        "unlockAt": "2026-11-19T06:00:00.000Z",
+        "anchor": [
+          -84.083,
+          9.933
+        ],
+        "offsetMinutes": -360
+      }
+    ]
+  },
+  {
+    "code": "HR",
+    "label": "Croácia",
+    "anchor": [
+      16.566,
+      45.016
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "Europe/Zagreb",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          15.967,
+          45.8
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "CU",
+    "label": "Cuba",
+    "anchor": [
+      -78.961,
+      21.632
+    ],
+    "color": "#ee86bd",
+    "windows": [
+      {
+        "timeZone": "America/Havana",
+        "unlockAt": "2026-11-19T05:00:00.000Z",
+        "anchor": [
+          -82.367,
+          23.133
+        ],
+        "offsetMinutes": -300
+      }
+    ]
+  },
+  {
+    "code": "DK",
+    "label": "Dinamarca",
+    "anchor": [
+      9.311,
+      56.22
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "Europe/Copenhagen",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          12.583,
+          55.667
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "DJ",
+    "label": "Djibouti",
+    "anchor": [
+      42.498,
+      11.773
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Africa/Djibouti",
+        "unlockAt": "2026-11-18T21:00:00.000Z",
+        "anchor": [
+          43.15,
+          11.6
+        ],
+        "offsetMinutes": 180
+      }
+    ]
+  },
+  {
+    "code": "EG",
+    "label": "Egito",
+    "anchor": [
+      29.844,
+      26.507
+    ],
+    "color": "#ee86bd",
+    "windows": [
+      {
+        "timeZone": "Africa/Cairo",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          31.25,
+          30.05
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "SV",
+    "label": "El Salvador",
+    "anchor": [
+      -88.873,
+      13.726
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "America/El_Salvador",
+        "unlockAt": "2026-11-19T06:00:00.000Z",
+        "anchor": [
+          -89.2,
+          13.7
+        ],
+        "offsetMinutes": -360
+      }
+    ]
+  },
+  {
+    "code": "AE",
+    "label": "Emirados Árabes Unidos",
+    "anchor": [
+      54.3,
+      24.4
+    ],
+    "color": "#ffac77",
+    "windows": [
+      {
+        "timeZone": "Asia/Dubai",
+        "unlockAt": "2026-11-18T20:00:00.000Z",
+        "anchor": [
+          55.3,
+          25.3
+        ],
+        "offsetMinutes": 240
+      }
+    ]
+  },
+  {
+    "code": "EC",
+    "label": "Equador",
+    "anchor": [
+      -78.384,
+      -1.455
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "America/Guayaquil",
+        "unlockAt": "2026-11-19T05:00:00.000Z",
+        "anchor": [
+          -79.833,
+          -2.167
+        ],
+        "offsetMinutes": -300
+      }
+    ]
+  },
+  {
+    "code": "ER",
+    "label": "Eritreia",
+    "anchor": [
+      38.678,
+      15.427
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "Africa/Asmara",
+        "unlockAt": "2026-11-18T21:00:00.000Z",
+        "anchor": [
+          38.883,
+          15.333
+        ],
+        "offsetMinutes": 180
+      }
+    ]
+  },
+  {
+    "code": "SK",
+    "label": "Eslováquia",
+    "anchor": [
+      19.508,
+      48.727
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Europe/Bratislava",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          17.117,
+          48.15
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "SI",
+    "label": "Eslovénia",
+    "anchor": [
+      14.938,
+      46.125
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "Europe/Ljubljana",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          14.517,
+          46.05
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "ES",
+    "label": "Espanha",
+    "anchor": [
+      -4,
+      40
+    ],
+    "color": "#ffae75",
+    "windows": [
+      {
+        "timeZone": "Africa/Ceuta",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          -5.317,
+          35.883
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "SZ",
+    "label": "Essuatíni",
+    "anchor": [
+      31.395,
+      -26.49
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Africa/Mbabane",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          31.1,
+          -26.3
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "US",
+    "label": "Estados Unidos",
+    "anchor": [
+      -98,
+      39
+    ],
+    "color": "#a87efa",
+    "windows": [
+      {
+        "timeZone": "America/Indiana/Indianapolis",
+        "unlockAt": "2026-11-19T05:00:00.000Z",
+        "anchor": [
+          -86.158,
+          39.768
+        ],
+        "offsetMinutes": -300
+      },
+      {
+        "timeZone": "America/Chicago",
+        "unlockAt": "2026-11-19T06:00:00.000Z",
+        "anchor": [
+          -87.65,
+          41.85
+        ],
+        "offsetMinutes": -360
+      },
+      {
+        "timeZone": "America/Phoenix",
+        "unlockAt": "2026-11-19T07:00:00.000Z",
+        "anchor": [
+          -112.073,
+          33.448
+        ],
+        "offsetMinutes": -420
+      },
+      {
+        "timeZone": "America/Los_Angeles",
+        "unlockAt": "2026-11-19T08:00:00.000Z",
+        "anchor": [
+          -118.243,
+          34.052
+        ],
+        "offsetMinutes": -480
+      },
+      {
+        "timeZone": "America/Yakutat",
+        "unlockAt": "2026-11-19T09:00:00.000Z",
+        "anchor": [
+          -139.727,
+          59.547
+        ],
+        "offsetMinutes": -540
+      },
+      {
+        "timeZone": "Pacific/Honolulu",
+        "unlockAt": "2026-11-19T10:00:00.000Z",
+        "anchor": [
+          -157.858,
+          21.307
+        ],
+        "offsetMinutes": -600
+      }
+    ]
+  },
+  {
+    "code": "EE",
+    "label": "Estónia",
+    "anchor": [
+      25.825,
+      58.644
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "Europe/Tallinn",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          24.75,
+          59.417
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "ET",
+    "label": "Etiópia",
+    "anchor": [
+      39.551,
+      8.654
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Africa/Addis_Ababa",
+        "unlockAt": "2026-11-18T21:00:00.000Z",
+        "anchor": [
+          38.7,
+          9.033
+        ],
+        "offsetMinutes": 180
+      }
+    ]
+  },
+  {
+    "code": "FJ",
+    "label": "Fiji",
+    "anchor": [
+      177.997,
+      -17.831
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Pacific/Fiji",
+        "unlockAt": "2026-11-18T12:00:00.000Z",
+        "anchor": [
+          178.417,
+          -18.133
+        ],
+        "offsetMinutes": 720
+      }
+    ]
+  },
+  {
+    "code": "PH",
+    "label": "Filipinas",
+    "anchor": [
+      122,
+      12.8
+    ],
+    "color": "#a779f7",
+    "windows": [
+      {
+        "timeZone": "Asia/Manila",
+        "unlockAt": "2026-11-18T16:00:00.000Z",
+        "anchor": [
+          120.968,
+          14.587
+        ],
+        "offsetMinutes": 480
+      }
+    ]
+  },
+  {
+    "code": "FI",
+    "label": "Finlândia",
+    "anchor": [
+      26.212,
+      64.504
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Europe/Helsinki",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          24.967,
+          60.167
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "FR",
+    "label": "França",
+    "anchor": [
+      2.5,
+      46.6
+    ],
+    "color": "#a77aff",
+    "windows": [
+      {
+        "timeZone": "Europe/Paris",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          2.333,
+          48.867
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "GA",
+    "label": "Gabão",
+    "anchor": [
+      11.688,
+      -0.647
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Africa/Libreville",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          9.45,
+          0.383
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "GM",
+    "label": "Gâmbia",
+    "anchor": [
+      -15.432,
+      13.475
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Africa/Banjul",
+        "unlockAt": "2026-11-19T00:00:00.000Z",
+        "anchor": [
+          -16.65,
+          13.467
+        ],
+        "offsetMinutes": 0
+      }
+    ]
+  },
+  {
+    "code": "GH",
+    "label": "Gana",
+    "anchor": [
+      -1.237,
+      7.929
+    ],
+    "color": "#ee86bd",
+    "windows": [
+      {
+        "timeZone": "Africa/Accra",
+        "unlockAt": "2026-11-19T00:00:00.000Z",
+        "anchor": [
+          -0.217,
+          5.55
+        ],
+        "offsetMinutes": 0
+      }
+    ]
+  },
+  {
+    "code": "GE",
+    "label": "Geórgia",
+    "anchor": [
+      43.482,
+      42.162
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Asia/Tbilisi",
+        "unlockAt": "2026-11-18T20:00:00.000Z",
+        "anchor": [
+          44.817,
+          41.717
+        ],
+        "offsetMinutes": 240
+      }
+    ]
+  },
+  {
+    "code": "GR",
+    "label": "Grécia",
+    "anchor": [
+      23.9,
+      38.8
+    ],
+    "color": "#ffad7a",
+    "windows": [
+      {
+        "timeZone": "Europe/Athens",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          23.717,
+          37.967
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "GL",
+    "label": "Groenlândia",
+    "anchor": [
+      -41.5,
+      74.77
+    ],
+    "color": "#ee86bd",
+    "windows": [
+      {
+        "timeZone": "America/Danmarkshavn",
+        "unlockAt": "2026-11-19T00:00:00.000Z",
+        "anchor": [
+          -18.667,
+          76.767
+        ],
+        "offsetMinutes": 0
+      },
+      {
+        "timeZone": "America/Nuuk",
+        "unlockAt": "2026-11-19T02:00:00.000Z",
+        "anchor": [
+          -51.733,
+          64.183
+        ],
+        "offsetMinutes": -120
+      },
+      {
+        "timeZone": "America/Thule",
+        "unlockAt": "2026-11-19T04:00:00.000Z",
+        "anchor": [
+          -68.783,
+          76.567
+        ],
+        "offsetMinutes": -240
+      }
+    ]
+  },
+  {
+    "code": "GT",
+    "label": "Guatemala",
+    "anchor": [
+      -90.369,
+      15.699
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "America/Guatemala",
+        "unlockAt": "2026-11-19T06:00:00.000Z",
+        "anchor": [
+          -90.517,
+          14.633
+        ],
+        "offsetMinutes": -360
+      }
+    ]
+  },
+  {
+    "code": "GY",
+    "label": "Guiana",
+    "anchor": [
+      -58.971,
+      4.79
+    ],
+    "color": "#ee86bd",
+    "windows": [
+      {
+        "timeZone": "America/Guyana",
+        "unlockAt": "2026-11-19T04:00:00.000Z",
+        "anchor": [
+          -58.167,
+          6.8
+        ],
+        "offsetMinutes": -240
+      }
+    ]
+  },
+  {
+    "code": "GN",
+    "label": "Guiné",
+    "anchor": [
+      -11.061,
+      10.448
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Africa/Conakry",
+        "unlockAt": "2026-11-19T00:00:00.000Z",
+        "anchor": [
+          -13.717,
+          9.517
+        ],
+        "offsetMinutes": 0
+      }
+    ]
+  },
+  {
+    "code": "GQ",
+    "label": "Guiné Equatorial",
+    "anchor": [
+      10.366,
+      1.646
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "Africa/Malabo",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          8.783,
+          3.75
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "GW",
+    "label": "Guiné-Bissau",
+    "anchor": [
+      -15.111,
+      12.023
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Africa/Bissau",
+        "unlockAt": "2026-11-19T00:00:00.000Z",
+        "anchor": [
+          -15.583,
+          11.85
+        ],
+        "offsetMinutes": 0
+      }
+    ]
+  },
+  {
+    "code": "HT",
+    "label": "Haiti",
+    "anchor": [
+      -72.658,
+      18.901
+    ],
+    "color": "#ee86bd",
+    "windows": [
+      {
+        "timeZone": "America/Port-au-Prince",
+        "unlockAt": "2026-11-19T05:00:00.000Z",
+        "anchor": [
+          -72.333,
+          18.533
+        ],
+        "offsetMinutes": -300
+      }
+    ]
+  },
+  {
+    "code": "HN",
+    "label": "Honduras",
+    "anchor": [
+      -86.59,
+      14.823
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "America/Tegucigalpa",
+        "unlockAt": "2026-11-19T06:00:00.000Z",
+        "anchor": [
+          -87.217,
+          14.1
+        ],
+        "offsetMinutes": -360
+      }
+    ]
+  },
+  {
+    "code": "HU",
+    "label": "Hungria",
+    "anchor": [
+      19.358,
+      47.2
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Europe/Budapest",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          19.083,
+          47.5
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "YE",
+    "label": "Iémen",
+    "anchor": [
+      47.535,
+      15.913
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Asia/Aden",
+        "unlockAt": "2026-11-18T21:00:00.000Z",
+        "anchor": [
+          45.2,
+          12.75
+        ],
+        "offsetMinutes": 180
+      }
+    ]
+  },
+  {
+    "code": "FK",
+    "label": "Ilhas Malvinas",
+    "anchor": [
+      -59.421,
+      -51.713
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "Atlantic/Stanley",
+        "unlockAt": "2026-11-19T03:00:00.000Z",
+        "anchor": [
+          -57.85,
+          -51.7
+        ],
+        "offsetMinutes": -180
+      }
+    ]
+  },
+  {
+    "code": "SB",
+    "label": "Ilhas Salomão",
+    "anchor": [
+      159.102,
+      -7.902
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "Pacific/Guadalcanal",
+        "unlockAt": "2026-11-18T13:00:00.000Z",
+        "anchor": [
+          160.2,
+          -9.533
+        ],
+        "offsetMinutes": 660
+      }
+    ]
+  },
+  {
+    "code": "IN",
+    "label": "Índia",
+    "anchor": [
+      78.9,
+      22
+    ],
+    "color": "#ffb96a",
+    "windows": [
+      {
+        "timeZone": "Asia/Kolkata",
+        "unlockAt": "2026-11-18T18:30:00.000Z",
+        "anchor": [
+          88.367,
+          22.533
+        ],
+        "offsetMinutes": 330
+      }
+    ]
+  },
+  {
+    "code": "ID",
+    "label": "Indonésia",
+    "anchor": [
+      114.023,
+      -0.254
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "Asia/Jayapura",
+        "unlockAt": "2026-11-18T15:00:00.000Z",
+        "anchor": [
+          140.7,
+          -2.533
+        ],
+        "offsetMinutes": 540
+      },
+      {
+        "timeZone": "Asia/Makassar",
+        "unlockAt": "2026-11-18T16:00:00.000Z",
+        "anchor": [
+          119.4,
+          -5.117
+        ],
+        "offsetMinutes": 480
+      },
+      {
+        "timeZone": "Asia/Jakarta",
+        "unlockAt": "2026-11-18T17:00:00.000Z",
+        "anchor": [
+          106.8,
+          -6.167
+        ],
+        "offsetMinutes": 420
+      }
+    ]
+  },
+  {
+    "code": "IR",
+    "label": "Irão",
+    "anchor": [
+      54.285,
+      32.519
+    ],
+    "color": "#ee86bd",
+    "windows": [
+      {
+        "timeZone": "Asia/Tehran",
+        "unlockAt": "2026-11-18T20:30:00.000Z",
+        "anchor": [
+          51.433,
+          35.667
+        ],
+        "offsetMinutes": 210
+      }
+    ]
+  },
+  {
+    "code": "IQ",
+    "label": "Iraque",
+    "anchor": [
+      43.757,
+      33.037
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "Asia/Baghdad",
+        "unlockAt": "2026-11-18T21:00:00.000Z",
+        "anchor": [
+          44.417,
+          33.35
+        ],
+        "offsetMinutes": 180
+      }
+    ]
+  },
+  {
+    "code": "IS",
+    "label": "Islândia",
+    "anchor": [
+      -18.761,
+      65.074
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "Atlantic/Reykjavik",
+        "unlockAt": "2026-11-19T00:00:00.000Z",
+        "anchor": [
+          -21.85,
+          64.15
+        ],
+        "offsetMinutes": 0
+      }
+    ]
+  },
+  {
+    "code": "IL",
+    "label": "Israel",
+    "anchor": [
+      35.004,
+      31.485
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "Asia/Jerusalem",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          35.224,
+          31.781
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "IT",
+    "label": "Itália",
+    "anchor": [
+      12.5,
+      42
+    ],
+    "color": "#fa7e9c",
+    "windows": [
+      {
+        "timeZone": "Europe/Rome",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          12.483,
+          41.9
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "JM",
+    "label": "Jamaica",
+    "anchor": [
+      -77.324,
+      18.138
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "America/Jamaica",
+        "unlockAt": "2026-11-19T05:00:00.000Z",
+        "anchor": [
+          -76.793,
+          17.968
+        ],
+        "offsetMinutes": -300
+      }
+    ]
+  },
+  {
+    "code": "JP",
+    "label": "Japão",
+    "anchor": [
+      138,
+      37
+    ],
+    "color": "#fa7e9c",
+    "windows": [
+      {
+        "timeZone": "Asia/Tokyo",
+        "unlockAt": "2026-11-18T15:00:00.000Z",
+        "anchor": [
+          139.745,
+          35.654
+        ],
+        "offsetMinutes": 540
+      }
+    ]
+  },
+  {
+    "code": "JO",
+    "label": "Jordânia",
+    "anchor": [
+      36.779,
+      31.245
+    ],
+    "color": "#ee86bd",
+    "windows": [
+      {
+        "timeZone": "Asia/Amman",
+        "unlockAt": "2026-11-18T21:00:00.000Z",
+        "anchor": [
+          35.933,
+          31.95
+        ],
+        "offsetMinutes": 180
+      }
+    ]
+  },
+  {
+    "code": "KW",
+    "label": "Kuwait",
+    "anchor": [
+      47.6,
+      29.307
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Asia/Kuwait",
+        "unlockAt": "2026-11-18T21:00:00.000Z",
+        "anchor": [
+          47.983,
+          29.333
+        ],
+        "offsetMinutes": 180
+      }
+    ]
+  },
+  {
+    "code": "LA",
+    "label": "Laos",
+    "anchor": [
+      103.75,
+      18.445
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Asia/Vientiane",
+        "unlockAt": "2026-11-18T17:00:00.000Z",
+        "anchor": [
+          102.6,
+          17.967
+        ],
+        "offsetMinutes": 420
+      }
+    ]
+  },
+  {
+    "code": "LS",
+    "label": "Lesoto",
+    "anchor": [
+      28.17,
+      -29.625
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Africa/Maseru",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          27.5,
+          -29.467
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "LV",
+    "label": "Letónia",
+    "anchor": [
+      24.833,
+      56.807
+    ],
+    "color": "#ee86bd",
+    "windows": [
+      {
+        "timeZone": "Europe/Riga",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          24.1,
+          56.95
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "LB",
+    "label": "Líbano",
+    "anchor": [
+      35.871,
+      33.912
+    ],
+    "color": "#ee86bd",
+    "windows": [
+      {
+        "timeZone": "Asia/Beirut",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          35.5,
+          33.883
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "LR",
+    "label": "Libéria",
+    "anchor": [
+      -9.411,
+      6.432
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "Africa/Monrovia",
+        "unlockAt": "2026-11-19T00:00:00.000Z",
+        "anchor": [
+          -10.783,
+          6.3
+        ],
+        "offsetMinutes": 0
+      }
+    ]
+  },
+  {
+    "code": "LY",
+    "label": "Líbia",
+    "anchor": [
+      17.974,
+      26.997
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "Africa/Tripoli",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          13.183,
+          32.9
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "LT",
+    "label": "Lituânia",
+    "anchor": [
+      23.881,
+      55.284
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "Europe/Vilnius",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          25.317,
+          54.683
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "LU",
+    "label": "Luxemburgo",
+    "anchor": [
+      5.965,
+      49.766
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Europe/Luxembourg",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          6.15,
+          49.6
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "MK",
+    "label": "Macedónia do Norte",
+    "anchor": [
+      21.698,
+      41.606
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "Europe/Skopje",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          21.433,
+          41.983
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "MG",
+    "label": "Madagáscar",
+    "anchor": [
+      46.691,
+      -19.356
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "Indian/Antananarivo",
+        "unlockAt": "2026-11-18T21:00:00.000Z",
+        "anchor": [
+          47.517,
+          -18.917
+        ],
+        "offsetMinutes": 180
+      }
+    ]
+  },
+  {
+    "code": "MY",
+    "label": "Malásia",
+    "anchor": [
+      114.676,
+      3.548
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "Asia/Kuala_Lumpur",
+        "unlockAt": "2026-11-18T16:00:00.000Z",
+        "anchor": [
+          101.7,
+          3.167
+        ],
+        "offsetMinutes": 480
+      }
+    ]
+  },
+  {
+    "code": "MW",
+    "label": "Malawi",
+    "anchor": [
+      34.194,
+      -13.173
+    ],
+    "color": "#ee86bd",
+    "windows": [
+      {
+        "timeZone": "Africa/Blantyre",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          35,
+          -15.783
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "ML",
+    "label": "Mali",
+    "anchor": [
+      -3.543,
+      17.268
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "Africa/Bamako",
+        "unlockAt": "2026-11-19T00:00:00.000Z",
+        "anchor": [
+          -8,
+          12.65
+        ],
+        "offsetMinutes": 0
+      }
+    ]
+  },
+  {
+    "code": "MA",
+    "label": "Marrocos",
+    "anchor": [
+      -8.42,
+      29.885
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "Africa/Casablanca",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          -7.583,
+          33.65
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "MR",
+    "label": "Mauritânia",
+    "anchor": [
+      -10.326,
+      20.209
+    ],
+    "color": "#ee86bd",
+    "windows": [
+      {
+        "timeZone": "Africa/Nouakchott",
+        "unlockAt": "2026-11-19T00:00:00.000Z",
+        "anchor": [
+          -15.95,
+          18.1
+        ],
+        "offsetMinutes": 0
+      }
+    ]
+  },
+  {
+    "code": "MX",
+    "label": "México",
+    "anchor": [
+      -102,
+      24
+    ],
+    "color": "#ffb66b",
+    "windows": [
+      {
+        "timeZone": "America/Cancun",
+        "unlockAt": "2026-11-19T05:00:00.000Z",
+        "anchor": [
+          -86.767,
+          21.083
+        ],
+        "offsetMinutes": -300
+      },
+      {
+        "timeZone": "America/Monterrey",
+        "unlockAt": "2026-11-19T06:00:00.000Z",
+        "anchor": [
+          -100.317,
+          25.667
+        ],
+        "offsetMinutes": -360
+      },
+      {
+        "timeZone": "America/Ciudad_Juarez",
+        "unlockAt": "2026-11-19T07:00:00.000Z",
+        "anchor": [
+          -106.483,
+          31.733
+        ],
+        "offsetMinutes": -420
+      },
+      {
+        "timeZone": "America/Tijuana",
+        "unlockAt": "2026-11-19T08:00:00.000Z",
+        "anchor": [
+          -117.017,
+          32.533
+        ],
+        "offsetMinutes": -480
+      }
+    ]
+  },
+  {
+    "code": "MZ",
+    "label": "Moçambique",
+    "anchor": [
+      35.473,
+      -17.23
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "Africa/Maputo",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          32.583,
+          -25.967
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "MD",
+    "label": "Moldávia",
+    "anchor": [
+      28.41,
+      47.204
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Europe/Chisinau",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          28.833,
+          47
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "MN",
+    "label": "Mongólia",
+    "anchor": [
+      102.946,
+      46.824
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Asia/Ulaanbaatar",
+        "unlockAt": "2026-11-18T16:00:00.000Z",
+        "anchor": [
+          106.883,
+          47.917
+        ],
+        "offsetMinutes": 480
+      },
+      {
+        "timeZone": "Asia/Hovd",
+        "unlockAt": "2026-11-18T17:00:00.000Z",
+        "anchor": [
+          91.65,
+          48.017
+        ],
+        "offsetMinutes": 420
+      }
+    ]
+  },
+  {
+    "code": "ME",
+    "label": "Montenegro",
+    "anchor": [
+      19.286,
+      42.789
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Europe/Podgorica",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          19.267,
+          42.433
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "MM",
+    "label": "Myanmar",
+    "anchor": [
+      96.506,
+      21.017
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "Asia/Yangon",
+        "unlockAt": "2026-11-18T17:30:00.000Z",
+        "anchor": [
+          96.167,
+          16.783
+        ],
+        "offsetMinutes": 390
+      }
+    ]
+  },
+  {
+    "code": "NA",
+    "label": "Namíbia",
+    "anchor": [
+      17.156,
+      -22.1
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Africa/Windhoek",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          17.1,
+          -22.567
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "NP",
+    "label": "Nepal",
+    "anchor": [
+      84.013,
+      28.239
+    ],
+    "color": "#ee86bd",
+    "windows": [
+      {
+        "timeZone": "Asia/Kathmandu",
+        "unlockAt": "2026-11-18T18:15:00.000Z",
+        "anchor": [
+          85.317,
+          27.717
+        ],
+        "offsetMinutes": 345
+      }
+    ]
+  },
+  {
+    "code": "NI",
+    "label": "Nicarágua",
+    "anchor": [
+      -85.02,
+      12.848
+    ],
+    "color": "#ee86bd",
+    "windows": [
+      {
+        "timeZone": "America/Managua",
+        "unlockAt": "2026-11-19T06:00:00.000Z",
+        "anchor": [
+          -86.283,
+          12.15
+        ],
+        "offsetMinutes": -360
+      }
+    ]
+  },
+  {
+    "code": "NE",
+    "label": "Níger",
+    "anchor": [
+      9.324,
+      17.346
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Africa/Niamey",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          2.117,
+          13.517
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "NG",
+    "label": "Nigéria",
+    "anchor": [
+      7.995,
+      9.548
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Africa/Lagos",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          3.4,
+          6.45
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "NO",
+    "label": "Noruega",
+    "anchor": [
+      14.245,
+      64.537
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "Europe/Oslo",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          10.75,
+          59.917
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "NC",
+    "label": "Nova Caledónia",
+    "anchor": [
+      165.534,
+      -21.261
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Pacific/Noumea",
+        "unlockAt": "2026-11-18T13:00:00.000Z",
+        "anchor": [
+          166.45,
+          -22.267
+        ],
+        "offsetMinutes": 660
+      }
+    ]
+  },
+  {
+    "code": "NZ",
+    "label": "Nova Zelândia",
+    "anchor": [
+      173,
+      -41
+    ],
+    "color": "#fa7e9c",
+    "windows": [
+      {
+        "timeZone": "Pacific/Auckland",
+        "unlockAt": "2026-11-18T11:00:00.000Z",
+        "anchor": [
+          174.767,
+          -36.867
+        ],
+        "offsetMinutes": 780
+      }
+    ]
+  },
+  {
+    "code": "OM",
+    "label": "Omã",
+    "anchor": [
+      56.098,
+      20.581
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "Asia/Muscat",
+        "unlockAt": "2026-11-18T20:00:00.000Z",
+        "anchor": [
+          58.583,
+          23.6
+        ],
+        "offsetMinutes": 240
+      }
+    ]
+  },
+  {
+    "code": "NL",
+    "label": "Países Baixos",
+    "anchor": [
+      5.512,
+      52.299
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "Europe/Amsterdam",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          4.9,
+          52.367
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "PS",
+    "label": "Palestina",
+    "anchor": [
+      35.273,
+      31.941
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Asia/Gaza",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          34.467,
+          31.5
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "PA",
+    "label": "Panamá",
+    "anchor": [
+      -80.109,
+      8.53
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "America/Panama",
+        "unlockAt": "2026-11-19T05:00:00.000Z",
+        "anchor": [
+          -79.533,
+          8.967
+        ],
+        "offsetMinutes": -300
+      }
+    ]
+  },
+  {
+    "code": "PG",
+    "label": "Papua-Nova Guiné",
+    "anchor": [
+      144.331,
+      -6.645
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Pacific/Bougainville",
+        "unlockAt": "2026-11-18T13:00:00.000Z",
+        "anchor": [
+          155.567,
+          -6.217
+        ],
+        "offsetMinutes": 660
+      },
+      {
+        "timeZone": "Pacific/Port_Moresby",
+        "unlockAt": "2026-11-18T14:00:00.000Z",
+        "anchor": [
+          147.167,
+          -9.5
+        ],
+        "offsetMinutes": 600
+      }
+    ]
+  },
+  {
+    "code": "PK",
+    "label": "Paquistão",
+    "anchor": [
+      69.414,
+      29.973
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "Asia/Karachi",
+        "unlockAt": "2026-11-18T19:00:00.000Z",
+        "anchor": [
+          67.05,
+          24.867
+        ],
+        "offsetMinutes": 300
+      }
+    ]
+  },
+  {
+    "code": "PY",
+    "label": "Paraguai",
+    "anchor": [
+      -58.387,
+      -23.248
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "America/Asuncion",
+        "unlockAt": "2026-11-19T03:00:00.000Z",
+        "anchor": [
+          -57.667,
+          -25.267
+        ],
+        "offsetMinutes": -180
+      }
+    ]
+  },
+  {
+    "code": "PE",
+    "label": "Peru",
+    "anchor": [
+      -74.392,
+      -9.192
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "America/Lima",
+        "unlockAt": "2026-11-19T05:00:00.000Z",
+        "anchor": [
+          -77.05,
+          -12.05
+        ],
+        "offsetMinutes": -300
+      }
+    ]
+  },
+  {
+    "code": "PL",
+    "label": "Polónia",
+    "anchor": [
+      19.311,
+      52.148
+    ],
+    "color": "#ee86bd",
+    "windows": [
+      {
+        "timeZone": "Europe/Warsaw",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          21,
+          52.25
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "PR",
+    "label": "Porto Rico",
+    "anchor": [
+      -66.479,
+      18.237
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "America/Puerto_Rico",
+        "unlockAt": "2026-11-19T04:00:00.000Z",
+        "anchor": [
+          -66.106,
+          18.468
+        ],
+        "offsetMinutes": -240
+      }
+    ]
+  },
+  {
+    "code": "PT",
+    "label": "Portugal",
+    "anchor": [
+      -8,
+      39.5
+    ],
+    "color": "#ffb06d",
+    "windows": [
+      {
+        "timeZone": "Europe/Lisbon",
+        "unlockAt": "2026-11-19T00:00:00.000Z",
+        "anchor": [
+          -9.133,
+          38.717
+        ],
+        "offsetMinutes": 0
+      }
+    ]
+  },
+  {
+    "code": "KE",
+    "label": "Quénia",
+    "anchor": [
+      37.792,
+      0.596
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Africa/Nairobi",
+        "unlockAt": "2026-11-18T21:00:00.000Z",
+        "anchor": [
+          36.817,
+          -1.283
+        ],
+        "offsetMinutes": 180
+      }
+    ]
+  },
+  {
+    "code": "KG",
+    "label": "Quirguistão",
+    "anchor": [
+      74.62,
+      41.507
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "Asia/Bishkek",
+        "unlockAt": "2026-11-18T18:00:00.000Z",
+        "anchor": [
+          74.6,
+          42.9
+        ],
+        "offsetMinutes": 360
+      }
+    ]
+  },
+  {
+    "code": "GB",
+    "label": "Reino Unido",
+    "anchor": [
+      -2,
+      54
+    ],
+    "color": "#a87efa",
+    "windows": [
+      {
+        "timeZone": "Europe/London",
+        "unlockAt": "2026-11-19T00:00:00.000Z",
+        "anchor": [
+          -0.125,
+          51.508
+        ],
+        "offsetMinutes": 0
+      }
+    ]
+  },
+  {
+    "code": "CF",
+    "label": "República Centro-Africana",
+    "anchor": [
+      20.374,
+      6.543
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "Africa/Bangui",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          18.583,
+          4.367
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "IE",
+    "label": "República da Irlanda",
+    "anchor": [
+      -8.01,
+      53.181
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Europe/Dublin",
+        "unlockAt": "2026-11-19T00:00:00.000Z",
+        "anchor": [
+          -6.25,
+          53.333
+        ],
+        "offsetMinutes": 0
+      }
+    ]
+  },
+  {
+    "code": "CD",
+    "label": "República Democrática do Congo",
+    "anchor": [
+      23.583,
+      -2.85
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "Africa/Lubumbashi",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          27.467,
+          -11.667
+        ],
+        "offsetMinutes": 120
+      },
+      {
+        "timeZone": "Africa/Kinshasa",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          15.3,
+          -4.3
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "CG",
+    "label": "República do Congo",
+    "anchor": [
+      15.134,
+      -0.838
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Africa/Brazzaville",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          15.283,
+          -4.267
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "DO",
+    "label": "República Dominicana",
+    "anchor": [
+      -70.462,
+      18.884
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "America/Santo_Domingo",
+        "unlockAt": "2026-11-19T04:00:00.000Z",
+        "anchor": [
+          -69.9,
+          18.467
+        ],
+        "offsetMinutes": -240
+      }
+    ]
+  },
+  {
+    "code": "RO",
+    "label": "Roménia",
+    "anchor": [
+      24.943,
+      45.857
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "Europe/Bucharest",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          26.1,
+          44.433
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "RW",
+    "label": "Ruanda",
+    "anchor": [
+      29.919,
+      -2.014
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "Africa/Kigali",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          30.067,
+          -1.95
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "RU",
+    "label": "Rússia",
+    "anchor": [
+      99.217,
+      61.693
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Asia/Kamchatka",
+        "unlockAt": "2026-11-18T12:00:00.000Z",
+        "anchor": [
+          158.65,
+          53.017
+        ],
+        "offsetMinutes": 720
+      },
+      {
+        "timeZone": "Asia/Magadan",
+        "unlockAt": "2026-11-18T13:00:00.000Z",
+        "anchor": [
+          150.8,
+          59.567
+        ],
+        "offsetMinutes": 660
+      },
+      {
+        "timeZone": "Asia/Vladivostok",
+        "unlockAt": "2026-11-18T14:00:00.000Z",
+        "anchor": [
+          131.933,
+          43.167
+        ],
+        "offsetMinutes": 600
+      },
+      {
+        "timeZone": "Asia/Yakutsk",
+        "unlockAt": "2026-11-18T15:00:00.000Z",
+        "anchor": [
+          129.667,
+          62
+        ],
+        "offsetMinutes": 540
+      },
+      {
+        "timeZone": "Asia/Irkutsk",
+        "unlockAt": "2026-11-18T16:00:00.000Z",
+        "anchor": [
+          104.333,
+          52.267
+        ],
+        "offsetMinutes": 480
+      },
+      {
+        "timeZone": "Asia/Tomsk",
+        "unlockAt": "2026-11-18T17:00:00.000Z",
+        "anchor": [
+          84.967,
+          56.5
+        ],
+        "offsetMinutes": 420
+      },
+      {
+        "timeZone": "Asia/Omsk",
+        "unlockAt": "2026-11-18T18:00:00.000Z",
+        "anchor": [
+          73.4,
+          55
+        ],
+        "offsetMinutes": 360
+      },
+      {
+        "timeZone": "Asia/Yekaterinburg",
+        "unlockAt": "2026-11-18T19:00:00.000Z",
+        "anchor": [
+          60.6,
+          56.85
+        ],
+        "offsetMinutes": 300
+      },
+      {
+        "timeZone": "Europe/Astrakhan",
+        "unlockAt": "2026-11-18T20:00:00.000Z",
+        "anchor": [
+          48.05,
+          46.35
+        ],
+        "offsetMinutes": 240
+      },
+      {
+        "timeZone": "Europe/Volgograd",
+        "unlockAt": "2026-11-18T21:00:00.000Z",
+        "anchor": [
+          44.417,
+          48.733
+        ],
+        "offsetMinutes": 180
+      },
+      {
+        "timeZone": "Europe/Kaliningrad",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          20.5,
+          54.717
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "EH",
+    "label": "Sara Ocidental",
+    "anchor": [
+      -12.138,
+      24.291
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "Africa/El_Aaiun",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          -13.2,
+          27.15
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "SN",
+    "label": "Senegal",
+    "anchor": [
+      -14.51,
+      14.354
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "Africa/Dakar",
+        "unlockAt": "2026-11-19T00:00:00.000Z",
+        "anchor": [
+          -17.433,
+          14.667
+        ],
+        "offsetMinutes": 0
+      }
+    ]
+  },
+  {
+    "code": "SL",
+    "label": "Serra Leoa",
+    "anchor": [
+      -11.795,
+      8.53
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "Africa/Freetown",
+        "unlockAt": "2026-11-19T00:00:00.000Z",
+        "anchor": [
+          -13.25,
+          8.5
+        ],
+        "offsetMinutes": 0
+      }
+    ]
+  },
+  {
+    "code": "RS",
+    "label": "Sérvia",
+    "anchor": [
+      20.82,
+      44.233
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Europe/Belgrade",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          20.5,
+          44.833
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "SY",
+    "label": "Síria",
+    "anchor": [
+      38.544,
+      35.013
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "Asia/Damascus",
+        "unlockAt": "2026-11-18T21:00:00.000Z",
+        "anchor": [
+          36.3,
+          33.5
+        ],
+        "offsetMinutes": 180
+      }
+    ]
+  },
+  {
+    "code": "SO",
+    "label": "Somália",
+    "anchor": [
+      45.727,
+      4.752
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Africa/Mogadishu",
+        "unlockAt": "2026-11-18T21:00:00.000Z",
+        "anchor": [
+          45.367,
+          2.067
+        ],
+        "offsetMinutes": 180
+      }
+    ]
+  },
+  {
+    "code": "LK",
+    "label": "Sri Lanka",
+    "anchor": [
+      80.667,
+      7.701
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "Asia/Colombo",
+        "unlockAt": "2026-11-18T18:30:00.000Z",
+        "anchor": [
+          79.85,
+          6.933
+        ],
+        "offsetMinutes": 330
+      }
+    ]
+  },
+  {
+    "code": "SD",
+    "label": "Sudão",
+    "anchor": [
+      29.863,
+      15.991
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "Africa/Khartoum",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          32.533,
+          15.6
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "SS",
+    "label": "Sudão do Sul",
+    "anchor": [
+      30.199,
+      7.293
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "Africa/Juba",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          31.617,
+          4.85
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "SE",
+    "label": "Suécia",
+    "anchor": [
+      16.596,
+      62.811
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Europe/Stockholm",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          18.05,
+          59.333
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "CH",
+    "label": "Suíça",
+    "anchor": [
+      8.118,
+      46.792
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Europe/Zurich",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          8.533,
+          47.383
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "SR",
+    "label": "Suriname",
+    "anchor": [
+      -55.911,
+      4.12
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "America/Paramaribo",
+        "unlockAt": "2026-11-19T03:00:00.000Z",
+        "anchor": [
+          -55.167,
+          5.833
+        ],
+        "offsetMinutes": -180
+      }
+    ]
+  },
+  {
+    "code": "TH",
+    "label": "Tailândia",
+    "anchor": [
+      101.006,
+      15.017
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Asia/Bangkok",
+        "unlockAt": "2026-11-18T17:00:00.000Z",
+        "anchor": [
+          100.517,
+          13.75
+        ],
+        "offsetMinutes": 420
+      }
+    ]
+  },
+  {
+    "code": "TW",
+    "label": "Taiwan",
+    "anchor": [
+      120.975,
+      23.741
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Asia/Taipei",
+        "unlockAt": "2026-11-18T16:00:00.000Z",
+        "anchor": [
+          121.5,
+          25.05
+        ],
+        "offsetMinutes": 480
+      }
+    ]
+  },
+  {
+    "code": "TJ",
+    "label": "Tajiquistão",
+    "anchor": [
+      71.034,
+      38.583
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Asia/Dushanbe",
+        "unlockAt": "2026-11-18T19:00:00.000Z",
+        "anchor": [
+          68.8,
+          38.583
+        ],
+        "offsetMinutes": 300
+      }
+    ]
+  },
+  {
+    "code": "TZ",
+    "label": "Tanzânia",
+    "anchor": [
+      34.753,
+      -6.258
+    ],
+    "color": "#ffb778",
+    "windows": [
+      {
+        "timeZone": "Africa/Dar_es_Salaam",
+        "unlockAt": "2026-11-18T21:00:00.000Z",
+        "anchor": [
+          39.283,
+          -6.8
+        ],
+        "offsetMinutes": 180
+      }
+    ]
+  },
+  {
+    "code": "TL",
+    "label": "Timor-Leste",
+    "anchor": [
+      125.966,
+      -8.768
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "Asia/Dili",
+        "unlockAt": "2026-11-18T15:00:00.000Z",
+        "anchor": [
+          125.583,
+          -8.55
+        ],
+        "offsetMinutes": 540
+      }
+    ]
+  },
+  {
+    "code": "TG",
+    "label": "Togo",
+    "anchor": [
+      0.996,
+      8.44
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "Africa/Lome",
+        "unlockAt": "2026-11-19T00:00:00.000Z",
+        "anchor": [
+          1.217,
+          6.133
+        ],
+        "offsetMinutes": 0
+      }
+    ]
+  },
+  {
+    "code": "TT",
+    "label": "Trinidad e Tobago",
+    "anchor": [
+      -61.33,
+      10.428
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "America/Port_of_Spain",
+        "unlockAt": "2026-11-19T04:00:00.000Z",
+        "anchor": [
+          -61.517,
+          10.65
+        ],
+        "offsetMinutes": -240
+      }
+    ]
+  },
+  {
+    "code": "TN",
+    "label": "Tunísia",
+    "anchor": [
+      9.535,
+      34.173
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "Africa/Tunis",
+        "unlockAt": "2026-11-18T23:00:00.000Z",
+        "anchor": [
+          10.183,
+          36.8
+        ],
+        "offsetMinutes": 60
+      }
+    ]
+  },
+  {
+    "code": "TM",
+    "label": "Turquemenistão",
+    "anchor": [
+      59.275,
+      39.091
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "Asia/Ashgabat",
+        "unlockAt": "2026-11-18T19:00:00.000Z",
+        "anchor": [
+          58.383,
+          37.95
+        ],
+        "offsetMinutes": 300
+      }
+    ]
+  },
+  {
+    "code": "TR",
+    "label": "Turquia",
+    "anchor": [
+      35,
+      39
+    ],
+    "color": "#fa7e9c",
+    "windows": [
+      {
+        "timeZone": "Europe/Istanbul",
+        "unlockAt": "2026-11-18T21:00:00.000Z",
+        "anchor": [
+          28.967,
+          41.017
+        ],
+        "offsetMinutes": 180
+      }
+    ]
+  },
+  {
+    "code": "UA",
+    "label": "Ucrânia",
+    "anchor": [
+      31.229,
+      49.149
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "Europe/Simferopol",
+        "unlockAt": "2026-11-18T21:00:00.000Z",
+        "anchor": [
+          34.1,
+          44.95
+        ],
+        "offsetMinutes": 180
+      },
+      {
+        "timeZone": "Europe/Kyiv",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          30.517,
+          50.433
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "UG",
+    "label": "Uganda",
+    "anchor": [
+      32.358,
+      1.295
+    ],
+    "color": "#b18bff",
+    "windows": [
+      {
+        "timeZone": "Africa/Kampala",
+        "unlockAt": "2026-11-18T21:00:00.000Z",
+        "anchor": [
+          32.417,
+          0.317
+        ],
+        "offsetMinutes": 180
+      }
+    ]
+  },
+  {
+    "code": "UY",
+    "label": "Uruguai",
+    "anchor": [
+      -56,
+      -33
+    ],
+    "color": "#b080ff",
+    "windows": [
+      {
+        "timeZone": "America/Montevideo",
+        "unlockAt": "2026-11-19T03:00:00.000Z",
+        "anchor": [
+          -56.213,
+          -34.909
+        ],
+        "offsetMinutes": -180
+      }
+    ]
+  },
+  {
+    "code": "UZ",
+    "label": "Uzbequistão",
+    "anchor": [
+      63.204,
+      41.749
+    ],
+    "color": "#ff92a8",
+    "windows": [
+      {
+        "timeZone": "Asia/Samarkand",
+        "unlockAt": "2026-11-18T19:00:00.000Z",
+        "anchor": [
+          66.8,
+          39.667
+        ],
+        "offsetMinutes": 300
+      }
+    ]
+  },
+  {
+    "code": "VU",
+    "label": "Vanuatu",
+    "anchor": [
+      166.907,
+      -15.223
+    ],
+    "color": "#ee86bd",
+    "windows": [
+      {
+        "timeZone": "Pacific/Efate",
+        "unlockAt": "2026-11-18T13:00:00.000Z",
+        "anchor": [
+          168.417,
+          -17.667
+        ],
+        "offsetMinutes": 660
+      }
+    ]
+  },
+  {
+    "code": "VE",
+    "label": "Venezuela",
+    "anchor": [
+      -66.164,
+      7.162
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "America/Caracas",
+        "unlockAt": "2026-11-19T04:00:00.000Z",
+        "anchor": [
+          -66.933,
+          10.5
+        ],
+        "offsetMinutes": -240
+      }
+    ]
+  },
+  {
+    "code": "VN",
+    "label": "Vietname",
+    "anchor": [
+      106.286,
+      16.658
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "Asia/Ho_Chi_Minh",
+        "unlockAt": "2026-11-18T17:00:00.000Z",
+        "anchor": [
+          106.667,
+          10.75
+        ],
+        "offsetMinutes": 420
+      }
+    ]
+  },
+  {
+    "code": "ZM",
+    "label": "Zâmbia",
+    "anchor": [
+      27.728,
+      -13.395
+    ],
+    "color": "#72d2e3",
+    "windows": [
+      {
+        "timeZone": "Africa/Lusaka",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          28.283,
+          -15.417
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  },
+  {
+    "code": "ZW",
+    "label": "Zimbábue",
+    "anchor": [
+      29.789,
+      -18.907
+    ],
+    "color": "#d8a2ff",
+    "windows": [
+      {
+        "timeZone": "Africa/Harare",
+        "unlockAt": "2026-11-18T22:00:00.000Z",
+        "anchor": [
+          31.05,
+          -17.833
+        ],
+        "offsetMinutes": 120
+      }
+    ]
+  }
+]
