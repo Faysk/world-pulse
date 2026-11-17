@@ -57,3 +57,6 @@
 .gta-launch-panel {min-height:0}
 .gta-launch-regions {flex:1}
 @media(max-width:680px){.gta-launch-search-label{padding:9px 16px 4px}.gta-launch-panel{max-height:420px}}
+
+.gta-launch-source{color:#ffd3b9;font-weight:700;font-size:11px;text-underline-offset:3px;width:max-content}
+.gta-launch-source:hover{color:#fff5dc}
