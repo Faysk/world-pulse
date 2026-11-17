@@ -12,6 +12,7 @@ import {
 import './gta6LaunchExperience.css';
 
 const EMPTY: PulseCollection = { type: 'FeatureCollection', features: [] };
+const NO_HIGHLIGHTS: readonly string[] = [];
 const PLAYBACK_DURATION = 45_000;
 const fmtTime = (date: number) => new Intl.DateTimeFormat('pt-PT', {
   timeZone: 'Europe/Lisbon', day: '2-digit', month: 'short',
@@ -98,7 +99,7 @@ export default function Gta6LaunchExperience() {
         onTap={() => {}} onTagPick={() => {}} onFailure={setMapError}
       />
       <Gta6LaunchLayer map={map} now={time} simulated={simulated}
-        highlightedCodes={featuredMoment?.codes ?? []}
+        highlightedCodes={featuredMoment?.codes ?? NO_HIGHLIGHTS}
         onPick={pick} onError={setGeometryError}/>
       <div className="gta-launch-vignette" aria-hidden="true"/>
       <header className="gta-launch-header">
