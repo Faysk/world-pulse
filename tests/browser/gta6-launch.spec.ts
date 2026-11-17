@@ -40,6 +40,14 @@ test('GTA VI world moment previews a clipped regional launch without calling pro
   await page.getByRole('searchbox', { name: 'Buscar território' }).fill('');
   await page.getByRole('button', { name: /Ver onda em 45 segundos/ }).click();
   await expect(page.getByText(/Prévia acelerada/)).toBeVisible();
+  // A release cue automatically flies toward the current region and reveals
+  // its title. The user can pause and resume the camera at any time.
+  await expect(page.locator('.gta-launch-cinema')).toBeVisible({ timeout: 30_000 });
+  await page.getByRole('button', { name: /Pausar câmera/ }).click();
+  await expect(page.getByRole('button', { name: /Retomar câmera/ })).toBeVisible();
+  await expect(page.locator('.gta-launch-cinema')).toHaveCount(0);
+  await page.getByRole('button', { name: /Retomar câmera/ }).click();
+  await expect(page.getByRole('button', { name: /Pausar câmera/ })).toBeVisible();
   await expect(page.getByRole('progressbar', { name: /Territórios com a virada local concluída/ })).toHaveAttribute('aria-valuenow', /[1-9]/, { timeout: 30_000 });
   await page.getByRole('button', { name: /Tempo real/ }).click();
   await expect(page.getByText(/Relógio em Portugal/)).toBeVisible();
