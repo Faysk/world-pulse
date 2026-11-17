@@ -21,11 +21,12 @@ type Props = {
   map: MapInstance | null;
   now: number;
   simulated: boolean;
+  highlightedCodes: readonly string[];
   onPick: (region: ReleaseRegion) => void;
   onError: (error: string) => void;
 };
 
-export function Gta6LaunchLayer({ map, now, simulated, onPick, onError }: Props) {
+export function Gta6LaunchLayer({ map, now, simulated, highlightedCodes, onPick, onError }: Props) {
   const [segments, setSegments] = useState<Segment[]>([]);
   const callback = useRef(onPick);
   const lastCompleted = useRef('');
@@ -34,7 +35,7 @@ export function Gta6LaunchLayer({ map, now, simulated, onPick, onError }: Props)
   useEffect(() => {
     if (!map) return;
     let mounted = true;
-    const sources = ['gta6-launch-regions', 'gta6-launch-completed', 'gta6-launch-reveal'];
+    const sources = ['gta6-launch-regions', 'gta6-launch-completed', 'gta6-launch-reveal', 'gta6-launch-spotlight'];
     for (const id of sources) map.addSource(id, { type: 'geojson', data: EMPTY });
     map.addLayer({
       id: 'gta6-launch-zone-hit', type: 'fill', source: 'gta6-launch-regions',
@@ -55,6 +56,14 @@ export function Gta6LaunchLayer({ map, now, simulated, onPick, onError }: Props)
     map.addLayer({
       id: 'gta6-launch-sheen', type: 'line', source: 'gta6-launch-reveal',
       paint: { 'line-color': '#fff2ea', 'line-width': 1.6, 'line-opacity': 0.73 }
+    });
+    map.addLayer({
+      id: 'gta6-launch-spotlight-halo', type: 'line', source: 'gta6-launch-spotlight',
+      paint: { 'line-color': ['get', 'color'], 'line-width': 10, 'line-blur': 7, 'line-opacity': 0.65 }
+    });
+    map.addLayer({
+      id: 'gta6-launch-spotlight-rim', type: 'line', source: 'gta6-launch-spotlight',
+      paint: { 'line-color': '#ffeadd', 'line-width': 2.1, 'line-blur': 0.35, 'line-opacity': 0.85 }
     });
 
     const onClick = (event: { point: { x: number; y: number } }) => {
@@ -97,7 +106,7 @@ export function Gta6LaunchLayer({ map, now, simulated, onPick, onError }: Props)
       lastCompleted.current = '';
       setSegments([]);
       if (!map.getStyle()) return;
-      for (const id of ['gta6-launch-sheen', 'gta6-launch-aura', 'gta6-launch-color', 'gta6-launch-completed-fill', 'gta6-launch-zone-hit']) {
+      for (const id of ['gta6-launch-spotlight-rim', 'gta6-launch-spotlight-halo', 'gta6-launch-sheen', 'gta6-launch-aura', 'gta6-launch-color', 'gta6-launch-completed-fill', 'gta6-launch-zone-hit']) {
         if (map.getLayer(id)) map.removeLayer(id);
       }
       for (const id of sources) if (map.getSource(id)) map.removeSource(id);
@@ -135,6 +144,20 @@ export function Gta6LaunchLayer({ map, now, simulated, onPick, onError }: Props)
       type: 'FeatureCollection', features: moving
     });
   }, [map, segments, now, simulated]);
+
+  useEffect(() => {
+    if (!map || !segments.length) return;
+    const selected = new Set(highlightedCodes);
+    const features: FeatureCollection['features'] = segments
+      .filter(segment => selected.has(segment.countryCode))
+      .map(segment => ({
+        type: 'Feature', geometry: segment.geometry,
+        properties: { color: segment.region.color, countryCode: segment.countryCode }
+      }));
+    (map.getSource('gta6-launch-spotlight') as GeoJSONSource | undefined)?.setData({
+      type: 'FeatureCollection', features
+    });
+  }, [map, segments, highlightedCodes]);
 
   return null;
 }
