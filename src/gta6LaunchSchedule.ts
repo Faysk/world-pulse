@@ -27,19 +27,44 @@ export type ReleaseRegion = {
   windows: readonly ReleaseWindow[];
 };
 
+/**
+ * Calculate civil midnight with the active IANA rule set (including last-minute
+ * 2026 DST changes like Manitoba and British Columbia). The JSON's unlockAt is
+ * a versioned build-time snapshot, retained for provenance only.
+ */
+export function midnightOnLaunchDate(timeZone: string): string {
+  const target = Date.UTC(2026, 10, 19);
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone, year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23'
+  });
+  let utc = target + 12 * 3_600_000;
+  for (let iteration = 0; iteration < 3; iteration++) {
+    const parts = Object.fromEntries(formatter.formatToParts(new Date(utc))
+      .filter(part => part.type !== 'literal')
+      .map(part => [part.type, Number(part.value)]));
+    const localAsUtc = Date.UTC(parts.year, parts.month - 1, parts.day,
+      parts.hour, parts.minute, parts.second);
+    const correction = target - localAsUtc;
+    utc += correction;
+    if (correction === 0) break;
+  }
+  return new Date(utc).toISOString();
+}
+
 export const RELEASE_REGIONS: readonly ReleaseRegion[] = countryData.map(region => ({
   code: region.code,
   label: region.label,
   anchor: region.anchor as [number, number],
   color: region.color,
   timeZone: region.windows[0].timeZone,
-  unlockAt: region.windows[0].unlockAt,
+  unlockAt: midnightOnLaunchDate(region.windows[0].timeZone),
   reference: region.windows.length > 1,
   windows: region.windows.map(window => ({
     timeZone: window.timeZone,
-    unlockAt: window.unlockAt,
+    unlockAt: midnightOnLaunchDate(window.timeZone),
     anchor: window.anchor as [number, number],
-    offsetMinutes: window.offsetMinutes
+    offsetMinutes: (Date.UTC(2026, 10, 19) - Date.parse(midnightOnLaunchDate(window.timeZone))) / 60_000
   }))
 }));
 
