@@ -92,6 +92,34 @@
   background: #16161680;
   backdrop-filter: blur(16px);
 }
+.live-navigation {
+  z-index: 4;
+  max-width: calc(100% - 36px);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.live-navigation > button,
+.live-navigation > a {
+  flex-shrink: 0;
+}
+.live-navigation .live-gta-moment {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 15px;
+  min-height: 44px;
+  border: 1px solid #ff99b862;
+  border-radius: 12px;
+  color: #ffe1e9;
+  background: linear-gradient(110deg, #5b244a99, #9b456b99);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .025em;
+  backdrop-filter: blur(16px);
+}
+.live-navigation .live-gta-moment:hover {
+  background: linear-gradient(110deg, #823560, #b9587f);
+}
 .live-panel {
   position: absolute;
   z-index: 3;
