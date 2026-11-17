@@ -8,7 +8,7 @@
  * clipped to the existing Natural Earth 110m atlas coverage.
  * Areas with several time zones use approximate longitudinal partitioning.
  */
-import countryData from './assets/gta6-world-timezones.json';
+import countryData from './assets/gta6-world-timezones.json' with { type: 'json' };
 
 export type ReleaseWindow = {
   timeZone: string;
