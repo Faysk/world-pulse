@@ -27,9 +27,19 @@ export default function Gta6LaunchExperience() {
   const [chosenCode, setChosenCode] = useState('PT');
 
   useEffect(() => {
+    // Count down once per second, but render the release wave smoothly at 10 Hz
+    // for the first 3.6 seconds following each reference-market unlock.
     const interval = window.setInterval(() => {
-      if (!document.hidden) setClock(Date.now());
-    }, 1000);
+      if (document.hidden) return;
+      const now = Date.now();
+      setClock(previous => {
+        const revealing = RELEASE_REGIONS.some(region => {
+          const elapsed = now - Date.parse(region.unlockAt);
+          return elapsed >= 0 && elapsed < 3600;
+        });
+        return revealing || Math.floor(previous / 1000) !== Math.floor(now / 1000) ? now : previous;
+      });
+    }, 100);
     return () => window.clearInterval(interval);
   }, []);
 
@@ -95,7 +105,7 @@ export default function Gta6LaunchExperience() {
         <h1>O mundo inteiro.<br/><em>Uma nova Vice City.</em></h1>
         <p>Acompanha a onda do lançamento de GTA VI. Cada região acende quando chega a sua janela de desbloqueio.</p>
         <div className="gta-launch-kpis">
-          <div><strong>{unlocked}<small> / {RELEASE_REGIONS.length}</small></strong><span>mercados na prévia</span></div>
+          <div><strong>{unlocked}<small> / {RELEASE_REGIONS.length}</small></strong><span>mercados acompanhados</span></div>
           <div><strong>{next ? remainingText(Date.parse(next.unlockAt) - time) : '00:00:00'}</strong><span>{next ? 'até a próxima liberação' : 'onda concluída'}</span></div>
         </div>
         <div className="gta-launch-progress" role="progressbar" aria-label="Mercados desbloqueados na prévia"
@@ -141,7 +151,7 @@ export default function Gta6LaunchExperience() {
       </aside>
       <footer className="gta-launch-footer">
         <span>VISUALIZAÇÃO DO CALENDÁRIO · NÃO REPRESENTA JOGADORES OU VOTOS REAIS</span>
-        <span>Países com vários fusos usam horários de referência (*) nesta prévia; países não mapeados permanecem neutros.</span>
+        <span>Países com vários fusos são ilustrativos (*) e podem libertar em momentos diferentes. Não é mapa oficial de lojas; áreas não mapeadas ficam neutras.</span>
         <a href={SOURCE_URL} rel="noreferrer" target="_blank">Fonte: Rockstar Games Support ↗</a>
         <a href="/" aria-label="Voltar ao World Pulse">Voltar ao World Pulse ↗</a>
       </footer>
