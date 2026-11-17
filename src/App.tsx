@@ -8,6 +8,10 @@ import { SteamPanel } from './SteamPanel';
 import { WorldLoading } from './WorldLoading';
 const ParticipationLab = lazy(() => import('./ParticipationLab'));
 const LiveExperience = lazy(() => import('./LiveExperience'));
+const Gta6LaunchExperience = lazy(() => import('./Gta6LaunchExperience'));
+// This preview cannot be opened by query string in the production build.
+const GTA6_LAUNCH_PREVIEW_ENABLED = (import.meta.env.DEV || __WP_PREVIEW_UI__) &&
+  new URLSearchParams(window.location.search).get('gta6LaunchPreview') === '1';
 const EXPERIENCE_ENABLED = __WP_ALPHA_RELEASE__ || ((import.meta.env.DEV || __WP_PREVIEW_UI__) &&
   new URLSearchParams(window.location.search).get('experiencePreview') === '1');
 const PARTICIPATION_LAB_ENABLED = import.meta.env.DEV &&
@@ -23,6 +27,7 @@ const format = (n: number) => Intl.NumberFormat('pt-BR').format(n);
 const compact = (n: number) => n >= 1_000_000 ? Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 2 }).format(n) : format(n);
 
 export default function App() {
+  if (GTA6_LAUNCH_PREVIEW_ENABLED) return <Suspense fallback={<WorldLoading />}><Gta6LaunchExperience /></Suspense>;
   if (EXPERIENCE_ENABLED) return <Suspense fallback={<WorldLoading />}><LiveExperience /></Suspense>;
   return <DemoApp />;
 }
