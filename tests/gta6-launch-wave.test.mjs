@@ -2,61 +2,83 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  RELEASE_REGIONS, RELEASE_WINDOWS, firstUnlock, lastUnlock,
+  RELEASE_REGIONS, RELEASE_WINDOWS, VERIFIED_COUNTRY_CODES,
+  UNCONFIRMED_COUNTRY_CODES, firstUnlock, lastUnlock,
   isReleased, releasedWindows, revealProgress, nextUnlock, remainingText,
 } from '../src/gta6LaunchSchedule.ts';
 import { clipCountryReveal, splitCountryByZones } from '../src/gta6LaunchGeometry.ts';
 
 const atlas = JSON.parse(readFileSync(new URL('../src/assets/countries-110m.geojson', import.meta.url), 'utf8'));
 
-test('Every mapped inhabited country has a civil-time schedule, not merely the original 22', () => {
-  const countryCodes = atlas.features.map(f => f.properties.countryCode)
-    .filter(code => code !== 'AQ' && code !== 'TF').sort();
-  assert.equal(countryCodes.length, 172);
-  assert.deepEqual(RELEASE_REGIONS.map(r => r.code).sort(), countryCodes);
-  assert.equal(RELEASE_WINDOWS.length, 211);
-  assert.ok(RELEASE_REGIONS.every(r => r.windows.length >= 1));
-  assert.ok(RELEASE_REGIONS.some(r => r.code === 'US' && r.windows.length > 1));
-  assert.ok(RELEASE_REGIONS.some(r => r.code === 'BR' && r.windows.length > 1));
-  assert.ok(RELEASE_REGIONS.some(r => r.code === 'RU' && r.windows.length > 1));
+test('Visual atlas retains all territories except unsupported Russian store and polar territories', () => {
+  const mappedCodes = atlas.features.map(feature => feature.properties.countryCode)
+    .filter(code => !['AQ','TF','RU'].includes(code)).sort();
+  assert.equal(RELEASE_REGIONS.length,171);
+  assert.deepEqual(RELEASE_REGIONS.map(region => region.code).sort(),mappedCodes);
+  assert.equal(RELEASE_WINDOWS.length,RELEASE_REGIONS.length);
+  assert.deepEqual(UNCONFIRMED_COUNTRY_CODES,['RU']);
+  assert.ok(!RELEASE_REGIONS.some(region => region.code === 'RU'));
 });
 
-test('Each civil-time window corresponds to 19 November 2026 at 00:00 in the IANA timezone', () => {
-  for (const region of RELEASE_REGIONS) {
-    for (const window of region.windows) {
-      const local = new Intl.DateTimeFormat('en-GB', {
-        timeZone: window.timeZone, year: 'numeric', month: '2-digit',
-        day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
-      }).format(new Date(window.unlockAt));
-      assert.match(local, /19\/11\/2026, 00:00/, region.code + '/' + window.timeZone + ': ' + local);
+test('Only directly checked PlayStation Store markets are labeled verified', () => {
+  assert.deepEqual(VERIFIED_COUNTRY_CODES,['BR','CA','PT','US']);
+  const expected = { BR:'2026-11-19T03:00:00Z', CA:'2026-11-19T05:00:00Z', PT:'2026-11-19T00:00:00Z', US:'2026-11-19T05:00:00Z' };
+  for(const [code,unlockAt] of Object.entries(expected)) {
+    const region=RELEASE_REGIONS.find(x=>x.code===code);
+    assert.ok(region,code);
+    assert.equal(new Date(region.unlockAt).toISOString(),new Date(unlockAt).toISOString());
+    assert.equal(region.windows.length,1);
+    assert.equal(region.verified,true);
+    assert.ok(region.storeUrl?.startsWith('https://store.playstation.com/'));
+    assert.equal(region.reference,false);
+  }
+  for(const region of RELEASE_REGIONS) {
+    if(!expected[region.code]) {
+      assert.equal(region.verified,false,region.code);
+      assert.equal(region.storeUrl,undefined,region.code);
+      assert.equal(region.reference,true,region.code);
     }
   }
 });
 
-test('Chronological global wave includes full Americas and stays monotonic', () => {
-  assert.equal(firstUnlock, Date.parse('2026-11-18T11:00:00Z'));
-  assert.equal(lastUnlock, Date.parse('2026-11-19T10:00:00Z'));
-  assert.equal(nextUnlock(firstUnlock - 1000)?.region.code, 'NZ');
-  assert.equal(nextUnlock(lastUnlock), undefined);
-  assert.equal(remainingText(0), '00:00:00');
-  assert.equal(remainingText(90_000), '00:01:30');
-  const windows = RELEASE_WINDOWS.map(item => Date.parse(item.window.unlockAt));
-  assert.deepEqual(windows, [...windows].sort((a,b) => a-b));
+test('Each storefront market is a SINGLE release instant independent of civil time zones inside its country', () => {
+  const byCode=new Map(RELEASE_REGIONS.map(region=>[region.code,region]));
+  for(const code of ['US','CA','BR','PT','AU','MX','ID']) {
+    const region=byCode.get(code);
+    assert.ok(region);
+    assert.equal(region.windows.length,1,code);
+    assert.equal(releasedWindows(region,Date.parse(region.unlockAt)-1),0);
+    assert.equal(isReleased(region,Date.parse(region.unlockAt)-1),false);
+    assert.equal(isReleased(region,Date.parse(region.unlockAt)),true);
+  }
 });
 
-test('Country only completes when its last local midnight arrives', () => {
-  const brazil = RELEASE_REGIONS.find(r => r.code === 'BR');
+test('Representative unverified zone has local midnight but does not become a verified store', () => {
+  for(const region of RELEASE_REGIONS.filter(r=>!r.verified)) {
+    const local=new Intl.DateTimeFormat('en-GB',{
+      timeZone:region.timeZone,year:'numeric',month:'2-digit',day:'2-digit',
+      hour:'2-digit',minute:'2-digit',hourCycle:'h23'
+    }).format(new Date(region.unlockAt));
+    assert.match(local,/19\/11\/2026, 00:00/,region.code+'/'+region.timeZone);
+    assert.equal(region.verified,false);
+  }
+});
+
+test('Countdown monotonicity and transition duration', () => {
+  assert.ok(firstUnlock<=Date.parse('2026-11-18T11:00:00Z'));
+  assert.ok(lastUnlock>=Date.parse('2026-11-19T05:00:00Z'));
+  assert.equal(nextUnlock(lastUnlock),undefined);
+  assert.equal(remainingText(0),'00:00:00');
+  assert.equal(remainingText(90_000),'00:01:30');
+  const instants=RELEASE_WINDOWS.map(x=>Date.parse(x.window.unlockAt));
+  assert.deepEqual(instants,[...instants].sort((a,b)=>a-b));
+  const brazil=RELEASE_REGIONS.find(r=>r.code==='BR');
   assert.ok(brazil);
-  const first = Date.parse(brazil.windows[0].unlockAt);
-  const last = Date.parse(brazil.windows.at(-1).unlockAt);
-  assert.equal(isReleased(brazil, first), false);
-  assert.ok(releasedWindows(brazil, first) > 0);
-  assert.equal(isReleased(brazil, last), true);
-  assert.equal(releasedWindows(brazil, last), brazil.windows.length);
-  assert.equal(revealProgress(brazil.windows[0], first - 1, false), 0);
-  assert.ok(revealProgress(brazil.windows[0], first + 1800, false) > 0.5);
-  assert.equal(revealProgress(brazil.windows[0], first + 3600, false), 1);
-  assert.ok(revealProgress(brazil.windows[0], first + 3600, true) < 1);
+  const start=Date.parse(brazil.unlockAt);
+  assert.equal(revealProgress(brazil.windows[0],start-1,false),0);
+  assert.ok(revealProgress(brazil.windows[0],start+1800,false)>0.5);
+  assert.equal(revealProgress(brazil.windows[0],start+3600,false),1);
+  assert.ok(revealProgress(brazil.windows[0],start+3600,true)<1);
 });
 
 test('Radial wave is confined inside its country polygon', () => {

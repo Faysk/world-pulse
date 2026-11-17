@@ -23,8 +23,17 @@ test('GTA VI world moment previews a clipped regional launch without calling pro
   await page.goto('/?gta6LaunchPreview=1');
   await expect(page.getByRole('heading', { name: /O mundo inteiro/ })).toBeVisible();
   await expect(page.locator('.maplibregl-canvas')).toBeVisible();
-  await expect(page.locator('.gta-launch-region')).toHaveCount(172);
+  await expect(page.locator('.gta-launch-region')).toHaveCount(171);
   await expect(page.getByRole('heading', { name: 'Portugal' })).toBeVisible();
+  await expect(page.getByText(/Horário de desbloqueio conferido na PlayStation Store/)).toBeVisible();
+  await page.getByRole('searchbox', { name: 'Buscar território' }).fill('Rússia');
+  await expect(page.locator('.gta-launch-region')).toHaveCount(0);
+  await page.getByRole('searchbox', { name: 'Buscar território' }).fill('Brasil');
+  await expect(page.locator('.gta-launch-region')).toHaveCount(1);
+  await page.getByRole('button', { name: /Brasil/ }).click();
+  await expect(page.getByText(/Horário de desbloqueio conferido na PlayStation Store/)).toBeVisible();
+  await page.getByRole('searchbox', { name: 'Buscar território' }).fill('');
+
   await expect(page.getByRole('progressbar', { name: /Territórios com a virada local concluída/ })).toHaveAttribute('aria-valuenow', '0');
   await page.getByRole('searchbox', { name: 'Buscar território' }).fill('Nigéria');
   await expect(page.locator('.gta-launch-region')).toHaveCount(1);
