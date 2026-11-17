@@ -26,9 +26,9 @@ test('GTA VI world moment previews a clipped regional launch without calling pro
   await expect(page.locator('.gta-launch-region')).toHaveCount(172);
   await expect(page.getByRole('heading', { name: 'Portugal' })).toBeVisible();
   await expect(page.getByRole('progressbar', { name: /Territórios com a virada local concluída/ })).toHaveAttribute('aria-valuenow', '0');
-  await page.getByRole('textbox', { name: 'Buscar território' }).fill('Nigéria');
+  await page.getByRole('searchbox', { name: 'Buscar território' }).fill('Nigéria');
   await expect(page.locator('.gta-launch-region')).toHaveCount(1);
-  await page.getByRole('textbox', { name: 'Buscar território' }).fill('');
+  await page.getByRole('searchbox', { name: 'Buscar território' }).fill('');
   await page.getByRole('button', { name: /Ver onda em 45 segundos/ }).click();
   await expect(page.getByText(/Prévia acelerada/)).toBeVisible();
   await expect(page.getByRole('progressbar', { name: /Territórios com a virada local concluída/ })).toHaveAttribute('aria-valuenow', /[1-9]/, { timeout: 30_000 });
