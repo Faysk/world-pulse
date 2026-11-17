@@ -15,6 +15,8 @@ test('GTA VI world moment previews a clipped regional launch without calling pro
   page.on('request', request => {
     if (new URL(request.url()).pathname.startsWith('/api/')) apiCalls.push(request.url());
   });
+  // Freeze the reference date so this test remains valid after launch day.
+  await page.clock.setFixedTime(new Date('2026-11-17T18:00:00Z'));
   await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/, route =>
     route.fulfill({ json: minimalMapStyle })
   );
