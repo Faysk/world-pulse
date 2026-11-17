@@ -44,7 +44,7 @@ export function Gta6LaunchLayer({ map, now, simulated, onPick, onError }: Props)
     });
 
     const onClick = (event: { point: { x: number; y: number } }) => {
-      const feature = map.queryRenderedFeatures(event.point, { layers: ['gta6-launch-zone-hit'] })[0];
+      const feature = map.queryRenderedFeatures([event.point.x, event.point.y], { layers: ['gta6-launch-zone-hit'] })[0];
       const region = REGION_BY_CODE.get(String(feature?.properties?.countryCode ?? ''));
       if (region) callback.current(region);
     };
