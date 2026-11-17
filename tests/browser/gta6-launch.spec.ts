@@ -27,7 +27,8 @@ test('GTA VI world moment previews a clipped regional launch without calling pro
   await expect(page.getByRole('heading', { name: 'Portugal' })).toBeVisible();
   await expect(page.getByText(/Horário de desbloqueio conferido na PlayStation Store/)).toBeVisible();
   await page.getByRole('searchbox', { name: 'Buscar território' }).fill('Rússia');
-  await expect(page.locator('.gta-launch-region')).toHaveCount(0);
+  // "Bielorrússia" matches a substring search; require an exact Russia label.
+  await expect(page.getByText('Rússia', { exact: true })).toHaveCount(0);
   await page.getByRole('searchbox', { name: 'Buscar território' }).fill('Brasil');
   await expect(page.locator('.gta-launch-region')).toHaveCount(1);
   await page.getByRole('button', { name: /Brasil/ }).click();
