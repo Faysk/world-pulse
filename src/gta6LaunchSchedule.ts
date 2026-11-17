@@ -1,14 +1,21 @@
 /**
- * GTA VI release-window preview.
- * Source: Rockstar Games Support, checked 2026-11-17:
- * https://support.rockstargames.com/articles/29jV3Cv2cCgvwM1XgtMO5o/grand-theft-auto-vi-regional-pre-load-and-release-times-on-playstation-5-and-xbox-series-x-or-s
- *
- * Rockstar: midnight, 19 Nov 2026, local time in each store region.
- * Multizone countries below are MARKET REFERENCES, not verified state-level
- * entitlements. Their whole-country fills are a preview simplification.
- * Never represent this dataset as actual player activity.
+ * World Pulse GTA VI World Moment: an ILLUSTRATIVE geographic midnight wave.
+ * GTA VI launch date is 19 November 2026 (Rockstar Games Support).
+ * IANA tzdb zone.tab coordinates describe *civil time*, NOT game storefront
+ * entitlements or commercial availability in any given territory.
+ * Static data (172 regions / 211 civil-time windows) generated 2026-11-17
+ * from https://raw.githubusercontent.com/eggert/tz/main/zone.tab,
+ * clipped to the existing Natural Earth 110m atlas coverage.
+ * Areas with several time zones use approximate longitudinal partitioning.
  */
+import countryData from './assets/gta6-world-timezones.json';
 
+export type ReleaseWindow = {
+  timeZone: string;
+  unlockAt: string;
+  anchor: [number, number];
+  offsetMinutes: number;
+};
 export type ReleaseRegion = {
   code: string;
   label: string;
@@ -16,58 +23,59 @@ export type ReleaseRegion = {
   unlockAt: string;
   anchor: [number, number];
   color: string;
-  reference?: boolean;
+  reference: boolean;
+  windows: readonly ReleaseWindow[];
 };
 
-export const RELEASE_REGIONS: readonly ReleaseRegion[] = [
-  { code: 'NZ', label: 'Nova Zelândia', timeZone: 'Pacific/Auckland', unlockAt: '2026-11-18T11:00:00Z', anchor: [173, -41], color: '#fa7e9c' },
-  { code: 'AU', label: 'Austrália · Sydney*', timeZone: 'Australia/Sydney', unlockAt: '2026-11-18T13:00:00Z', anchor: [134, -26], color: '#ffac77', reference: true },
-  { code: 'JP', label: 'Japão', timeZone: 'Asia/Tokyo', unlockAt: '2026-11-18T15:00:00Z', anchor: [138, 37], color: '#fa7e9c' },
-  { code: 'KR', label: 'Coreia do Sul', timeZone: 'Asia/Seoul', unlockAt: '2026-11-18T15:00:00Z', anchor: [128, 36], color: '#b77dfc' },
-  { code: 'SG', label: 'Singapura', timeZone: 'Asia/Singapore', unlockAt: '2026-11-18T16:00:00Z', anchor: [103.8, 1.35], color: '#ffac77' },
-  { code: 'PH', label: 'Filipinas', timeZone: 'Asia/Manila', unlockAt: '2026-11-18T16:00:00Z', anchor: [122, 12.8], color: '#a779f7' },
-  { code: 'IN', label: 'Índia', timeZone: 'Asia/Kolkata', unlockAt: '2026-11-18T18:30:00Z', anchor: [78.9, 22], color: '#ffb96a' },
-  { code: 'AE', label: 'Emirados Árabes Unidos', timeZone: 'Asia/Dubai', unlockAt: '2026-11-18T20:00:00Z', anchor: [54.3, 24.4], color: '#ffac77' },
-  { code: 'TR', label: 'Turquia', timeZone: 'Europe/Istanbul', unlockAt: '2026-11-18T21:00:00Z', anchor: [35, 39], color: '#fa7e9c' },
-  { code: 'ZA', label: 'África do Sul', timeZone: 'Africa/Johannesburg', unlockAt: '2026-11-18T22:00:00Z', anchor: [25, -29], color: '#aa80ff' },
-  { code: 'GR', label: 'Grécia', timeZone: 'Europe/Athens', unlockAt: '2026-11-18T22:00:00Z', anchor: [23.9, 38.8], color: '#ffad7a' },
-  { code: 'DE', label: 'Alemanha', timeZone: 'Europe/Berlin', unlockAt: '2026-11-18T23:00:00Z', anchor: [10.5, 51], color: '#fa7e9c' },
-  { code: 'FR', label: 'França', timeZone: 'Europe/Paris', unlockAt: '2026-11-18T23:00:00Z', anchor: [2.5, 46.6], color: '#a77aff' },
-  { code: 'ES', label: 'Espanha · continental*', timeZone: 'Europe/Madrid', unlockAt: '2026-11-18T23:00:00Z', anchor: [-4, 40], color: '#ffae75', reference: true },
-  { code: 'IT', label: 'Itália', timeZone: 'Europe/Rome', unlockAt: '2026-11-18T23:00:00Z', anchor: [12.5, 42], color: '#fa7e9c' },
-  { code: 'PT', label: 'Portugal · continental*', timeZone: 'Europe/Lisbon', unlockAt: '2026-11-19T00:00:00Z', anchor: [-8, 39.5], color: '#ffb06d', reference: true },
-  { code: 'GB', label: 'Reino Unido', timeZone: 'Europe/London', unlockAt: '2026-11-19T00:00:00Z', anchor: [-2, 54], color: '#a87efa' },
-  { code: 'BR', label: 'Brasil · Brasília*', timeZone: 'America/Sao_Paulo', unlockAt: '2026-11-19T03:00:00Z', anchor: [-51, -14], color: '#ffac77', reference: true },
-  { code: 'AR', label: 'Argentina', timeZone: 'America/Argentina/Buenos_Aires', unlockAt: '2026-11-19T03:00:00Z', anchor: [-64, -36], color: '#ff7d9f' },
-  { code: 'UY', label: 'Uruguai', timeZone: 'America/Montevideo', unlockAt: '2026-11-19T03:00:00Z', anchor: [-56, -33], color: '#b080ff' },
-  { code: 'US', label: 'EUA · Nova Iorque*', timeZone: 'America/New_York', unlockAt: '2026-11-19T05:00:00Z', anchor: [-98, 39], color: '#a87efa', reference: true },
-  { code: 'MX', label: 'México · Cidade do México*', timeZone: 'America/Mexico_City', unlockAt: '2026-11-19T06:00:00Z', anchor: [-102, 24], color: '#ffb66b', reference: true }
-];
+export const RELEASE_REGIONS: readonly ReleaseRegion[] = countryData.map(region => ({
+  code: region.code,
+  label: region.label,
+  anchor: region.anchor as [number, number],
+  color: region.color,
+  timeZone: region.windows[0].timeZone,
+  unlockAt: region.windows[0].unlockAt,
+  reference: region.windows.length > 1,
+  windows: region.windows.map(window => ({
+    timeZone: window.timeZone,
+    unlockAt: window.unlockAt,
+    anchor: window.anchor as [number, number],
+    offsetMinutes: window.offsetMinutes
+  }))
+}));
 
 export const SOURCE_URL =
   'https://support.rockstargames.com/articles/29jV3Cv2cCgvwM1XgtMO5o/grand-theft-auto-vi-regional-pre-load-and-release-times-on-playstation-5-and-xbox-series-x-or-s';
 
-export const firstUnlock = Math.min(...RELEASE_REGIONS.map(region => Date.parse(region.unlockAt)));
-export const lastUnlock = Math.max(...RELEASE_REGIONS.map(region => Date.parse(region.unlockAt)));
+export const RELEASE_WINDOWS = RELEASE_REGIONS.flatMap(region =>
+  region.windows.map(window => ({ region, window }))
+).sort((a, b) => Date.parse(a.window.unlockAt) - Date.parse(b.window.unlockAt));
+
+export const firstUnlock = Date.parse(RELEASE_WINDOWS[0].window.unlockAt);
+export const lastUnlock = Date.parse(RELEASE_WINDOWS[RELEASE_WINDOWS.length - 1].window.unlockAt);
 export const previewStart = firstUnlock - 30 * 60_000;
 export const previewEnd = lastUnlock + 80 * 60_000;
 
+/** True only when ALL mapped time zones in a territory have reached midnight. */
 export function isReleased(region: ReleaseRegion, now: number): boolean {
-  return now >= Date.parse(region.unlockAt);
+  return region.windows.every(window => now >= Date.parse(window.unlockAt));
+}
+export function releasedWindows(region: ReleaseRegion, now: number): number {
+  return region.windows.filter(window => now >= Date.parse(window.unlockAt)).length;
 }
 
-export function revealProgress(region: ReleaseRegion, now: number, simulated: boolean): number {
+export function revealProgress(window: ReleaseWindow, now: number, simulated: boolean): number {
   const duration = simulated ? 75 * 60_000 : 3_600;
-  const linear = Math.max(0, Math.min(1, (now - Date.parse(region.unlockAt)) / duration));
-  return 1 - Math.pow(1 - linear, 2); // ease out
+  const linear = Math.max(0, Math.min(1, (now - Date.parse(window.unlockAt)) / duration));
+  return 1 - Math.pow(1 - linear, 2);
 }
 
-export function nextUnlock(now: number): ReleaseRegion | undefined {
-  return RELEASE_REGIONS.find(region => Date.parse(region.unlockAt) > now);
+/** The next *time zone window*, not merely the first time zone of each country. */
+export function nextUnlock(now: number): { region: ReleaseRegion; window: ReleaseWindow } | undefined {
+  return RELEASE_WINDOWS.find(item => Date.parse(item.window.unlockAt) > now);
 }
 
 export function remainingText(ms: number): string {
-  if (ms <= 0) return 'LIBERADO';
+  if (ms <= 0) return '00:00:00';
   const seconds = Math.ceil(ms / 1000);
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor(seconds / 3600) % 24;
@@ -78,10 +86,9 @@ export function remainingText(ms: number): string {
     String(minutes).padStart(2, '0') + ':' +
     String(secs).padStart(2, '0');
 }
-
-export function formatRelease(region: ReleaseRegion): string {
+export function formatRelease(window: ReleaseWindow): string {
   return new Intl.DateTimeFormat('pt-PT', {
-    timeZone: region.timeZone, day: '2-digit', month: 'short',
+    timeZone: window.timeZone, day: '2-digit', month: 'short',
     hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
-  }).format(new Date(region.unlockAt));
+  }).format(new Date(window.unlockAt));
 }
