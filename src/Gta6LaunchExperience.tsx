@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Map as MapInstance } from 'maplibre-gl';
 import { WorldGlobe } from './WorldGlobe';
 import { Gta6LaunchLayer } from './Gta6LaunchLayer';
+import { useGta6CinematicCamera } from './useGta6CinematicCamera';
+import type { UnlockMoment } from './gta6CameraMoments';
 import type { PulseCollection } from './demoData';
 import {
   RELEASE_REGIONS, VERIFIED_COUNTRY_CODES, SOURCE_URL, previewStart, previewEnd,
@@ -10,6 +12,7 @@ import {
 import './gta6LaunchExperience.css';
 
 const EMPTY: PulseCollection = { type: 'FeatureCollection', features: [] };
+const NO_HIGHLIGHTS: readonly string[] = [];
 const PLAYBACK_DURATION = 45_000;
 const fmtTime = (date: number) => new Intl.DateTimeFormat('pt-PT', {
   timeZone: 'Europe/Lisbon', day: '2-digit', month: 'short',
@@ -26,6 +29,7 @@ export default function Gta6LaunchExperience() {
   const [playbackRun, setPlaybackRun] = useState(0);
   const [chosenCode, setChosenCode] = useState('PT');
   const [search, setSearch] = useState('');
+  const [featuredMoment, setFeaturedMoment] = useState<UnlockMoment | null>(null);
 
   useEffect(() => {
     // Count down once per second, but render the release wave smoothly at 10 Hz
@@ -59,6 +63,8 @@ export default function Gta6LaunchExperience() {
 
   const time = preview ?? clock;
   const simulated = preview !== null;
+  const { userPaused, pauseCamera, releaseCamera, focusManually } =
+    useGta6CinematicCamera(map, time, simulated, playbackRun, setFeaturedMoment);
   const selected = useMemo(() => RELEASE_REGIONS.find(r => r.code === chosenCode) ?? RELEASE_REGIONS[0], [chosenCode]);
   const unlocked = RELEASE_REGIONS.filter(region => isReleased(region, time)).length;
   const next = nextUnlock(time);
@@ -69,21 +75,20 @@ export default function Gta6LaunchExperience() {
     setChosenCode(region.code);
   }, []);
   const startPlayback = () => {
+    releaseCamera();
     setPreview(previewStart);
     setPlaying(true);
     setPlaybackRun(value => value + 1);
   };
   const backToLive = () => {
+    releaseCamera();
     setPlaying(false);
     setPreview(null);
     setClock(Date.now());
   };
   const focus = (region: ReleaseRegion) => {
     setChosenCode(region.code);
-    map?.flyTo({
-      center: region.anchor, zoom: Math.max(map.getZoom(), 3.2),
-      speed: 0.8, curve: 1.4, essential: true
-    });
+    focusManually(region.anchor, 3.2);
   };
   return (
     <main className="gta-launch" aria-label="World Pulse — GTA VI global launch">
@@ -93,7 +98,9 @@ export default function Gta6LaunchExperience() {
         onReady={setMap} onZoom={() => {}} onFps={() => {}}
         onTap={() => {}} onTagPick={() => {}} onFailure={setMapError}
       />
-      <Gta6LaunchLayer map={map} now={time} simulated={simulated} onPick={pick} onError={setGeometryError}/>
+      <Gta6LaunchLayer map={map} now={time} simulated={simulated}
+        highlightedCodes={featuredMoment?.codes ?? NO_HIGHLIGHTS}
+        onPick={pick} onError={setGeometryError}/>
       <div className="gta-launch-vignette" aria-hidden="true"/>
       <header className="gta-launch-header">
         <div className="gta-launch-brand">
@@ -123,10 +130,21 @@ export default function Gta6LaunchExperience() {
             {playing ? '↻ Reiniciar onda' : '▶ Ver onda em 45 segundos'}
           </button>
           <button type="button" className="gta-launch-reset" onClick={backToLive} disabled={!simulated}>◷ Tempo real</button>
+          <button type="button" className="gta-launch-reset" onClick={() => userPaused ? releaseCamera() : pauseCamera(120_000)}>
+            {userPaused ? '↻ Retomar câmera' : '⏸ Pausar câmera'}
+          </button>
         </div>
         <div className="gta-launch-time">{simulated ? 'Prévia acelerada · ' : 'Relógio em Portugal · '}{fmtTime(time)}</div>
       </section>
 
+      {featuredMoment && <div className="gta-launch-cinema" aria-live="off">
+        <span className="gta-launch-cinema-eyebrow">
+          <span className="gta-launch-cinema-pulse" aria-hidden="true"/>
+          {featuredMoment.verified ? 'DESBLOQUEIO · PLAYSTATION STORE' : 'VIRADA LOCAL · SIMULAÇÃO'}
+        </span>
+        <strong>{featuredMoment.title}</strong>
+        <small>{featuredMoment.regions.length} {featuredMoment.regions.length === 1 ? 'território nesta janela' : 'territórios nesta janela'} · onda de cores em expansão</small>
+      </div>}
       <aside className="gta-launch-panel" aria-label="Janelas regionais">
         <div className="gta-launch-panel-head">
           <span>REGIÕES</span><span>{VERIFIED_COUNTRY_CODES.length} lojas conferidas · {RELEASE_REGIONS.length} territórios</span>
