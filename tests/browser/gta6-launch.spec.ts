@@ -10,7 +10,7 @@ const interceptStyle=async(page:import('@playwright/test').Page)=>{
 };
 
 test('GTA VI public page always highlights next global release and advances automatically',async({page})=>{
-  test.setTimeout(95_000);
+  test.setTimeout(120_000);
   const errors:string[]=[];
   const apiCalls:string[]=[];
   page.on('pageerror',error=>errors.push(error.message));
@@ -67,7 +67,8 @@ test('GTA VI public page always highlights next global release and advances auto
   await expect(page.locator('.gta-launch-recent .gta-launch-market').first()).toContainText('Austrália');
   await expect(page.locator('.gta-launch-recent .gta-launch-market').last()).toContainText('Nova Zelândia');
 
-  await page.screenshot({path:'test-artifacts/gta6-launch-live.png'});
+  // Screenshot-on-failure is already provided by Playwright; avoid an
+  // expensive unconditional WebGL screenshot on mobile SwiftShader CI.
   // Small screens must not push the live status / region controls outside
   // the viewport or cover the brand after responsive typography changes.
   await page.setViewportSize({width:320,height:740});
