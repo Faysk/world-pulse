@@ -6,7 +6,7 @@ import { gta6TestSeconds, isGta6MomentUrl } from '../src/gta6TestMode.ts';
 import { RELEASE_REGIONS, RELEASE_COUNTRIES, RELEASE_WINDOWS,
   VERIFIED_COUNTRY_CODES, UNCONFIRMED_COUNTRY_CODES, missingSupportedCodes,
   firstUnlock,lastUnlock,previewStart,previewEnd,
-  nextMarkets,lastReleasedMarkets,revealProgress, midnightOnLaunchDate } from '../src/gta6LaunchSchedule.ts';
+  nextMarkets,lastReleasedMarkets,launchTimeline,revealProgress, midnightOnLaunchDate } from '../src/gta6LaunchSchedule.ts';
 
 test('Rockstar-announced storefront coverage is complete and no unrelated countries unlock',()=>{
   assert.equal(PLAYSTATION_SUPPORTED_CODES.length,62);
@@ -66,6 +66,29 @@ test('Next 3 and last released 3 follow real timestamp ordering',()=>{
   assert.ok(firstUnlock<lastUnlock && previewStart<firstUnlock && previewEnd>lastUnlock);
   const timeline=RELEASE_COUNTRIES.map(x=>Date.parse(x.unlockAt));
   assert.deepEqual(timeline,[...timeline].sort((a,b)=>a-b));
+});
+
+test('Primary headline always advances to the earliest unfulfilled market',()=>{
+  const before=launchTimeline(Date.parse('2026-11-18T10:00:00Z'));
+  assert.equal(before.headline?.code,'NZ');
+  assert.deepEqual(before.upcoming.map(x=>x.code).slice(0,1),['AU']);
+  assert.equal(before.upcoming.length,3);
+  assert.ok(!before.upcoming.some(x=>x.code===before.headline?.code));
+  assert.equal(before.recent.length,0);
+
+  const exactly=launchTimeline(Date.parse('2026-11-18T11:00:00Z'));
+  assert.equal(exactly.headline?.code,'AU');
+  assert.equal(exactly.recent[0]?.code,'NZ');
+  assert.ok(!exactly.upcoming.some(x=>x.code===exactly.headline?.code));
+
+  const afterAu=launchTimeline(Date.parse('2026-11-18T14:00:00Z'));
+  assert.equal(afterAu.headline?.code,'KR');
+  assert.deepEqual(afterAu.recent.map(x=>x.code),['AU','NZ']);
+
+  const completed=launchTimeline(lastUnlock+1);
+  assert.equal(completed.headline,null);
+  assert.equal(completed.upcoming.length,0);
+  assert.equal(completed.recent.length,3);
 });
 
 test('Replay parser allows 1 to 3600 seconds only and handles user shorthand',()=>{
