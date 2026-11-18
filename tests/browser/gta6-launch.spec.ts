@@ -68,6 +68,17 @@ test('GTA VI public page always highlights next global release and advances auto
   await expect(page.locator('.gta-launch-recent .gta-launch-market').last()).toContainText('Nova Zelândia');
 
   await page.screenshot({path:'test-artifacts/gta6-launch-live.png'});
+  // Small screens must not push the live status / region controls outside
+  // the viewport or cover the brand after responsive typography changes.
+  await page.setViewportSize({width:320,height:740});
+  const brandBox=await page.locator('.gta-launch-brand').boundingBox();
+  const actionsBox=await page.locator('.gta-launch-header-actions').boundingBox();
+  expect(brandBox).not.toBeNull();
+  expect(actionsBox).not.toBeNull();
+  if (brandBox && actionsBox) {
+    expect(brandBox.x + brandBox.width).toBeLessThanOrEqual(actionsBox.x + 2);
+    expect(actionsBox.x + actionsBox.width).toBeLessThanOrEqual(321);
+  }
   expect(errors).toEqual([]);
   expect(apiCalls).toEqual([]);
 });

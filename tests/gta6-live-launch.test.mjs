@@ -6,7 +6,7 @@ import { gta6TestSeconds, isGta6MomentUrl } from '../src/gta6TestMode.ts';
 import { RELEASE_REGIONS, RELEASE_COUNTRIES, RELEASE_WINDOWS,
   VERIFIED_COUNTRY_CODES, UNCONFIRMED_COUNTRY_CODES, missingSupportedCodes,
   firstUnlock,lastUnlock,previewStart,previewEnd,
-  nextMarkets,lastReleasedMarkets,launchTimeline,revealProgress, midnightOnLaunchDate } from '../src/gta6LaunchSchedule.ts';
+  nextMarkets,lastReleasedMarkets,launchTimeline,revealProgress, midnightOnLaunchDate, formatReleaseHeadline } from '../src/gta6LaunchSchedule.ts';
 
 test('Rockstar-announced storefront coverage is complete and no unrelated countries unlock',()=>{
   assert.equal(PLAYSTATION_SUPPORTED_CODES.length,62);
@@ -89,6 +89,16 @@ test('Primary headline always advances to the earliest unfulfilled market',()=>{
   assert.equal(completed.headline,null);
   assert.equal(completed.upcoming.length,0);
   assert.equal(completed.recent.length,3);
+});
+
+test('Headline date is stable across native pt-PT Intl implementations',()=>{
+  // Browser ICU may use 19/11 instead of a Portuguese month abbreviation.
+  // The UI deliberately uses an explicit short month label.
+  for (const code of ['NZ','AU','PT','BR','US']) {
+    const market=RELEASE_REGIONS.find(m=>m.code===code);
+    assert.ok(market,code);
+    assert.equal(formatReleaseHeadline(market.windows[0]),'19 NOV · 00:00',code);
+  }
 });
 
 test('Replay parser allows 1 to 3600 seconds only and handles user shorthand',()=>{

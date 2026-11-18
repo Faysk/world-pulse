@@ -166,3 +166,23 @@ export function formatRelease(window:ReleaseWindow): string {
     minute:'2-digit',hourCycle:'h23'
   }).format(new Date(window.unlockAt));
 }
+
+/**
+ * Locale-stable headline date.
+ *
+ * Intl.DateTimeFormat.format() may yield "19/11, 00:00" on some browsers
+ * and "19 nov. 00:00" on others, even for the same pt-PT options.
+ * Use formatToParts to keep the live event headline consistent worldwide.
+ */
+export function formatReleaseHeadline(window: ReleaseWindow): string {
+  const formatter = new Intl.DateTimeFormat('pt-PT', {
+    timeZone: window.timeZone, day: '2-digit', month: '2-digit',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+  });
+  const parts = Object.fromEntries(formatter.formatToParts(new Date(window.unlockAt))
+    .filter(part => part.type !== 'literal')
+    .map(part => [part.type, part.value]));
+  const monthNames = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+  const month = monthNames[Number(parts.month)-1] ?? parts.month ?? '';
+  return `${parts.day} ${month} · ${parts.hour}:${parts.minute}`;
+}
