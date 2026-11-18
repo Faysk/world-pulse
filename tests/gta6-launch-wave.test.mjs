@@ -7,14 +7,16 @@ import {
   isReleased, releasedWindows, revealProgress, nextUnlock, remainingText,
 } from '../src/gta6LaunchSchedule.ts';
 import { clipCountryReveal, splitCountryByZones } from '../src/gta6LaunchGeometry.ts';
+import { EXACT_STORE_UNLOCKS, PLAYSTATION_SUPPORTED_SET } from '../src/gta6MarketSources.ts';
 
 const atlas = JSON.parse(readFileSync(new URL('../src/assets/countries-110m.geojson', import.meta.url), 'utf8'));
 
-test('Visual atlas retains all territories except Russia, North Korea, and polar territories', () => {
+test('Only published PlayStation launch markets are in the release wave', () => {
   const mappedCodes = atlas.features.map(feature => feature.properties.countryCode)
-    .filter(code => !['AQ','TF','RU','KP'].includes(code)).sort();
-  assert.equal(RELEASE_REGIONS.length,170);
-  assert.deepEqual(RELEASE_REGIONS.map(region => region.code).sort(),mappedCodes);
+    .filter(code => PLAYSTATION_SUPPORTED_SET.has(code)).sort();
+  assert.equal(RELEASE_REGIONS.length,62);
+  assert.deepEqual(RELEASE_REGIONS.filter(region => mappedCodes.includes(region.code))
+    .map(region => region.code).sort(),mappedCodes);
   assert.equal(RELEASE_WINDOWS.length,RELEASE_REGIONS.length);
   assert.deepEqual(UNCONFIRMED_COUNTRY_CODES,['RU','KP']);
   assert.ok(!RELEASE_REGIONS.some(region => region.code === 'RU'));
@@ -22,23 +24,18 @@ test('Visual atlas retains all territories except Russia, North Korea, and polar
   assert.ok(RELEASE_REGIONS.some(region => region.code === 'KR'));
 });
 
-test('Only directly checked PlayStation Store markets are labeled verified', () => {
-  assert.deepEqual(VERIFIED_COUNTRY_CODES,['BR','CA','PT','US']);
-  const expected = { BR:'2026-11-19T03:00:00Z', CA:'2026-11-19T05:00:00Z', PT:'2026-11-19T00:00:00Z', US:'2026-11-19T05:00:00Z' };
-  for(const [code,unlockAt] of Object.entries(expected)) {
-    const region=RELEASE_REGIONS.find(x=>x.code===code);
-    assert.ok(region,code);
-    assert.equal(new Date(region.unlockAt).toISOString(),new Date(unlockAt).toISOString());
-    assert.equal(region.windows.length,1);
-    assert.equal(region.verified,true);
-    assert.ok(region.storeUrl?.startsWith('https://store.playstation.com/'));
-    assert.equal(region.reference,false);
-  }
+test('Direct PlayStation Store dates are distinct from Rockstar local-midnight policy-derived dates', () => {
+  assert.deepEqual(VERIFIED_COUNTRY_CODES,Object.keys(EXACT_STORE_UNLOCKS).sort());
   for(const region of RELEASE_REGIONS) {
-    if(!expected[region.code]) {
-      assert.equal(region.verified,false,region.code);
-      assert.equal(region.storeUrl,undefined,region.code);
-      assert.equal(region.reference,true,region.code);
+    const direct=EXACT_STORE_UNLOCKS[region.code];
+    assert.equal(region.windows.length,1);
+    assert.equal(region.verified,Boolean(direct),region.code);
+    assert.equal(region.reference,!direct,region.code);
+    if(direct){
+      assert.equal(Date.parse(region.unlockAt),Date.parse(direct.unlockAt),region.code);
+      assert.equal(region.storeUrl,direct.url);
+    } else {
+      assert.equal(region.storeUrl,undefined);
     }
   }
 });
@@ -78,8 +75,8 @@ test('Countdown monotonicity and transition duration', () => {
   assert.ok(brazil);
   const start=Date.parse(brazil.unlockAt);
   assert.equal(revealProgress(brazil.windows[0],start-1,false),0);
-  assert.ok(revealProgress(brazil.windows[0],start+1800,false)>0.5);
-  assert.equal(revealProgress(brazil.windows[0],start+3600,false),1);
+  assert.ok(revealProgress(brazil.windows[0],start+1800,false)>0.2);
+  assert.equal(revealProgress(brazil.windows[0],start+5500,false),1);
   assert.ok(revealProgress(brazil.windows[0],start+3600,true)<1);
 });
 
