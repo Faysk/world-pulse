@@ -58,7 +58,7 @@ export function midnightOnLaunchDate(timeZone: string): string {
 }
 
 function regionForMarket(
-  market: { code:string;label:string;anchor:readonly [number,number];color:string;windows?:readonly {timeZone:string}[] },
+  market: { code:string;label:string;anchor:readonly number[];color:string;windows?:readonly {timeZone:string}[] },
   fallbackZone?: string
 ): ReleaseRegion {
   const direct = EXACT_STORE_UNLOCKS[market.code];
