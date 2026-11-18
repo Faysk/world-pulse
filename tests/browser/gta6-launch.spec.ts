@@ -70,6 +70,7 @@ test('URL-only simulation plays automatically without exposing a public replay b
   await expect(page.locator('.gta-launch-live')).toContainText('TESTE · 3s');
   await expect(page.getByRole('link',{name:/Voltar ao vivo/})).toBeVisible();
   await expect(page.getByRole('button',{name:/Ver onda|Reiniciar onda|Simular/})).toHaveCount(0);
-  await expect(page.getByText('Teste concluído')).toBeVisible({timeout:15_000});
+  await expect(page.locator('.gta-launch-recent .gta-launch-market')).toHaveCount(3,{timeout:15_000});
+  await expect(page.locator('.gta-launch-replay-label')).toContainText('Teste concluído');
   await expect(page.getByRole('heading',{name:'ÚLTIMOS 3 LIBERADOS'})).toBeVisible();
 });
