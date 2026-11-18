@@ -122,8 +122,6 @@ export default function Gta6LaunchExperience() {
   const brasilTimer=splitTimer(brazilRemaining);
   const upcoming=nextMarkets(time,3);
   const released=lastReleasedMarkets(time,3);
-  const completedCount=RELEASE_REGIONS.length-upcoming.length-
-    RELEASE_REGIONS.filter(region=>Date.parse(region.unlockAt)>time).length+upcoming.length;
   // Keep the official source clock as the primary time regardless of location.
   const showCountry=useCallback((region:ReleaseRegion)=>{
     setChosenCode(region.code);
