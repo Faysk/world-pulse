@@ -7,7 +7,7 @@ import type { UnlockMoment } from './gta6CameraMoments';
 import type { PulseCollection } from './demoData';
 import {
   RELEASE_REGIONS, VERIFIED_COUNTRY_CODES, SOURCE_URL, previewStart, previewEnd,
-  isReleased, remainingText, formatRelease, nextMarkets, launchTimeline,
+  isReleased, remainingText, formatRelease, launchTimeline,
   type ReleaseRegion
 } from './gta6LaunchSchedule.ts';
 import { ROCKSTAR_MARKETS_URL } from './gta6MarketSources.ts';
@@ -105,14 +105,12 @@ export default function Gta6LaunchExperience() {
     return ()=>window.removeEventListener('keydown',key);
   },[infoOpen,drawerOpen]);
 
+  const time=preview??clock;
   const replayMode=TEST_SECONDS!==null;
   const {userPaused,pauseCamera,releaseCamera,focusManually} =
     useGta6CinematicCamera(map,time,replayMode,playbackRun,true,setFeaturedMoment);
-  const time=preview??clock;
   const { headline, upcoming, recent } = launchTimeline(time);
-  const selected=useMemo(()=>
-    RELEASE_REGIONS.find(region=>region.code===chosenCode)??headline??recent[0]??BRAZIL,
-    [chosenCode,headline,recent]);
+  const selected=RELEASE_REGIONS.find(region=>region.code===chosenCode)??headline??recent[0]??BRAZIL;
   const visibleRegions=useMemo(()=>{
     const needle=search.trim().toLocaleLowerCase('pt');
     return [...RELEASE_REGIONS].sort((a,b)=>Date.parse(a.unlockAt)-Date.parse(b.unlockAt) ||
