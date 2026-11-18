@@ -176,12 +176,13 @@ export function formatRelease(window:ReleaseWindow): string {
  */
 export function formatReleaseHeadline(window: ReleaseWindow): string {
   const formatter = new Intl.DateTimeFormat('pt-PT', {
-    timeZone: window.timeZone, day: '2-digit', month: 'short',
+    timeZone: window.timeZone, day: '2-digit', month: '2-digit',
     hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
   });
   const parts = Object.fromEntries(formatter.formatToParts(new Date(window.unlockAt))
     .filter(part => part.type !== 'literal')
     .map(part => [part.type, part.value]));
-  const month = (parts.month ?? '').replace(/\./g, '').toLocaleUpperCase('pt-PT');
+  const monthNames = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+  const month = monthNames[Number(parts.month)-1] ?? parts.month ?? '';
   return `${parts.day} ${month} · ${parts.hour}:${parts.minute}`;
 }
