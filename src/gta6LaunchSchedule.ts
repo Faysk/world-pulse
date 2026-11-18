@@ -102,7 +102,7 @@ export const missingSupportedCodes = PLAYSTATION_SUPPORTED_CODES.filter(
 export const firstUnlock = Date.parse(RELEASE_WINDOWS[0].window.unlockAt);
 export const lastUnlock = Date.parse(RELEASE_WINDOWS[RELEASE_WINDOWS.length-1].window.unlockAt);
 export const previewStart = firstUnlock - 18 * 60_000;
-export const previewEnd = lastUnlock + 6 * 60_000;
+export const previewEnd = lastUnlock + 45 * 60_000;
 
 export function isReleased(region: ReleaseRegion, now: number): boolean {
   return now >= Date.parse(region.unlockAt);
@@ -114,8 +114,8 @@ export function releasedWindows(region: ReleaseRegion, now: number): number {
 /** Eased radial spread, real time by default and speed-scaled for URL-only tests. */
 export function revealProgress(window: ReleaseWindow, now: number, simulated = false, testSeconds = 45): number {
   const duration = simulated
-    ? Math.max(5_000, Math.min(4*3_600_000,
-        ((previewEnd-previewStart)/(Math.max(1,testSeconds)*1000))*1_150))
+    ? Math.min(previewEnd-lastUnlock,
+        Math.max(1_000, ((previewEnd-previewStart)/(Math.max(1,testSeconds)*1000))*1_600))
     : 5_500;
   const progress = Math.max(0,Math.min(1,(now-Date.parse(window.unlockAt))/duration));
   return progress*progress*(3-2*progress);
