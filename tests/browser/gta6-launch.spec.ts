@@ -9,7 +9,7 @@ const interceptStyle=async(page:import('@playwright/test').Page)=>{
     route.fulfill({json:minimalMapStyle}));
 };
 
-test('GTA VI public page is live-only, Brazil first, ordered upcoming and last released markets',async({page})=>{
+test('GTA VI public page always highlights next global release and advances automatically',async({page})=>{
   test.setTimeout(95_000);
   const errors:string[]=[];
   const apiCalls:string[]=[];
@@ -22,9 +22,10 @@ test('GTA VI public page is live-only, Brazil first, ordered upcoming and last r
   await page.goto('/?gta6LaunchPreview=1');
 
   await expect(page.locator('.maplibregl-canvas')).toBeVisible();
-  await expect(page.getByRole('heading',{name:'Brasil'})).toBeVisible();
-  await expect(page.getByRole('timer',{name:'Contagem regressiva do Brasil'})).toHaveText(/\d\d:\d\d:\d\d/);
-  await expect(page.getByText(/19 NOV · 00:00/)).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Nova Zelândia'})).toBeVisible();
+  await expect(page.getByRole('timer',{name:'Contagem regressiva de Nova Zelândia'})).toHaveText(/\d\d:\d\d:\d\d/);
+  await expect(page.getByText(/18 NOV · 00:00 · hora local/)).toBeVisible();
+  await expect(page.getByText(/PLAYSTATION STORE · BRASIL/)).toHaveCount(0);
   await expect(page.getByText('AO VIVO')).toBeVisible();
   await expect(page.getByRole('heading',{name:'PRÓXIMAS LIBERAÇÕES'})).toBeVisible();
   await expect(page.getByRole('heading',{name:'ÚLTIMOS 3 LIBERADOS'})).toBeVisible();
@@ -32,7 +33,14 @@ test('GTA VI public page is live-only, Brazil first, ordered upcoming and last r
   await expect(page.getByRole('button',{name:/Ver onda|Reiniciar onda|Simular/})).toHaveCount(0);
   await expect(page.getByRole('link',{name:/Voltar ao vivo/})).toHaveCount(0);
   await expect(page.locator('.gta-launch-next-markets').first().locator('.gta-launch-market')).toHaveCount(3);
-  await expect(page.locator('.gta-launch-next-markets').first().locator('.gta-launch-market').first()).toContainText('Nova Zelândia');
+  await expect(page.locator('.gta-launch-next-markets').first().locator('.gta-launch-market').first()).toContainText('Austrália');
+  // At the exact midnight threshold, the hero must advance without reload.
+  await page.clock.setFixedTime(new Date('2026-11-18T11:00:00Z'));
+  await page.waitForTimeout(550);
+  await expect(page.getByRole('heading',{name:'Austrália'})).toBeVisible();
+  await expect(page.getByRole('timer',{name:'Contagem regressiva de Austrália'})).toBeVisible();
+  await expect(page.locator('.gta-launch-recent .gta-launch-market').first()).toContainText('Nova Zelândia');
+  await expect(page.locator('.gta-launch-next-markets').first().locator('.gta-launch-market').first()).not.toContainText('Austrália');
 
   await expect(page.getByText('WORLD MOMENT / 001')).toHaveCount(0);
   await expect(page.locator('.gta-launch-footer')).toHaveCount(0);
@@ -53,6 +61,8 @@ test('GTA VI public page is live-only, Brazil first, ordered upcoming and last r
   // An actual chronological timeline, not a fixed set of countries.
   await page.clock.setFixedTime(new Date('2026-11-18T14:00:00Z'));
   await page.waitForTimeout(600);
+  await expect(page.getByRole('heading',{name:'Coreia do Sul'})).toBeVisible();
+  await expect(page.getByRole('timer',{name:'Contagem regressiva de Coreia do Sul'})).toBeVisible();
   await expect(page.locator('.gta-launch-recent .gta-launch-market')).toHaveCount(2);
   await expect(page.locator('.gta-launch-recent .gta-launch-market').first()).toContainText('Austrália');
   await expect(page.locator('.gta-launch-recent .gta-launch-market').last()).toContainText('Nova Zelândia');
