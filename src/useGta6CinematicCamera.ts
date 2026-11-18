@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Map as MapInstance } from 'maplibre-gl';
 import {
-  GTA6_UNLOCK_MOMENTS, crossedUnlockMoments, type UnlockMoment
+  GTA6_UNLOCK_MOMENTS, GTA6_OFFICIAL_MOMENTS, crossedUnlockMoments, type UnlockMoment
 } from './gta6CameraMoments';
 
 const IDLE_ROTATION_DEGREES_PER_SECOND = 0.34;
@@ -123,9 +123,7 @@ export function useGta6CinematicCamera(
     if (previous === null || clock <= previous) return;
     if (reducedMotion.current || state.userPaused || document.hidden) return;
 
-    const eligible = includeIllustrative
-      ? GTA6_UNLOCK_MOMENTS
-      : GTA6_UNLOCK_MOMENTS.filter(moment => moment.verified);
+    const eligible = includeIllustrative ? GTA6_UNLOCK_MOMENTS : GTA6_OFFICIAL_MOMENTS;
     const crossed = crossedUnlockMoments(eligible, previous, clock);
     if (!crossed.length) return;
     // A replay can cross multiple instants between two render frames. Always
