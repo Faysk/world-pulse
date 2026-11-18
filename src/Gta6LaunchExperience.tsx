@@ -7,7 +7,7 @@ import type { UnlockMoment } from './gta6CameraMoments';
 import type { PulseCollection } from './demoData';
 import {
   RELEASE_REGIONS, VERIFIED_COUNTRY_CODES, SOURCE_URL, previewStart, previewEnd,
-  isReleased, remainingText, formatRelease, nextMarkets, lastReleasedMarkets,
+  isReleased, remainingText, formatRelease, nextMarkets, launchTimeline,
   type ReleaseRegion
 } from './gta6LaunchSchedule.ts';
 import { ROCKSTAR_MARKETS_URL } from './gta6MarketSources.ts';
@@ -39,7 +39,7 @@ export default function Gta6LaunchExperience() {
   const [playing,setPlaying] = useState(false);
   const [playbackRun,setPlaybackRun] = useState(0);
   const startedTest = useRef(false);
-  const [chosenCode,setChosenCode] = useState('BR');
+  const [chosenCode,setChosenCode] = useState<string|null>(null);
   const [search,setSearch] = useState('');
   const [drawerOpen,setDrawerOpen] = useState(false);
   const [infoOpen,setInfoOpen] = useState(false);
@@ -105,12 +105,14 @@ export default function Gta6LaunchExperience() {
     return ()=>window.removeEventListener('keydown',key);
   },[infoOpen,drawerOpen]);
 
-  const time=preview??clock;
   const replayMode=TEST_SECONDS!==null;
   const {userPaused,pauseCamera,releaseCamera,focusManually} =
     useGta6CinematicCamera(map,time,replayMode,playbackRun,true,setFeaturedMoment);
+  const time=preview??clock;
+  const { headline, upcoming, recent } = launchTimeline(time);
   const selected=useMemo(()=>
-    RELEASE_REGIONS.find(region=>region.code===chosenCode)??BRAZIL,[chosenCode]);
+    RELEASE_REGIONS.find(region=>region.code===chosenCode)??headline??recent[0]??BRAZIL,
+    [chosenCode,headline,recent]);
   const visibleRegions=useMemo(()=>{
     const needle=search.trim().toLocaleLowerCase('pt');
     return [...RELEASE_REGIONS].sort((a,b)=>Date.parse(a.unlockAt)-Date.parse(b.unlockAt) ||
@@ -118,11 +120,9 @@ export default function Gta6LaunchExperience() {
       region.label.toLocaleLowerCase('pt').includes(needle) ||
       region.code.toLowerCase().includes(needle));
   },[search]);
-  const brazilRemaining=Date.parse(BRAZIL.unlockAt)-time;
-  const brasilTimer=splitTimer(brazilRemaining);
-  const upcoming=nextMarkets(time,3);
-  const released=lastReleasedMarkets(time,3);
-  // Keep the official source clock as the primary time regardless of location.
+  const headlineRemaining=headline ? Date.parse(headline.unlockAt)-time : 0;
+  const headlineTimer=splitTimer(headlineRemaining);
+  // The headline always represents the earliest unreleased market globally.
   const showCountry=useCallback((region:ReleaseRegion)=>{
     setChosenCode(region.code);
     setDrawerOpen(true);
@@ -169,20 +169,21 @@ export default function Gta6LaunchExperience() {
       </header>
 
       <section className="gta-launch-countdowns" aria-label="Contadores do lançamento">
-        <div className="gta-launch-primary-label">
-          <span className="gta-launch-primary-dot"/>PLAYSTATION STORE · BRASIL
+        <div className="gta-launch-featured-title" key={headline?.code ?? 'complete'}>
+          <h1>{headline?.label ?? 'Lançamento concluído'}</h1>
         </div>
-        <div className="gta-launch-br-title"><h1>Brasil</h1></div>
         <div className="gta-launch-big-time" role="timer"
-          aria-label="Contagem regressiva do Brasil" aria-live="off">
-          {brazilRemaining<=0?'LIBERADO':<>
-            {brasilTimer.days && <span className="gta-launch-big-days">{brasilTimer.days}d</span>}
-            <span className="gta-launch-big-clock">{brasilTimer.clock}</span>
+          aria-label={headline ? `Contagem regressiva de ${headline.label}` : 'Lançamento global concluído'}
+          aria-live="off">
+          {!headline ? 'LIBERADO' : <>
+            {headlineTimer.days && <span className="gta-launch-big-days">{headlineTimer.days}d</span>}
+            <span className="gta-launch-big-clock">{headlineTimer.clock}</span>
           </>}
         </div>
-        <p className="gta-launch-br-subtitle">
-          {brazilRemaining<=0 ? 'Liberado na PlayStation Store brasileira'
-            : '19 NOV · 00:00 (horário de Brasília)'}
+        <p className="gta-launch-featured-subtitle">
+          {headline
+            ? `${formatRelease(headline.windows[0]).toLocaleUpperCase('pt-PT')} · hora local`
+            : 'Todos os mercados anunciados alcançaram o horário de desbloqueio.'}
         </p>
 
         <div className="gta-launch-market-divider"/>
@@ -210,7 +211,7 @@ export default function Gta6LaunchExperience() {
             ÚLTIMOS 3 LIBERADOS
           </h2>
           <div className="gta-launch-next-markets">
-            {released.length ? released.map(region=>(
+            {recent.length ? recent.map(region=>(
               <button className="gta-launch-market" type="button" key={region.code}
                 onClick={()=>{setDrawerOpen(true);focus(region);}}>
                 <span className="gta-launch-market-name">{region.label}</span>
