@@ -231,14 +231,14 @@ function installLights(map: MapInstance, scale: number, population?: PulseCollec
 }
 
 export function WorldGlobe({
-  scale, population, selected, cityLights, onReady, onZoom, onFps, onTap, onCountryPick, onRegionPick, onTagPick, onFailure, ariaLabel='Globo interativo de atividade simulada'
+  scale, population, selected, cityLights, initialZoom, onReady, onZoom, onFps, onTap, onCountryPick, onRegionPick, onTagPick, onFailure, ariaLabel='Globo interativo de atividade simulada'
 }: GlobeProps) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapInstance | null>(null);
   const callbacks = useRef({ onReady, onZoom, onFps, onTap, onCountryPick, onRegionPick, onTagPick, onFailure });
   callbacks.current = { onReady, onZoom, onFps, onTap, onCountryPick, onRegionPick, onTagPick, onFailure };
-  const latestState = useRef({ scale, population, selected, cityLights });
-  latestState.current = { scale, population, selected, cityLights };
+  const latestState = useRef({ scale, population, selected, cityLights, initialZoom });
+  latestState.current = { scale, population, selected, cityLights, initialZoom };
 
   // Create the GPU-backed map only once. React state must not recreate the renderer.
   useEffect(() => {
