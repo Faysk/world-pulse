@@ -33,6 +33,7 @@ export function Gta6LaunchLayer({ map, now, simulated, replaySeconds = 45, highl
   const callback = useRef(onPick);
   const lastCompleted = useRef('');
   const lastSmallMarkets = useRef('');
+  const lastRevealing = useRef(false);
   callback.current = onPick;
 
   useEffect(() => {
@@ -88,7 +89,7 @@ export function Gta6LaunchLayer({ map, now, simulated, replaySeconds = 45, highl
     });
 
     const onClick = (event: { point: { x: number; y: number } }) => {
-      const features = map.queryRenderedFeatures([event.point.x, event.point.y], { layers: ['gta6-launch-zone-hit'] });
+      const features = map.queryRenderedFeatures([event.point.x, event.point.y], { layers: ['gta6-launch-small-market-dot', 'gta6-launch-zone-hit'] });
       const code = String(features[0]?.properties?.countryCode ?? '');
       const region = REGION_BY_CODE.get(code);
       if (region) callback.current(region);
@@ -125,6 +126,7 @@ export function Gta6LaunchLayer({ map, now, simulated, replaySeconds = 45, highl
       });
       lastCompleted.current = '';
       lastSmallMarkets.current = '';
+      lastRevealing.current = false;
       setSegments(allPieces);
       onError('');
     }).catch(() => {
@@ -171,9 +173,13 @@ export function Gta6LaunchLayer({ map, now, simulated, replaySeconds = 45, highl
       });
       lastCompleted.current = signature;
     }
-    (map.getSource('gta6-launch-reveal') as GeoJSONSource | undefined)?.setData({
-      type: 'FeatureCollection', features: moving
-    });
+    // No worker update on ordinary clock ticks if there is no active wave.
+    if (moving.length || lastRevealing.current) {
+      (map.getSource('gta6-launch-reveal') as GeoJSONSource | undefined)?.setData({
+        type: 'FeatureCollection', features: moving
+      });
+    }
+    lastRevealing.current = moving.length > 0;
     const mini = RELEASE_REGIONS
       .filter(region => ['HK','SG','MT'].includes(region.code) &&
         isUnlockedForRegion(region, now))
