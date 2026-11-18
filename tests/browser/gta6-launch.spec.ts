@@ -24,7 +24,7 @@ test('GTA VI public page always highlights next global release and advances auto
   await expect(page.locator('.maplibregl-canvas')).toBeVisible();
   await expect(page.getByRole('heading',{name:'Nova Zelândia'})).toBeVisible();
   await expect(page.getByRole('timer',{name:'Contagem regressiva de Nova Zelândia'})).toHaveText(/\d\d:\d\d:\d\d/);
-  await expect(page.getByText(/18 NOV · 00:00 · hora local/)).toBeVisible();
+  await expect(page.getByText(/19 NOV · 00:00 · hora local/)).toBeVisible();
   await expect(page.getByText(/PLAYSTATION STORE · BRASIL/)).toHaveCount(0);
   await expect(page.getByText('AO VIVO')).toBeVisible();
   await expect(page.getByRole('heading',{name:'PRÓXIMAS LIBERAÇÕES'})).toBeVisible();
