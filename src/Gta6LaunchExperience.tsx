@@ -36,7 +36,8 @@ export default function Gta6LaunchExperience() {
   const [playing, setPlaying] = useState(false);
   const [playbackRun, setPlaybackRun] = useState(0);
   const [playbackRange, setPlaybackRange] = useState({ start: OFFICIAL_PREVIEW_START, end: OFFICIAL_PREVIEW_END });
-  const [showSimulation, setShowSimulation] = useState(false);
+  // Keep the global color-wave visible on arrival; unverified regions are explicitly illustrative.
+  const [showSimulation, setShowSimulation] = useState(true);
   const [chosenCode, setChosenCode] = useState('BR');
   const [search, setSearch] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -158,7 +159,7 @@ export default function Gta6LaunchExperience() {
         <div className="gta-launch-header-actions">
           <button type="button" className="gta-launch-header-btn gta-launch-mode-btn"
             aria-pressed={showSimulation} onClick={() => setMode(!showSimulation)}>
-            {showSimulation ? '◉ Simulação mundial' : '◯ Simular mundo'}
+            {showSimulation ? '◉ Onda mundial' : '◯ Só confirmados'}
           </button>
           <button type="button" className="gta-launch-header-btn"
             aria-expanded={drawerOpen} onClick={() => { setDrawerOpen(!drawerOpen); setInfoOpen(false); }}>
@@ -193,8 +194,8 @@ export default function Gta6LaunchExperience() {
           ))}
         </div>
         <div className="gta-launch-mode-footnote">
-          {showSimulation ? 'Simulação mundial ativada · demais fusos são ilustrativos'
-            : `${knownCompleted}/${OFFICIAL_REGIONS.length} mercados com horário verificado alcançados`}
+          {showSimulation ? 'Onda mundial ilustrativa · 4 mercados com horário verificado'
+            : `${knownCompleted}/${OFFICIAL_REGIONS.length} mercados verificados · demais territórios neutros`}
         </div>
       </section>
 
@@ -267,7 +268,7 @@ export default function Gta6LaunchExperience() {
         </div>
         <p>Rosa e laranja indicam horários de desbloqueio verificados na PlayStation Store. Áreas cinza não possuem horário de loja confirmado nesta visualização.</p>
         <p>A Rússia permanece neutra. Isso não significa que pessoas nesses territórios não possam jogar com contas de outros mercados.</p>
-        <p>O botão <b>Simular mundo</b> mostra uma onda ilustrativa por fusos locais; não representa disponibilidade comercial nem jogadores reais.</p>
+        <p>A <b>Onda mundial</b> é exibida por padrão: mostra horários verificados nas lojas e uma simulação ilustrativa da meia-noite nos demais territórios. Use <b>Só confirmados</b> para ocultar a simulação. Cores não representam jogadores reais.</p>
         <div className="gta-launch-info-links">
           <a href={SOURCE_URL} target="_blank" rel="noreferrer">Rockstar Games — lançamento ↗</a>
           {BRAZIL.storeUrl && <a href={BRAZIL.storeUrl} target="_blank" rel="noreferrer">PlayStation Store Brasil ↗</a>}
