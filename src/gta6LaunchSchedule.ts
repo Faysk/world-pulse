@@ -130,6 +130,24 @@ export function lastReleasedMarkets(now:number, count=3): ReleaseRegion[] {
   return RELEASE_COUNTRIES.filter(region => Date.parse(region.unlockAt) <= now)
     .reverse().slice(0,count);
 }
+
+/**
+ * A single chronological headline, followed by three DISTINCT upcoming markets.
+ * At each unlock boundary, the headline advances automatically to the next.
+ * When all markets have unlocked, headline is null (the event is complete).
+ */
+export function launchTimeline(now: number): {
+  headline: ReleaseRegion | null;
+  upcoming: ReleaseRegion[];
+  recent: ReleaseRegion[];
+} {
+  const queue = nextMarkets(now, 4);
+  return {
+    headline: queue[0] ?? null,
+    upcoming: queue.slice(1),
+    recent: lastReleasedMarkets(now, 3)
+  };
+}
 export function remainingText(ms: number): string {
   if (ms <= 0) return '00:00:00';
   const seconds = Math.ceil(ms/1000);
