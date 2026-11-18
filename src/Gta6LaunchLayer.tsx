@@ -9,6 +9,7 @@ import {
 
 const EMPTY: FeatureCollection = { type: 'FeatureCollection', features: [] };
 const REGION_BY_CODE = new Map(RELEASE_REGIONS.map(region => [region.code, region]));
+const isUnlockedForRegion = (region: ReleaseRegion, now: number) => now >= Date.parse(region.unlockAt);
 
 type Segment = {
   countryCode: string;
@@ -21,24 +22,24 @@ type Props = {
   map: MapInstance | null;
   now: number;
   simulated: boolean;
-  showSimulation: boolean;
+  replaySeconds?: number;
   highlightedCodes: readonly string[];
   onPick: (region: ReleaseRegion) => void;
   onError: (error: string) => void;
 };
 
-export function Gta6LaunchLayer({ map, now, simulated, showSimulation, highlightedCodes, onPick, onError }: Props) {
+export function Gta6LaunchLayer({ map, now, simulated, replaySeconds = 45, highlightedCodes, onPick, onError }: Props) {
   const [segments, setSegments] = useState<Segment[]>([]);
   const callback = useRef(onPick);
-  const showSimulationRef = useRef(showSimulation);
   const lastCompleted = useRef('');
+  const lastSmallMarkets = useRef('');
+  const lastRevealing = useRef(false);
   callback.current = onPick;
-  showSimulationRef.current = showSimulation;
 
   useEffect(() => {
     if (!map) return;
     let mounted = true;
-    const sources = ['gta6-launch-regions', 'gta6-launch-neutral', 'gta6-launch-completed', 'gta6-launch-reveal', 'gta6-launch-spotlight'];
+    const sources = ['gta6-launch-regions', 'gta6-launch-neutral', 'gta6-launch-small-market', 'gta6-launch-completed', 'gta6-launch-reveal', 'gta6-launch-spotlight'];
     for (const id of sources) map.addSource(id, { type: 'geojson', data: EMPTY });
     map.addLayer({
       id: 'gta6-launch-zone-hit', type: 'fill', source: 'gta6-launch-regions',
@@ -53,11 +54,11 @@ export function Gta6LaunchLayer({ map, now, simulated, showSimulation, highlight
     });
     map.addLayer({
       id: 'gta6-launch-completed-fill', type: 'fill', source: 'gta6-launch-completed',
-      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': ['case', ['get', 'verified'], 0.78, 0.42] }
+      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': ['case', ['get', 'verified'], 0.86, 0.69] }
     });
     map.addLayer({
       id: 'gta6-launch-color', type: 'fill', source: 'gta6-launch-reveal',
-      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': ['case', ['get', 'verified'], 0.85, 0.5] }
+      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': ['case', ['get', 'verified'], 0.88, 0.76] }
     });
     map.addLayer({
       id: 'gta6-launch-aura', type: 'line', source: 'gta6-launch-reveal',
@@ -66,6 +67,17 @@ export function Gta6LaunchLayer({ map, now, simulated, showSimulation, highlight
     map.addLayer({
       id: 'gta6-launch-sheen', type: 'line', source: 'gta6-launch-reveal',
       paint: { 'line-color': '#fff2ea', 'line-width': 1.6, 'line-opacity': 0.73 }
+    });
+    map.addLayer({
+      id: 'gta6-launch-small-market-glow', type: 'circle', source: 'gta6-launch-small-market',
+      paint: { 'circle-color': ['get', 'color'], 'circle-radius': 10,
+        'circle-opacity': 0.23, 'circle-blur': 0.9 }
+    });
+    map.addLayer({
+      id: 'gta6-launch-small-market-dot', type: 'circle', source: 'gta6-launch-small-market',
+      paint: { 'circle-color': ['get', 'color'], 'circle-radius': 3.6,
+        'circle-opacity': 0.93, 'circle-stroke-color': '#ffebf0',
+        'circle-stroke-width': 0.9, 'circle-stroke-opacity': 0.78 }
     });
     map.addLayer({
       id: 'gta6-launch-spotlight-halo', type: 'line', source: 'gta6-launch-spotlight',
@@ -77,10 +89,10 @@ export function Gta6LaunchLayer({ map, now, simulated, showSimulation, highlight
     });
 
     const onClick = (event: { point: { x: number; y: number } }) => {
-      const features = map.queryRenderedFeatures([event.point.x, event.point.y], { layers: ['gta6-launch-zone-hit'] });
+      const features = map.queryRenderedFeatures([event.point.x, event.point.y], { layers: ['gta6-launch-small-market-dot', 'gta6-launch-zone-hit'] });
       const code = String(features[0]?.properties?.countryCode ?? '');
       const region = REGION_BY_CODE.get(code);
-      if (region && (region.verified || showSimulationRef.current)) callback.current(region);
+      if (region) callback.current(region);
     };
     map.on('click', onClick);
     void countryGeometry().then(collection => {
@@ -113,6 +125,8 @@ export function Gta6LaunchLayer({ map, now, simulated, showSimulation, highlight
         }))
       });
       lastCompleted.current = '';
+      lastSmallMarkets.current = '';
+      lastRevealing.current = false;
       setSegments(allPieces);
       onError('');
     }).catch(() => {
@@ -122,9 +136,10 @@ export function Gta6LaunchLayer({ map, now, simulated, showSimulation, highlight
       mounted = false;
       map.off('click', onClick);
       lastCompleted.current = '';
+      lastSmallMarkets.current = '';
       setSegments([]);
       if (!map.getStyle()) return;
-      for (const id of ['gta6-launch-spotlight-rim', 'gta6-launch-spotlight-halo', 'gta6-launch-sheen', 'gta6-launch-aura', 'gta6-launch-color', 'gta6-launch-completed-fill', 'gta6-launch-neutral-fill', 'gta6-launch-zone-hit']) {
+      for (const id of ['gta6-launch-spotlight-rim', 'gta6-launch-spotlight-halo', 'gta6-launch-sheen', 'gta6-launch-aura', 'gta6-launch-color', 'gta6-launch-small-market-glow', 'gta6-launch-small-market-dot', 'gta6-launch-completed-fill', 'gta6-launch-neutral-fill', 'gta6-launch-zone-hit']) {
         if (map.getLayer(id)) map.removeLayer(id);
       }
       for (const id of sources) if (map.getSource(id)) map.removeSource(id);
@@ -137,8 +152,7 @@ export function Gta6LaunchLayer({ map, now, simulated, showSimulation, highlight
     const moving: FeatureCollection['features'] = [];
     const completedKeys: string[] = [];
     for (const segment of segments) {
-      if (!showSimulation && !segment.region.verified) continue;
-      const progress = revealProgress(segment.window, now, simulated);
+      const progress = revealProgress(segment.window, now, simulated, replaySeconds);
       if (progress <= 0) continue;
       const properties = { countryCode: segment.countryCode, color: segment.region.color, verified: segment.region.verified };
       if (progress >= 0.99999) {
@@ -159,10 +173,29 @@ export function Gta6LaunchLayer({ map, now, simulated, showSimulation, highlight
       });
       lastCompleted.current = signature;
     }
-    (map.getSource('gta6-launch-reveal') as GeoJSONSource | undefined)?.setData({
-      type: 'FeatureCollection', features: moving
-    });
-  }, [map, segments, now, simulated, showSimulation]);
+    // No worker update on ordinary clock ticks if there is no active wave.
+    if (moving.length || lastRevealing.current) {
+      (map.getSource('gta6-launch-reveal') as GeoJSONSource | undefined)?.setData({
+        type: 'FeatureCollection', features: moving
+      });
+    }
+    lastRevealing.current = moving.length > 0;
+    const mini = RELEASE_REGIONS
+      .filter(region => ['HK','SG','MT'].includes(region.code) &&
+        isUnlockedForRegion(region, now))
+      .map(region => ({
+        type: 'Feature' as const,
+        geometry: { type: 'Point' as const, coordinates: region.anchor },
+        properties: { countryCode: region.code, color: region.color }
+      }));
+    const miniSignature = mini.map(feature => feature.properties.countryCode).join('|');
+    if (miniSignature !== lastSmallMarkets.current) {
+      (map.getSource('gta6-launch-small-market') as GeoJSONSource | undefined)?.setData({
+        type: 'FeatureCollection', features: mini
+      });
+      lastSmallMarkets.current = miniSignature;
+    }
+  }, [map, segments, now, simulated, replaySeconds]);
 
   useEffect(() => {
     if (!map || !segments.length) return;

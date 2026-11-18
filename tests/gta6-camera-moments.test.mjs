@@ -25,11 +25,12 @@ test('USA and Canada share one verified camera moment, not separate time-zone fl
   assert.ok(moment.center[1] > 25 && moment.center[1] < 65);
 });
 
-test('Brazil gets a single confirmed focus even if simulated regions share the hour', () => {
-  const at = Date.parse('2026-11-19T03:00:00Z');
-  const moment = GTA6_UNLOCK_MOMENTS.find(g => g.at === at);
+test('Brazil joins other real simultaneous South American markets in one focus', () => {
+  const at=Date.parse('2026-11-19T03:00:00Z');
+  const moment=GTA6_UNLOCK_MOMENTS.find(g=>g.at===at);
   assert.ok(moment);
-  assert.deepEqual(moment.codes,['BR']);
+  assert.ok(moment.codes.includes('BR'),moment.codes.join(','));
+  assert.ok(moment.codes.includes('CL'),moment.codes.join(','));
   assert.equal(moment.verified,true);
 });
 
