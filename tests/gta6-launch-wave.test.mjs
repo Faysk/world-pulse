@@ -10,14 +10,16 @@ import { clipCountryReveal, splitCountryByZones } from '../src/gta6LaunchGeometr
 
 const atlas = JSON.parse(readFileSync(new URL('../src/assets/countries-110m.geojson', import.meta.url), 'utf8'));
 
-test('Visual atlas retains all territories except unsupported Russian store and polar territories', () => {
+test('Visual atlas retains all territories except Russia, North Korea, and polar territories', () => {
   const mappedCodes = atlas.features.map(feature => feature.properties.countryCode)
-    .filter(code => !['AQ','TF','RU'].includes(code)).sort();
-  assert.equal(RELEASE_REGIONS.length,171);
+    .filter(code => !['AQ','TF','RU','KP'].includes(code)).sort();
+  assert.equal(RELEASE_REGIONS.length,170);
   assert.deepEqual(RELEASE_REGIONS.map(region => region.code).sort(),mappedCodes);
   assert.equal(RELEASE_WINDOWS.length,RELEASE_REGIONS.length);
-  assert.deepEqual(UNCONFIRMED_COUNTRY_CODES,['RU']);
+  assert.deepEqual(UNCONFIRMED_COUNTRY_CODES,['RU','KP']);
   assert.ok(!RELEASE_REGIONS.some(region => region.code === 'RU'));
+  assert.ok(!RELEASE_REGIONS.some(region => region.code === 'KP'));
+  assert.ok(RELEASE_REGIONS.some(region => region.code === 'KR'));
 });
 
 test('Only directly checked PlayStation Store markets are labeled verified', () => {
