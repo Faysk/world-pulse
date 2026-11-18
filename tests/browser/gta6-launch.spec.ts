@@ -6,7 +6,7 @@ const minimalMapStyle = {
   layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#10101b' } }]
 };
 
-test('GTA VI keeps Brazil primary, shows official markets, and offers optional world simulation', async ({ page }) => {
+test('GTA VI keeps Brazil primary and paints global regions by default with official-only option', async ({ page }) => {
   test.setTimeout(90_000);
   const pageErrors: string[] = [];
   const apiCalls: string[] = [];
@@ -38,22 +38,22 @@ test('GTA VI keeps Brazil primary, shows official markets, and offers optional w
   await expect(page.getByRole('link', { name: /PlayStation Store Brasil/ })).toBeVisible();
   await page.getByRole('button', { name: 'Fechar informações' }).click();
 
-  const toggle = page.getByRole('button', { name: '◯ Simular mundo' });
-  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  const toggle = page.getByRole('button', { name: '◉ Onda mundial' });
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'Regiões' }).click();
-  await expect(page.locator('.gta-launch-region')).toHaveCount(4);
+  await expect(page.locator('.gta-launch-region')).toHaveCount(171);
   await expect(page.getByRole('heading', { name: 'Brasil' }).last()).toBeVisible();
   await page.getByRole('button', { name: 'Fechar regiões' }).click();
 
   await toggle.click();
-  await expect(page.getByRole('button', { name: /Simulação mundial/ })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: '◯ Só confirmados' })).toHaveAttribute('aria-pressed', 'false');
   await page.getByRole('button', { name: 'Regiões' }).click();
-  await expect(page.locator('.gta-launch-region')).toHaveCount(171);
+  await expect(page.locator('.gta-launch-region')).toHaveCount(4);
   await page.getByRole('searchbox', { name: 'Buscar território' }).fill('Nigéria');
-  await expect(page.locator('.gta-launch-region')).toHaveCount(1);
+  await expect(page.locator('.gta-launch-region')).toHaveCount(0);
   await page.getByRole('button', { name: 'Fechar regiões' }).click();
-  await page.getByRole('button', { name: /Simulação mundial/ }).click();
-  await expect(page.getByRole('button', { name: '◯ Simular mundo' })).toHaveAttribute('aria-pressed', 'false');
+  await page.getByRole('button', { name: '◯ Só confirmados' }).click();
+  await expect(page.getByRole('button', { name: '◉ Onda mundial' })).toHaveAttribute('aria-pressed', 'true');
 
   await page.getByRole('button', { name: /Ver onda em 45s/ }).click();
   await expect(page.locator('.gta-launch-cinema')).toBeVisible({ timeout: 30_000 });
