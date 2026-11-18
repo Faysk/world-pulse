@@ -47,8 +47,8 @@ export function Gta6LaunchLayer({ map, now, simulated, showSimulation, highlight
     map.addLayer({
       id: 'gta6-launch-neutral-fill', type: 'fill', source: 'gta6-launch-neutral',
       paint: {
-        'fill-color': ['case', ['==', ['get', 'countryCode'], 'RU'], '#342b44', '#556477'],
-        'fill-opacity': ['case', ['==', ['get', 'countryCode'], 'RU'], 0.25, 0.16]
+        'fill-color': ['case', ['in', ['get', 'countryCode'], ['literal', ['RU', 'KP']]], '#342b44', '#556477'],
+        'fill-opacity': ['case', ['in', ['get', 'countryCode'], ['literal', ['RU', 'KP']]], 0.25, 0.16]
       }
     });
     map.addLayer({
