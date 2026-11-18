@@ -7,7 +7,7 @@ import type { UnlockMoment } from './gta6CameraMoments';
 import type { PulseCollection } from './demoData';
 import {
   RELEASE_REGIONS, VERIFIED_COUNTRY_CODES, SOURCE_URL, previewStart, previewEnd,
-  isReleased, remainingText, formatRelease, launchTimeline,
+  isReleased, remainingText, formatRelease, formatReleaseHeadline, launchTimeline,
   type ReleaseRegion
 } from './gta6LaunchSchedule.ts';
 import { ROCKSTAR_MARKETS_URL } from './gta6MarketSources.ts';
@@ -180,7 +180,7 @@ export default function Gta6LaunchExperience() {
         </div>
         <p className="gta-launch-featured-subtitle">
           {headline
-            ? `${formatRelease(headline.windows[0]).toLocaleUpperCase('pt-PT')} · hora local`
+            ? `${formatReleaseHeadline(headline.windows[0])} · hora local`
             : 'Todos os mercados anunciados alcançaram o horário de desbloqueio.'}
         </p>
 
