@@ -6,6 +6,7 @@ import { WorldGlobe, flyToTag, resetGlobe } from './WorldGlobe';
 import { EMPTY_SECONDS, creditTap, creditedTotal } from './domain';
 import { SteamPanel } from './SteamPanel';
 import { WorldLoading } from './WorldLoading';
+import { isGta6MomentUrl } from './gta6TestMode';
 const ParticipationLab = lazy(() => import('./ParticipationLab'));
 const LiveExperience = lazy(() => import('./LiveExperience'));
 const Gta6LaunchExperience = lazy(() => import('./Gta6LaunchExperience'));
@@ -13,7 +14,7 @@ const Gta6LaunchExperience = lazy(() => import('./Gta6LaunchExperience'));
 // preview route stays unavailable in compiled production builds.
 const GTA6_LAUNCH_ENABLED =
   (import.meta.env.DEV || __WP_PREVIEW_UI__ || __WP_ALPHA_RELEASE__) &&
-  new URLSearchParams(window.location.search).get('moment') === 'gta6';
+  isGta6MomentUrl(window.location.search);
 const GTA6_LAUNCH_PREVIEW_ENABLED = (import.meta.env.DEV || __WP_PREVIEW_UI__) &&
   new URLSearchParams(window.location.search).get('gta6LaunchPreview') === '1';
 const EXPERIENCE_ENABLED = __WP_ALPHA_RELEASE__ || ((import.meta.env.DEV || __WP_PREVIEW_UI__) &&
