@@ -1,126 +1,118 @@
-.gta-launch{position:relative;width:100%;height:100dvh;overflow:hidden;background:#090b17;color:#f8eaf1;font-family:Inter,"Segoe UI",sans-serif}
-.gta-launch .map-canvas{inset:0}
-.gta-launch-vignette{pointer-events:none;position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,8,18,.89) 0%,rgba(10,8,18,.43) 34%,transparent 63%),linear-gradient(0deg,rgba(9,8,21,.8),transparent 22%),radial-gradient(ellipse at 80% 50%,transparent 23%,rgba(6,5,17,.24) 80%);z-index:1}
-.gta-launch-header{position:absolute;z-index:4;top:0;left:0;right:0;height:80px;padding:22px clamp(20px,4vw,64px);display:flex;align-items:center;justify-content:space-between;gap:10px;pointer-events:none}
-.gta-launch-brand{font-size:18px;font-weight:900;letter-spacing:.055em;display:flex;align-items:center;gap:9px}
-.gta-launch-brand-accent{color:#ff91ad}.gta-launch-orbit{font-size:31px;font-weight:300;color:#ff8b99}
-.gta-launch-chip{font-size:10px;font-weight:800;letter-spacing:.17em;background:rgba(17,15,34,.7);color:#ffd3df;border:1px solid #ff9aaf4d;border-radius:99px;padding:9px 13px}
-.gta-launch-hero{position:absolute;z-index:3;top:17%;left:clamp(20px,4vw,64px);width:min(440px,40vw);pointer-events:auto}
-.gta-launch-eyebrow{font-size:10px;font-weight:850;letter-spacing:.22em;color:#ff97b1}
-.gta-launch-hero h1{font-size:clamp(36px,3.4vw,61px);line-height:1.05;letter-spacing:-.055em;margin:16px 0 14px;text-shadow:0 4px 35px #070411}
-.gta-launch-hero h1 em{font-weight:800;font-style:normal;background:linear-gradient(110deg,#ffc477,#ff7ca3 48%,#b68aff);background-clip:text;-webkit-background-clip:text;color:transparent}
-.gta-launch-hero p{font-size:14px;line-height:1.6;color:#d2c5d6;max-width:390px}
-.gta-launch-kpis{display:flex;gap:28px;margin:29px 0 18px}
-.gta-launch-kpis>div{display:flex;flex-direction:column;gap:4px;min-width:0}
-.gta-launch-kpis strong{font-size:clamp(21px,2.3vw,34px);letter-spacing:-.045em;white-space:nowrap;font-variant-numeric:tabular-nums}
-.gta-launch-kpis strong small{font-size:14px;color:#9b90a8}
-.gta-launch-kpis span{font-size:10px;color:#b6aabf;text-transform:uppercase;letter-spacing:.1em}
-.gta-launch-progress{width:100%;height:5px;border-radius:100px;overflow:hidden;background:#36293e;box-shadow:0 0 1px #ff9ba3}
-.gta-launch-progress div{height:100%;background:linear-gradient(90deg,#a57cff,#ff86a7,#ffbf75);transition:width .35s}
-.gta-launch-next{margin:15px 0 20px;font-size:10px;letter-spacing:.12em;color:#b0a1ba;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.gta-launch-next strong{font-size:12px;letter-spacing:.02em;color:#fff2ec}
-.gta-launch-actions{display:flex;flex-wrap:wrap;gap:9px}
-.gta-launch-actions button{border-radius:10px;padding:12px 15px;font-size:12px;font-weight:800;transition:transform .2s,background .2s}
-.gta-launch-actions button:hover:not(:disabled){transform:translateY(-2px)}
-.gta-launch-play{background:linear-gradient(115deg,#ffbd72,#ff82aa);color:#281b2b;border:0;box-shadow:0 6px 25px #ee659b44}
-.gta-launch-reset{background:#1c1726bb;border:1px solid #957a9b;color:#ffdeea}
-.gta-launch-reset:disabled{opacity:.4;cursor:default}
-.gta-launch-time{font-size:11px;color:#b8a3bf;margin-top:12px;font-variant-numeric:tabular-nums}
-.gta-launch-panel{position:absolute;z-index:3;right:clamp(16px,3vw,52px);top:110px;bottom:105px;width:min(332px,31vw);min-height:0;display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(160deg,#1e1935da,#0c0c1bea);border:1px solid #e7b0d03b;border-radius:18px;box-shadow:0 16px 80px #0304098c;backdrop-filter:blur(22px)}
-.gta-launch-panel-head{display:flex;justify-content:space-between;gap:8px;padding:18px 20px;border-bottom:1px solid #ffffff18;color:#f7d7e4;font-size:10px;font-weight:800;letter-spacing:.14em}
-.gta-launch-panel-head span:last-child{font-weight:500;letter-spacing:0;color:#aca0bb}
-.gta-launch-selected{padding:20px;border-bottom:1px solid #ffffff19;display:flex;flex-direction:column;gap:8px}
-.gta-launch-selected h2{font-size:23px;line-height:1.1;margin:2px 0;color:#fff}
-.gta-launch-selected>strong{font-variant-numeric:tabular-nums;font-size:25px;color:#f6d8e4;letter-spacing:.025em}
-.gta-launch-selected>strong.released{font-size:17px;color:#ffbf81}
-.gta-launch-selected small{color:#b9acbb;font-size:11px;line-height:1.4}
-.gta-launch-regions{overflow-y:auto;min-height:0;overscroll-behavior:contain;padding:9px}
-.gta-launch-region{width:100%;display:grid;grid-template-columns:8px minmax(0,1fr) auto;align-items:center;gap:9px;padding:11px 10px;border:1px solid transparent;border-radius:9px;background:transparent;color:#e3d8ea;text-align:left}
-.gta-launch-region:hover,.gta-launch-region.chosen{background:#ffffff12;border-color:#ffa1c344}
-.gta-launch-region i{width:7px;height:7px;border-radius:99px;box-shadow:0 0 10px currentColor}
-.gta-launch-region span{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gta-launch-region b{font-size:10px;color:#b3a8c1;font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:700}
-.gta-launch-region.chosen b{color:#ffb5cb}
-.gta-launch-footer{position:absolute;z-index:4;bottom:22px;left:clamp(18px,4vw,64px);right:clamp(18px,3vw,52px);display:flex;gap:9px 20px;align-items:center;flex-wrap:wrap;font-size:10px;line-height:1.3;color:#b4a7ba}
-.gta-launch-footer a{color:#ffe3ed;text-decoration:underline;text-underline-offset:3px}
-.gta-launch-error,.gta-launch-loading{position:absolute;top:90px;left:50%;transform:translateX(-50%);z-index:10;background:#281224ee;border:1px solid #dd6f95;border-radius:12px;padding:14px;color:#fff}
-.gta-launch-loading{background:#1d1829ee;border-color:#92739c}
-@media(max-width:980px){.gta-launch-hero{top:110px;width:min(410px,43vw)}.gta-launch-hero h1{font-size:clamp(31px,3.4vw,44px)}.gta-launch-panel{top:102px;bottom:120px;width:37vw}.gta-launch-hero p{font-size:13px}.gta-launch-kpis{gap:14px}}
-@media(max-width:680px){.gta-launch{overflow-y:auto;overflow-x:hidden}.gta-launch .map-canvas{position:fixed;height:100dvh}.gta-launch-vignette{position:fixed;background:linear-gradient(180deg,#0a0718dd 0%,#090a1c80 55%,#09091be8 100%)}.gta-launch-header{position:relative;height:66px;padding:16px 18px}.gta-launch-brand{font-size:15px}.gta-launch-chip{font-size:8px;padding:7px 9px}.gta-launch-hero{position:relative;top:auto;left:auto;width:auto;margin:40px 18px 22px}.gta-launch-hero h1{font-size:clamp(30px,8vw,47px)}.gta-launch-kpis{margin:20px 0 14px}.gta-launch-kpis strong{font-size:24px}.gta-launch-panel{position:relative;top:auto;bottom:auto;right:auto;width:auto;max-width:none;margin:22px 18px 0;max-height:360px}.gta-launch-regions{max-height:210px}.gta-launch-footer{position:relative;left:auto;right:auto;bottom:auto;display:block;margin:24px 18px 25px;padding-bottom:10px}.gta-launch-footer>*{display:block;margin-bottom:7px}.gta-launch-error,.gta-launch-loading{position:fixed;top:70px}}
-@media(prefers-reduced-motion:reduce){.gta-launch *{transition:none!important;animation:none!important}.gta-launch-actions button:hover:not(:disabled){transform:none}}
-
-/* Global coverage: keep the 172-entry index searchable. */
-.gta-launch-search-label {display:block;color:#b9a9c2;font-size:10px;letter-spacing:.11em;font-weight:700;text-transform:uppercase;padding:12px 20px 5px}
-.gta-launch-search {margin:0 14px 9px;width:calc(100% - 28px);min-height:38px;padding:8px 12px;background:#0d0a1b;border:1px solid #ffc0d03b;border-radius:9px;color:#fff2f6;font-size:12px}
-.gta-launch-search::placeholder {color:#8e839e}
-.gta-launch-search:focus-visible {outline:2px solid #ff94b3;outline-offset:2px}
-.gta-launch-panel {min-height:0}
-.gta-launch-regions {flex:1}
-@media(max-width:680px){.gta-launch-search-label{padding:9px 16px 4px}.gta-launch-panel{max-height:420px}}
-
-.gta-launch-source{color:#ffd3b9;font-weight:700;font-size:11px;text-underline-offset:3px;width:max-content}
-.gta-launch-source:hover{color:#fff5dc}
-
-/* Cinematic globe camera: transient spotlight never blocks map interactions. */
-.gta-launch-cinema {
-  position:absolute;
-  z-index:3;
-  pointer-events:none;
-  left:50%;
-  bottom:clamp(98px,14vh,148px);
-  width:min(440px,36vw);
-  transform:translateX(-50%);
-  padding:16px 22px 18px;
-  color:#fff1ef;
-  text-align:center;
-  border:1px solid #ffa4c263;
-  border-radius:18px;
-  background:linear-gradient(140deg,#1b1128dd,#45223bcc 55%,#1c1837dd);
-  box-shadow:0 12px 65px #120516aa,0 0 36px #f276b22c;
-  backdrop-filter:blur(20px);
-  animation:gta-spotlight-enter .48s both;
+/* World Pulse / GTA VI — minimal cinematic stage. Globe is the product. */
+.gta-launch{position:relative;width:100%;height:100dvh;overflow:hidden;background:#080a13;color:#f4edf5;font-family:Inter,"Segoe UI",sans-serif}
+.gta-launch .map-canvas{position:absolute;inset:0;height:100%;width:100%}
+.gta-launch-vignette{position:absolute;inset:0;pointer-events:none;z-index:1;background:linear-gradient(90deg,#070914dd 0%,#08091485 16%,#08091417 42%,transparent 75%),linear-gradient(180deg,#070811aa 0%,transparent 19%,transparent 73%,#09091499 100%)}
+.gta-launch-header{position:absolute;z-index:8;top:0;left:0;right:0;padding:22px clamp(18px,3.7vw,58px);display:flex;align-items:center;justify-content:space-between;gap:16px;pointer-events:none}
+.gta-launch-header>*{pointer-events:auto}
+.gta-launch-brand{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:900;letter-spacing:.035em;color:#f5edf5;white-space:nowrap}
+.gta-launch-orbit{font-size:28px;font-weight:400;color:#fa8eae;line-height:1}
+.gta-launch-brand-accent{color:#ff89af}
+.gta-launch-event-name{font-size:11px;letter-spacing:.18em;font-weight:900;color:#e9c3cf;border-left:1px solid #96768d77;padding-left:12px;margin-left:5px}
+.gta-launch-header-actions{display:flex;align-items:center;gap:7px}
+.gta-launch-header-btn{background:#111321ba;border:1px solid #b6a8b33b;border-radius:100px;min-height:38px;color:#eadce9;font-size:11px;font-weight:700;letter-spacing:.015em;padding:8px 14px;backdrop-filter:blur(20px)}
+.gta-launch-header-btn:hover,.gta-launch-header-btn[aria-pressed="true"]{color:#fff2f8;background:#37243dcc;border-color:#ef95b178}
+.gta-launch-info-btn{font-size:17px;min-width:38px;padding:5px 10px}
+.gta-launch-countdowns{position:absolute;z-index:3;top:clamp(125px,23vh,235px);left:clamp(20px,3.7vw,58px);width:min(340px,31vw);pointer-events:auto}
+.gta-launch-primary-label{display:flex;align-items:center;gap:8px;color:#ffb6ca;font-size:10px;letter-spacing:.19em;font-weight:800}
+.gta-launch-primary-dot{width:7px;height:7px;background:#ffaf7f;border-radius:50%;box-shadow:0 0 15px #ffa0789c}
+.gta-launch-br-title{display:flex;align-items:center;gap:10px;margin:12px 0 3px}
+.gta-launch-br-title>span{font-size:26px}
+.gta-launch-br-title h1{font-size:clamp(26px,2.5vw,37px);letter-spacing:-.05em;font-weight:750;margin:0;line-height:1.1}
+.gta-launch-big-time{font-size:clamp(37px,3.9vw,65px);font-weight:900;line-height:1.08;white-space:nowrap;letter-spacing:-.075em;font-variant-numeric:tabular-nums;background:linear-gradient(110deg,#ffcb8a 5%,#ff94a9 53%,#bd95fd 93%);background-clip:text;-webkit-background-clip:text;color:transparent;text-shadow:0 7px 36px #ed658c28}
+.gta-launch-br-subtitle{color:#bcafc3;font-size:11px;letter-spacing:.035em;margin:10px 0 0}
+.gta-launch-market-divider{width:min(300px,100%);height:1px;background:linear-gradient(90deg,#ffc3d34d,#ffffff00);margin:28px 0 17px}
+.gta-launch-secondary-title{color:#a69baa;font-size:9px;font-weight:800;letter-spacing:.16em;margin-bottom:13px}
+.gta-launch-next-markets{width:100%;display:flex;flex-direction:column;gap:5px}
+.gta-launch-market{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;padding:7px 2px;color:#e6dce9;background:none;border:0;text-align:left;border-radius:7px}
+.gta-launch-market:hover{color:#fff;background:#ffffff0e}
+.gta-launch-market-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gta-launch-market-time{font-size:13px;white-space:nowrap;letter-spacing:.035em;font-weight:800;font-variant-numeric:tabular-nums;color:#f2dce7}
+.gta-launch-market-time.is-live{color:#ffb77d;font-size:10px;letter-spacing:.08em}
+.gta-launch-mode-footnote{font-size:10px;color:#91899c;margin-top:18px;line-height:1.55}
+.gta-launch-controls{z-index:7;position:absolute;bottom:30px;left:50%;transform:translateX(-50%);display:flex;gap:7px;align-items:center;max-width:calc(100% - 32px);width:max-content;padding:7px;border-radius:100px;background:#100f20c9;border:1px solid #c6adcc2b;backdrop-filter:blur(22px);box-shadow:0 12px 45px #00000055}
+.gta-launch-controls button{border-radius:100px;white-space:nowrap;min-height:39px;padding:10px 17px;font-size:11px;font-weight:800;border:0}
+.gta-launch-play{background:linear-gradient(115deg,#ffba7d,#fa7eaa);color:#271726}
+.gta-launch-play:hover{filter:brightness(1.08)}
+.gta-launch-control{color:#ddd3e7;background:#ffffff10}
+.gta-launch-control:hover{background:#ffffff20;color:#fff}
+.gta-launch-replay-label{font-size:10px;color:#aaa1b9;white-space:nowrap;padding-right:12px}
+.gta-launch-drawer,.gta-launch-info-panel{z-index:9;position:absolute;top:88px;right:clamp(18px,3.5vw,54px);bottom:98px;width:min(335px,35vw);min-height:0;display:flex;flex-direction:column;border:1px solid #e5b7d044;border-radius:18px;background:linear-gradient(150deg,#1a172ae9,#0c1020ef);backdrop-filter:blur(23px);box-shadow:0 18px 85px #01020bc7;color:#eee5f0;overflow:hidden}
+.gta-launch-drawer-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 18px 15px;border-bottom:1px solid #ffffff19}
+.gta-launch-drawer-header strong{font-weight:800;font-size:14px}
+.gta-launch-drawer-header button{border:0;background:#ffffff13;border-radius:50%;min-width:30px;min-height:30px;color:#fff4ef;font-size:13px}
+.gta-launch-drawer-header button:hover{background:#ffffff25}
+.gta-launch-selected{padding:18px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid #ffffff15}
+.gta-launch-eyebrow{color:#f7a8be;font-size:9px;font-weight:850;letter-spacing:.15em}
+.gta-launch-selected h2{margin:0;font-size:25px;line-height:1.1;letter-spacing:-.035em}
+.gta-launch-selected>strong{font-size:21px;letter-spacing:.01em;font-weight:850;font-variant-numeric:tabular-nums}
+.gta-launch-selected>strong.released{color:#ffad87}
+.gta-launch-selected small{font-size:11px;color:#bfb4c7;line-height:1.5}
+.gta-launch-selected a{color:#f8bfd4;font-size:11px;text-decoration:underline;text-underline-offset:3px}
+.gta-launch-search-label{padding:14px 17px 6px;color:#aea3b9;font-size:10px;font-weight:750;letter-spacing:.09em}
+.gta-launch-search{margin:0 14px 9px;padding:9px 12px;min-height:38px;width:calc(100% - 28px);color:#fff5f7;background:#0a0b19;border:1px solid #e6a3ca47;border-radius:9px;font-size:12px}
+.gta-launch-search::placeholder{color:#857e92}
+.gta-launch-regions{flex:1;min-height:0;overflow-y:auto;padding:5px 9px 10px}
+.gta-launch-region{display:grid;grid-template-columns:7px minmax(0,1fr) auto;gap:9px;align-items:center;padding:10px;width:100%;text-align:left;border:1px solid transparent;border-radius:9px;background:transparent;color:#e5dce8}
+.gta-launch-region:hover,.gta-launch-region.chosen{background:#ffffff12;border-color:#f49dc43a}
+.gta-launch-region i{height:7px;width:7px;border-radius:100%;box-shadow:0 0 10px #d8b5dd88}
+.gta-launch-region span{font-size:11px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.gta-launch-region b{font-size:9px;white-space:nowrap;color:#bcb2c4;font-weight:700;font-variant-numeric:tabular-nums}
+.gta-launch-info-panel{height:max-content;max-height:calc(100dvh - 120px);bottom:auto;padding-bottom:12px;overflow-y:auto}
+.gta-launch-info-panel p{font-size:12px;color:#ccc0d3;line-height:1.65;padding:0 18px;margin:12px 0 0}
+.gta-launch-info-links{display:flex;flex-direction:column;align-items:flex-start;gap:11px;padding:21px 18px 12px}
+.gta-launch-info-links a{font-size:11px;color:#ffc3d6;text-decoration:underline;text-underline-offset:3px}
+.gta-launch-cinema{z-index:4;pointer-events:none;position:absolute;bottom:115px;left:50%;transform:translateX(-50%);width:min(410px,35vw);padding:15px 18px;text-align:center;border:1px solid #ffa2bb5c;border-radius:16px;background:#25172fdb;backdrop-filter:blur(20px);box-shadow:0 12px 50px #1b071b7a;animation:gta-cinema-in .5s both}
+.gta-launch-cinema-eyebrow{display:flex;justify-content:center;align-items:center;gap:8px;font-size:9px;letter-spacing:.13em;color:#ffc1d3;font-weight:800}
+.gta-launch-cinema-pulse{display:block;width:8px;height:8px;background:#ffac79;border-radius:50%;box-shadow:0 0 16px #ff8fa9;animation:gta-cinema-pulse 1.5s infinite}
+.gta-launch-cinema strong{display:block;margin:8px 0 6px;font-weight:850;line-height:1.15;font-size:clamp(17px,1.65vw,24px);letter-spacing:-.035em}
+.gta-launch-cinema small{font-size:10px;color:#ded0de}
+.gta-launch-loading,.gta-launch-error{position:absolute;z-index:10;top:100px;left:50%;transform:translateX(-50%);padding:12px 16px;border-radius:12px;background:#1d182cee;color:#fff;font-size:13px;border:1px solid #ad829f}
+.gta-launch-error{border-color:#ec7285}
+@keyframes gta-cinema-in{from{opacity:0;transform:translate(-50%,15px) scale(.96)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+@keyframes gta-cinema-pulse{50%{opacity:.45;transform:scale(1.65)}}
+@media(max-width:990px){
+  .gta-launch-countdowns{width:min(300px,35vw);top:150px}
+  .gta-launch-big-time{font-size:clamp(32px,4vw,49px)}
+  .gta-launch-market-time{font-size:11px}
+  .gta-launch-drawer{width:min(310px,42vw)}
 }
-.gta-launch-cinema-eyebrow {
-  display:flex;align-items:center;justify-content:center;gap:9px;
-  font-size:10px;letter-spacing:.14em;font-weight:800;color:#ffa6bf;
+@media(max-width:680px){
+  .gta-launch-header{padding:14px 16px;gap:5px}
+  .gta-launch-brand{font-size:12px;gap:5px}
+  .gta-launch-orbit{font-size:24px}
+  .gta-launch-event-name{font-size:9px;padding-left:7px;margin-left:3px;letter-spacing:.08em}
+  .gta-launch-header-actions{gap:4px}
+  .gta-launch-header-btn{font-size:10px;min-height:34px;padding:6px 9px}
+  .gta-launch-mode-btn{max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .gta-launch-info-btn{min-width:32px;font-size:15px}
+  .gta-launch-vignette{background:linear-gradient(180deg,#0a0a18e3 0%,#0a0b1699 17%,transparent 46%,transparent 67%,#070918d9 100%)}
+  .gta-launch-countdowns{position:absolute;top:86px;left:19px;width:min(310px,calc(100% - 38px))}
+  .gta-launch-primary-label{font-size:9px}
+  .gta-launch-br-title{margin-top:8px}
+  .gta-launch-br-title>span{font-size:20px}
+  .gta-launch-br-title h1{font-size:25px}
+  .gta-launch-big-time{font-size:clamp(33px,9.2vw,47px)}
+  .gta-launch-br-subtitle{font-size:10px;margin-top:5px}
+  .gta-launch-market-divider{margin:14px 0 10px}
+  .gta-launch-secondary-title{font-size:8px;margin-bottom:5px}
+  .gta-launch-next-markets{gap:1px;max-width:315px}
+  .gta-launch-market{padding:5px 2px}
+  .gta-launch-market-name{font-size:10px}
+  .gta-launch-market-time{font-size:11px}
+  .gta-launch-mode-footnote{margin-top:8px;font-size:9px}
+  .gta-launch-controls{position:fixed;left:10px;right:10px;bottom:14px;transform:none;max-width:none;justify-content:center;padding:6px}
+  .gta-launch-controls button{font-size:10px;padding:9px 11px;min-height:35px}
+  .gta-launch-replay-label{display:none}
+  .gta-launch-drawer,.gta-launch-info-panel{position:fixed;top:64px;right:12px;left:12px;bottom:75px;width:auto;max-height:none}
+  .gta-launch-info-panel{bottom:auto;max-height:calc(100dvh - 120px)}
+  .gta-launch-cinema{position:fixed;left:50%;bottom:74px;width:calc(100% - 48px);padding:12px 14px}
+  .gta-launch-cinema strong{font-size:17px}
 }
-.gta-launch-cinema-pulse {
-  display:inline-block;width:8px;height:8px;border-radius:50%;
-  background:#ffaf81;box-shadow:0 0 16px #ff94aa;
-  animation:gta-spotlight-pulse 1.6s ease-in-out infinite;
+@media(max-width:380px){
+  .gta-launch-brand{letter-spacing:0}
+  .gta-launch-header-actions .gta-launch-mode-btn{max-width:84px}
+  .gta-launch-controls button{padding:8px 9px;font-size:9px}
 }
-.gta-launch-cinema strong {
-  display:block;
-  margin:9px 0 6px;
-  font-size:clamp(18px,1.8vw,28px);
-  line-height:1.17;
-  letter-spacing:-.03em;
-  text-shadow:0 0 25px #f88cb28c;
-}
-.gta-launch-cinema small {
-  font-size:11px;
-  color:#e0c5d5;
-  line-height:1.4;
-}
-@keyframes gta-spotlight-enter {
-  from {opacity:0;transform:translate(-50%,14px) scale(.96)}
-  to {opacity:1;transform:translate(-50%,0) scale(1)}
-}
-@keyframes gta-spotlight-pulse {
-  50% {opacity:.45;transform:scale(1.8)}
-}
-@media(max-width:980px) {
-  .gta-launch-cinema {width:min(340px,38vw);padding:12px 16px;bottom:120px}
-}
-@media(max-width:680px) {
-  .gta-launch-cinema {
-    position:fixed;left:50%;bottom:14px;
-    width:calc(100% - 36px);
-    padding:12px 18px;
-  }
-  .gta-launch-cinema strong {font-size:18px}
-  .gta-launch-cinema-eyebrow {font-size:9px}
-}
-@media(prefers-reduced-motion:reduce) {
-  .gta-launch-cinema,.gta-launch-cinema-pulse {animation:none!important}
+@media(prefers-reduced-motion:reduce){
+  .gta-launch *{animation:none!important;transition:none!important}
 }

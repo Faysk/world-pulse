@@ -1,13 +1,12 @@
 import { expect, test } from '@playwright/test';
 
-// Exercise the actual MapLibre globe without depending on third-party tile availability.
 const minimalMapStyle = {
   version: 8,
   sources: {},
   layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#10101b' } }]
 };
 
-test('GTA VI world moment previews a clipped regional launch without calling production APIs', async ({ page }) => {
+test('GTA VI keeps Brazil primary, shows official markets, and offers optional world simulation', async ({ page }) => {
   test.setTimeout(90_000);
   const pageErrors: string[] = [];
   const apiCalls: string[] = [];
@@ -15,45 +14,57 @@ test('GTA VI world moment previews a clipped regional launch without calling pro
   page.on('request', request => {
     if (new URL(request.url()).pathname.startsWith('/api/')) apiCalls.push(request.url());
   });
-  // Freeze the reference date so this test remains valid after launch day.
+  // Freeze before the launch, independent of the date this CI is executed.
   await page.clock.setFixedTime(new Date('2026-11-17T18:00:00Z'));
   await page.route(/^https:\/\/tiles\.openfreemap\.org\/styles\/dark/, route =>
     route.fulfill({ json: minimalMapStyle })
   );
   await page.goto('/?gta6LaunchPreview=1');
-  await expect(page.getByRole('heading', { name: /O mundo inteiro/ })).toBeVisible();
-  await expect(page.locator('.maplibregl-canvas')).toBeVisible();
-  await expect(page.locator('.gta-launch-region')).toHaveCount(171);
-  await expect(page.getByRole('heading', { name: 'Portugal' })).toBeVisible();
-  await expect(page.getByText(/Horário de desbloqueio conferido na PlayStation Store/)).toBeVisible();
-  await page.getByRole('searchbox', { name: 'Buscar território' }).fill('Rússia');
-  // "Bielorrússia" matches a substring search; require an exact Russia label.
-  await expect(page.getByText('Rússia', { exact: true })).toHaveCount(0);
-  await page.getByRole('searchbox', { name: 'Buscar território' }).fill('Brasil');
-  await expect(page.locator('.gta-launch-region')).toHaveCount(1);
-  await page.getByRole('button', { name: /Brasil/ }).click();
-  await expect(page.getByText(/Horário de desbloqueio conferido na PlayStation Store/)).toBeVisible();
-  await page.getByRole('searchbox', { name: 'Buscar território' }).fill('');
 
-  await expect(page.getByRole('progressbar', { name: /Territórios com a virada local concluída/ })).toHaveAttribute('aria-valuenow', '0');
+  await expect(page.locator('.maplibregl-canvas')).toBeVisible();
+  await expect(page.locator('.gta-launch-br-title').getByRole('heading', { name: 'Brasil' })).toBeVisible();
+  await expect(page.getByRole('timer', { name: 'Contagem regressiva do Brasil' })).toHaveText(/\d\d:\d\d:\d\d/);
+  await expect(page.getByText('19 NOV · 00:00 (horário de Brasília)')).toBeVisible();
+  await expect(page.getByText('OUTROS MERCADOS CONFIRMADOS')).toBeVisible();
+  await expect(page.locator('.gta-launch-market')).toHaveCount(3);
+
+  // The former hero and technical footer are gone. Sources remain available on demand.
+  await expect(page.getByText('WORLD MOMENT / 001')).toHaveCount(0);
+  await expect(page.locator('.gta-launch-footer')).toHaveCount(0);
+  await expect(page.getByText(/Uma nova Vice City/)).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: 'Informações e fontes' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Informações e fontes' }).click();
+  await expect(page.getByRole('dialog', { name: 'Informações e fontes' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /PlayStation Store Brasil/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Fechar informações' }).click();
+
+  const toggle = page.getByRole('button', { name: '◯ Simular mundo' });
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await page.getByRole('button', { name: 'Regiões' }).click();
+  await expect(page.locator('.gta-launch-region')).toHaveCount(4);
+  await expect(page.getByRole('heading', { name: 'Brasil' }).last()).toBeVisible();
+  await page.getByRole('button', { name: 'Fechar regiões' }).click();
+
+  await toggle.click();
+  await expect(page.getByRole('button', { name: /Simulação mundial/ })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Regiões' }).click();
+  await expect(page.locator('.gta-launch-region')).toHaveCount(171);
   await page.getByRole('searchbox', { name: 'Buscar território' }).fill('Nigéria');
   await expect(page.locator('.gta-launch-region')).toHaveCount(1);
-  await page.getByRole('searchbox', { name: 'Buscar território' }).fill('');
-  await page.getByRole('button', { name: /Ver onda em 45 segundos/ }).click();
-  await expect(page.getByText(/Prévia acelerada/)).toBeVisible();
-  // A release cue automatically flies toward the current region and reveals
-  // its title. The user can pause and resume the camera at any time.
+  await page.getByRole('button', { name: 'Fechar regiões' }).click();
+  await page.getByRole('button', { name: /Simulação mundial/ }).click();
+  await expect(page.getByRole('button', { name: '◯ Simular mundo' })).toHaveAttribute('aria-pressed', 'false');
+
+  await page.getByRole('button', { name: /Ver onda em 45s/ }).click();
   await expect(page.locator('.gta-launch-cinema')).toBeVisible({ timeout: 30_000 });
   await page.getByRole('button', { name: /Pausar câmera/ }).click();
   await expect(page.getByRole('button', { name: /Retomar câmera/ })).toBeVisible();
   await expect(page.locator('.gta-launch-cinema')).toHaveCount(0);
   await page.getByRole('button', { name: /Retomar câmera/ }).click();
   await expect(page.getByRole('button', { name: /Pausar câmera/ })).toBeVisible();
-  await expect(page.getByRole('progressbar', { name: /Territórios com a virada local concluída/ })).toHaveAttribute('aria-valuenow', /[1-9]/, { timeout: 30_000 });
   await page.getByRole('button', { name: /Tempo real/ }).click();
-  await expect(page.getByText(/Relógio em Portugal/)).toBeVisible();
-  await expect(page.getByRole('progressbar', { name: /Territórios com a virada local concluída/ })).toHaveAttribute('aria-valuenow', '0');
-  await page.screenshot({ path: 'test-artifacts/gta6-launch-preview.png' });
+  await expect(page.getByRole('button', { name: /Tempo real/ })).toHaveCount(0);
+  await page.screenshot({ path: 'test-artifacts/gta6-launch-clean.png' });
   expect(pageErrors).toEqual([]);
   expect(apiCalls).toEqual([]);
 });
