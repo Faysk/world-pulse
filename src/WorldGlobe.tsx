@@ -16,6 +16,8 @@ export type GlobeProps = {
   scale: number;
   selected: TagId | null;
   cityLights: boolean;
+  /** Optional initial camera zoom; used by the GTA VI world moment only. */
+  initialZoom?: number;
   onReady: (map: MapInstance) => void;
   onZoom: (zoom: number) => void;
   onFps: (fps: number) => void;
@@ -248,7 +250,7 @@ export function WorldGlobe({
         container: container.current,
         style: 'https://tiles.openfreemap.org/styles/dark',
         center: [-23, 13],
-        zoom: 1.65,
+        zoom: latestState.current.initialZoom ?? 1.65,
         minZoom: 0.8,
         maxZoom: 15,
         pitch: 0,
