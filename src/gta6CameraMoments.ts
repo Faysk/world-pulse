@@ -90,3 +90,4 @@ export function crossedUnlockMoments(
 }
 
 export const GTA6_UNLOCK_MOMENTS = buildUnlockMoments(RELEASE_REGIONS);
+export const GTA6_OFFICIAL_MOMENTS = buildUnlockMoments(RELEASE_REGIONS.filter(region => region.verified));
