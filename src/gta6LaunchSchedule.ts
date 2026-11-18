@@ -11,7 +11,7 @@
  *
  * Other countries retain an IANA-based ILLUSTRATIVE local midnight, without
  * an assertion of game availability or a verified digital-store unlock.
- * Russia is excluded because a local GTA VI digital launch was not verified;
+ * Russia and North Korea are excluded because a local GTA VI digital launch was not verified;
  * the geography stays visible but uncolored.
  */
 import countryData from './assets/gta6-world-timezones.json' with { type: 'json' };
@@ -67,7 +67,7 @@ const REFERENCE_TIME_ZONES: Record<string, string> = {
   KZ: 'Asia/Almaty', UA: 'Europe/Kyiv'
 };
 export const VERIFIED_COUNTRY_CODES = Object.keys(VERIFIED_STORES).sort();
-export const UNCONFIRMED_COUNTRY_CODES = ['RU'] as const;
+export const UNCONFIRMED_COUNTRY_CODES = ['RU', 'KP'] as const;
 
 /** Convert 19 Nov 2026 local midnight to UTC using runtime IANA rules. */
 export function midnightOnLaunchDate(timeZone: string): string {
