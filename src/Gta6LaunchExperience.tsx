@@ -19,8 +19,6 @@ const BRAZIL = OFFICIAL_REGIONS.find(region => region.code === 'BR')!;
 const OTHER_MARKETS = OFFICIAL_REGIONS.filter(region => region.code !== 'BR')
   .sort((a, b) => Date.parse(a.unlockAt) - Date.parse(b.unlockAt) ||
     a.label.localeCompare(b.label, 'pt'));
-const OFFICIAL_PREVIEW_START = Math.min(...OFFICIAL_REGIONS.map(r => Date.parse(r.unlockAt))) - 20 * 60_000;
-const OFFICIAL_PREVIEW_END = Math.max(...OFFICIAL_REGIONS.map(r => Date.parse(r.unlockAt))) + 80 * 60_000;
 
 const formatReference = (date: number) => new Intl.DateTimeFormat('pt-PT', {
   timeZone: 'Europe/Lisbon', day: '2-digit', month: 'short',
@@ -35,9 +33,8 @@ export default function Gta6LaunchExperience() {
   const [preview, setPreview] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
   const [playbackRun, setPlaybackRun] = useState(0);
-  const [playbackRange, setPlaybackRange] = useState({ start: OFFICIAL_PREVIEW_START, end: OFFICIAL_PREVIEW_END });
+  const [playbackRange, setPlaybackRange] = useState({ start: previewStart, end: previewEnd });
   // Keep the global color-wave visible on arrival; unverified regions are explicitly illustrative.
-  const [showSimulation, setShowSimulation] = useState(true);
   const [chosenCode, setChosenCode] = useState('BR');
   const [search, setSearch] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -49,8 +46,7 @@ export default function Gta6LaunchExperience() {
       if (document.hidden) return;
       const now = Date.now();
       setClock(previous => {
-        const regions = showSimulation ? RELEASE_REGIONS : OFFICIAL_REGIONS;
-        const revealing = regions.some(region => {
+        const revealing = RELEASE_REGIONS.some(region => {
           const elapsed = now - Date.parse(region.unlockAt);
           return elapsed >= 0 && elapsed < 3600;
         });
@@ -58,7 +54,7 @@ export default function Gta6LaunchExperience() {
       });
     }, 100);
     return () => window.clearInterval(interval);
-  }, [showSimulation]);
+  }, []);
 
   useEffect(() => {
     if (!playing) return;
@@ -88,20 +84,18 @@ export default function Gta6LaunchExperience() {
   const time = preview ?? clock;
   const isReplay = preview !== null;
   const { userPaused, pauseCamera, releaseCamera, focusManually } =
-    useGta6CinematicCamera(map, time, isReplay, playbackRun, showSimulation, setFeaturedMoment);
+    useGta6CinematicCamera(map, time, isReplay, playbackRun, true, setFeaturedMoment);
 
   const selected = useMemo(() => RELEASE_REGIONS.find(r => r.code === chosenCode) ?? BRAZIL, [chosenCode]);
   const visibleRegions = useMemo(() => {
-    const pool = showSimulation ? RELEASE_REGIONS : OFFICIAL_REGIONS;
     const needle = search.trim().toLocaleLowerCase('pt');
-    return pool.filter(region => !needle ||
+    return RELEASE_REGIONS.filter(region => !needle ||
       region.label.toLocaleLowerCase('pt').includes(needle) ||
       region.code.toLowerCase().includes(needle));
-  }, [search, showSimulation]);
+  }, [search]);
 
   const selectedRemaining = Date.parse(selected.unlockAt) - time;
   const brazilRemaining = Date.parse(BRAZIL.unlockAt) - time;
-  const knownCompleted = OFFICIAL_REGIONS.filter(region => isReleased(region, time)).length;
   const showCountry = useCallback((region: ReleaseRegion) => {
     setChosenCode(region.code);
     setDrawerOpen(true);
@@ -116,18 +110,9 @@ export default function Gta6LaunchExperience() {
     setPreview(null);
     setClock(Date.now());
   };
-  const setMode = (enableSimulation: boolean) => {
-    if (enableSimulation === showSimulation) return;
-    resetToLive();
-    setShowSimulation(enableSimulation);
-    setSearch('');
-    setChosenCode('BR');
-  };
   const startPlayback = () => {
     releaseCamera();
-    const range = showSimulation
-      ? { start: previewStart, end: previewEnd }
-      : { start: OFFICIAL_PREVIEW_START, end: OFFICIAL_PREVIEW_END };
+    const range = { start: previewStart, end: previewEnd };
     setPlaybackRange(range);
     setPreview(range.start);
     setPlaying(true);
@@ -144,7 +129,7 @@ export default function Gta6LaunchExperience() {
         onTap={() => {}} onTagPick={() => {}} onFailure={setMapError}
       />
       <Gta6LaunchLayer
-        map={map} now={time} simulated={isReplay} showSimulation={showSimulation}
+        map={map} now={time} simulated={isReplay} showSimulation={true}
         highlightedCodes={featuredMoment?.codes ?? NO_HIGHLIGHTS}
         onPick={showCountry} onError={setGeometryError}
       />
@@ -157,10 +142,6 @@ export default function Gta6LaunchExperience() {
           <span className="gta-launch-event-name">GTA VI</span>
         </a>
         <div className="gta-launch-header-actions">
-          <button type="button" className="gta-launch-header-btn gta-launch-mode-btn"
-            aria-pressed={showSimulation} onClick={() => setMode(!showSimulation)}>
-            {showSimulation ? '◉ Onda mundial' : '◯ Só confirmados'}
-          </button>
           <button type="button" className="gta-launch-header-btn"
             aria-expanded={drawerOpen} onClick={() => { setDrawerOpen(!drawerOpen); setInfoOpen(false); }}>
             Regiões
@@ -192,10 +173,6 @@ export default function Gta6LaunchExperience() {
               </span>
             </button>
           ))}
-        </div>
-        <div className="gta-launch-mode-footnote">
-          {showSimulation ? 'Onda mundial ilustrativa · 4 mercados com horário verificado'
-            : `${knownCompleted}/${OFFICIAL_REGIONS.length} mercados verificados · demais territórios neutros`}
         </div>
       </section>
 
@@ -231,9 +208,7 @@ export default function Gta6LaunchExperience() {
           <strong className={isReleased(selected, time) ? 'released' : ''}>
             {selected.verified
               ? (isReleased(selected, time) ? 'LIBERADO' : remainingText(selectedRemaining))
-              : (showSimulation
-                  ? (isReleased(selected, time) ? 'VIRADA SIMULADA' : remainingText(selectedRemaining))
-                  : 'NÃO VERIFICADO')}
+              : (isReleased(selected, time) ? 'VIRADA SIMULADA' : remainingText(selectedRemaining))}
           </strong>
           <small>{selected.verified
             ? `PlayStation Store · ${formatRelease(selected.windows[0])}`
@@ -268,7 +243,7 @@ export default function Gta6LaunchExperience() {
         </div>
         <p>Rosa e laranja indicam horários de desbloqueio verificados na PlayStation Store. Áreas cinza não possuem horário de loja confirmado nesta visualização.</p>
         <p>A Rússia permanece neutra. Isso não significa que pessoas nesses territórios não possam jogar com contas de outros mercados.</p>
-        <p>A <b>Onda mundial</b> é exibida por padrão: mostra horários verificados nas lojas e uma simulação ilustrativa da meia-noite nos demais territórios. Use <b>Só confirmados</b> para ocultar a simulação. Cores não representam jogadores reais.</p>
+        <p>A onda mundial mostra horários verificados nas lojas e uma simulação ilustrativa da meia-noite nos demais territórios. As cores não representam jogadores reais.</p>
         <div className="gta-launch-info-links">
           <a href={SOURCE_URL} target="_blank" rel="noreferrer">Rockstar Games — lançamento ↗</a>
           {BRAZIL.storeUrl && <a href={BRAZIL.storeUrl} target="_blank" rel="noreferrer">PlayStation Store Brasil ↗</a>}
