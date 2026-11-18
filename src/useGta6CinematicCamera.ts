@@ -6,7 +6,7 @@ import {
 
 const IDLE_ROTATION_DEGREES_PER_SECOND = 0.34;
 const MANUAL_PAUSE_MS = 30_000;
-const RESTING_ZOOM = 1.65;
+const RESTING_ZOOM = 2.12;
 
 type Phase = 'idle' | 'spotlight' | 'returning';
 
@@ -34,15 +34,16 @@ export function useGta6CinematicCamera(
   clock: number,
   simulated: boolean,
   playbackRun: number,
+  includeIllustrative: boolean,
   onMoment: (moment: UnlockMoment | null) => void
 ) {
   const [userPaused, setUserPaused] = useState(false);
   const director = useRef<Director>(INITIAL_DIRECTOR());
   const callback = useRef(onMoment);
   const reducedMotion = useRef(false);
-  const mode = useRef({ simulated, playbackRun });
+  const mode = useRef({ simulated, playbackRun, includeIllustrative });
   callback.current = onMoment;
-  mode.current = { simulated, playbackRun };
+  mode.current = { simulated, playbackRun, includeIllustrative };
 
   const clearSpotlight = useCallback(() => callback.current(null), []);
 
@@ -107,7 +108,7 @@ export function useGta6CinematicCamera(
   useEffect(() => {
     if (!map) return;
     const state = director.current;
-    const key = (simulated ? 'replay:' : 'live:') + playbackRun;
+    const key = (simulated ? 'replay:' : 'live:') + playbackRun + ':' + includeIllustrative;
     if (state.replayKey !== key) {
       state.replayKey = key;
       state.lastClock = clock;
@@ -122,7 +123,10 @@ export function useGta6CinematicCamera(
     if (previous === null || clock <= previous) return;
     if (reducedMotion.current || state.userPaused || document.hidden) return;
 
-    const crossed = crossedUnlockMoments(GTA6_UNLOCK_MOMENTS, previous, clock);
+    const eligible = includeIllustrative
+      ? GTA6_UNLOCK_MOMENTS
+      : GTA6_UNLOCK_MOMENTS.filter(moment => moment.verified);
+    const crossed = crossedUnlockMoments(eligible, previous, clock);
     if (!crossed.length) return;
     // A replay can cross multiple instants between two render frames. Always
     // prefer a verified-store event, otherwise the latest simultaneous group.
@@ -134,7 +138,7 @@ export function useGta6CinematicCamera(
       return;
     }
     beginSpotlight(preferred, performance.now());
-  }, [map, clock, simulated, playbackRun, beginSpotlight, clearSpotlight]);
+  }, [map, clock, simulated, playbackRun, includeIllustrative, beginSpotlight, clearSpotlight]);
 
   useEffect(() => {
     if (!map) return;
